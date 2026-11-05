@@ -18,7 +18,7 @@ html,body{margin:0;position:fixed;width:100%;height:100%;background:#05060f;colo
 #bf{height:100%;width:0;background:var(--ac);transition:width .2s}
 .ib{width:42px;height:42px;border-radius:13px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:var(--ink);font-size:16px;padding:0;margin-left:6px}
 #fw{position:relative;flex:1;min-height:0}
-#ti{position:absolute;left:0;bottom:0;width:100%;height:1px;opacity:0;border:0;padding:0;font-size:16px;z-index:0;-webkit-user-select:text;user-select:text}
+#ti{position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;border:0;padding:0;font-size:16px;z-index:0;caret-color:transparent;pointer-events:none;-webkit-user-select:text;user-select:text}
 #g{position:absolute;inset:0;width:100%;height:100%}
 #kb{padding:8px 5px calc(10px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:7px;background:linear-gradient(180deg,transparent,rgba(94,242,255,.05))}
 .r{display:flex;gap:5px;justify-content:center}
@@ -276,9 +276,9 @@ function foc(){try{ti.focus({preventScroll:true})}catch(e){ti.focus()}}
 ti.addEventListener("input",()=>{if(state!=="play"){ti.value="";return}
 const v=ti.value.toLowerCase().replace(/ё/g,"е").replace(/[^а-я]/g,"");
 if(v.length<buf.length){while(buf&&buf.length>v.length)back()}else{for(const ch of v.slice(buf.length))press(ch)}
-ti.value=buf});
+if(ti.value!==buf)ti.value=buf});
 $("fw").addEventListener("pointerdown",()=>{if(state==="play")foc()});
-function vh(){app.style.height=(window.visualViewport?visualViewport.height:innerHeight)+"px";window.scrollTo(0,0)}
+let vhH=0;function vh(){const h=Math.round(window.visualViewport?visualViewport.height:innerHeight);if(h!==vhH){vhH=h;app.style.height=h+"px"}if(window.scrollY||window.pageYOffset)window.scrollTo(0,0)}
 if(window.visualViewport){visualViewport.addEventListener("resize",vh);visualViewport.addEventListener("scroll",vh)}addEventListener("resize",vh);vh();
 let W=0,H=0,bgc,bg,glow,vig,items=[],P=[],R=[],F=[],Sh=[],target=null,buf="",state="idle",last=0,gt=0,spawnT=0,shake=0,flashA=0,hitX=0,hitT=0,mute=false,ac=null;
 let score=0,ds=0,shown=-1,best=0,lives=3,combo=0,words=0,level=1;
@@ -445,7 +445,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(a)set(a,e)});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="1.5.0";let upLater=false;
+const VER="1.5.1";let upLater=false;
 function upShow(m,j){$("upt").textContent=m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО";$("upv").textContent="ВЕРСИЯ "+j.version;const l=$("upl");l.innerHTML="";(j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=m==="new"?"ОБНОВИТЬ":"КРУТО";$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if(state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
