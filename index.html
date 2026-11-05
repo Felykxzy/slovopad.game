@@ -185,16 +185,24 @@ body.eco .btn,body.eco .ib,body.eco .hs i{-webkit-backdrop-filter:none;backdrop-
 .cw{width:240px;height:240px;border-radius:50%;overflow:hidden;border:2px solid var(--ac);box-shadow:0 0 26px rgba(94,242,255,.35)}
 .cw canvas{width:100%;height:100%;display:block;touch-action:none}
 #cz{width:min(80%,300px);accent-color:var(--ac)}
+.ib.idb{position:absolute;left:16px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:auto;height:40px;border-radius:30px;padding:0 16px;font-family:inherit;font-size:10.5px;font-weight:700;letter-spacing:.14em;white-space:nowrap}
+#o10{background:rgba(5,6,15,.94)}
+.gl.ta{width:min(100%,420px);padding:6px 16px;display:block;border-color:rgba(94,242,255,.6);box-shadow:0 0 22px rgba(94,242,255,.2),inset 0 1px 1px rgba(255,255,255,.4)}
+#idT{display:block;width:100%;min-height:150px;resize:none;background:none;border:0;outline:0;color:var(--ink);font-family:inherit;font-size:16px;line-height:1.5;padding:10px 0;-webkit-user-select:text;user-select:text}
+#idT::placeholder{opacity:.35}
+.hint.ok{color:var(--ac);opacity:1}.hint.er{color:#ff7a90;opacity:1}
+.btn:disabled{opacity:.5}
 </style></head><body>
 <div id="app">
 <div id="hud"><div><div id="score">0</div><div class="lab" id="cm"></div></div>
 <div id="lvl"><div id="lv"></div><div id="bar"><div id="bf"></div></div></div>
 <div><button class="ib" id="bk" hidden>←</button><button class="ib" id="mu">🔊</button><button class="ib" id="ps">⏸</button></div></div>
 <div id="fw"><canvas id="g"></canvas><input id="ti" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done">
-<div class="ov s" id="o1"><button class="ib gb" id="gs" style="position:absolute;right:16px;top:calc(16px + env(safe-area-inset-top,0px))">⚙</button><button class="ib pcb" id="pc"><span class="av" id="pcA" style="width:32px;height:32px;font-size:17px"></span><span id="pcN"></span></button><div id="vr"></div><div class="hero"><div id="hi"></div><div class="lg" id="lg"></div><div class="ln"></div><div class="tg">ПЕЧАТАЙ СЛОВА · ЗАЩИЩАЙ ЩИТ</div><div class="hs"><i>🏆 ЛУЧШИЙ <b id="hA">0</b></i><i>⚡ ВСЕГО <b id="hB">0</b></i><i>🔥 СЕРИЯ <b id="hC">0</b></i></div><button class="rkb" id="rk"><div class="rkt"><span id="rkn"></span><em id="rkp"></em></div><div class="rkr"><i id="rkf"></i></div></button><div class="mb"><button class="btn" id="tp">▶ ТЕМАТИКИ</button><button class="btn a" id="qp">⚡ БЫСТРАЯ</button></div></div></div><div class="ov" id="o5"><h2>ТЕМАТИКИ</h2><div id="fg"></div><div id="dt"></div><div class="mb"><button class="btn a" id="c5">← НАЗАД</button><button class="btn" id="pl">▶ ИГРАТЬ</button></div></div><div class="ov" id="o6"><h2>РАНГИ</h2><div id="rl"></div><button class="btn" id="c6">ГОТОВО</button></div>
+<div class="ov s" id="o1"><button class="ib gb" id="gs" style="position:absolute;right:16px;top:calc(16px + env(safe-area-inset-top,0px))">⚙</button><button class="ib pcb" id="pc"><span class="av" id="pcA" style="width:32px;height:32px;font-size:17px"></span><span id="pcN"></span></button><button class="ib idb" id="idB">💡 ИДЕЯ ДЛЯ ИГРЫ</button><div id="vr"></div><div class="hero"><div id="hi"></div><div class="lg" id="lg"></div><div class="ln"></div><div class="tg">ПЕЧАТАЙ СЛОВА · ЗАЩИЩАЙ ЩИТ</div><div class="hs"><i>🏆 ЛУЧШИЙ <b id="hA">0</b></i><i>⚡ ВСЕГО <b id="hB">0</b></i><i>🔥 СЕРИЯ <b id="hC">0</b></i></div><button class="rkb" id="rk"><div class="rkt"><span id="rkn"></span><em id="rkp"></em></div><div class="rkr"><i id="rkf"></i></div></button><div class="mb"><button class="btn" id="tp">▶ ТЕМАТИКИ</button><button class="btn a" id="qp">⚡ БЫСТРАЯ</button></div></div></div><div class="ov" id="o5"><h2>ТЕМАТИКИ</h2><div id="fg"></div><div id="dt"></div><div class="mb"><button class="btn a" id="c5">← НАЗАД</button><button class="btn" id="pl">▶ ИГРАТЬ</button></div></div><div class="ov" id="o6"><h2>РАНГИ</h2><div id="rl"></div><button class="btn" id="c6">ГОТОВО</button></div>
 <div class="ov sc" id="o7"><h2>ПРОФИЛЬ</h2><div class="phero" id="pHero"><div class="avw"><div class="av" id="pAv" style="width:112px;height:112px;font-size:58px"></div><div class="ed">✎</div></div><div class="pnm" id="pNm"></div><div class="prk" id="pRk"></div></div><div class="pbig" id="pS"></div><div class="prow" id="pRow"></div><div class="psec">ПО ТЕМАМ</div><div id="pTh"></div><div class="mb"><button class="btn" id="c7">ГОТОВО</button></div></div>
 <div class="ov sc" id="o8"><h2>МОЙ ПРОФИЛЬ</h2><div class="av" id="eAv" style="width:96px;height:96px;font-size:50px"></div><div class="lbl">НИК</div><div class="gl inp"><input id="ni" type="text" maxlength="12" placeholder="ВВЕДИ НИК" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done"><small id="nc">0 / 12</small></div><div class="lbl">АВАТАРКА</div><div id="ag"></div><div class="phb"><button class="btn a" id="eph">📷 ФОТО</button><button class="btn a" id="eRm">✕ УБРАТЬ ФОТО</button></div><input type="file" id="pf" accept="image/*" hidden><div class="hint" id="eh"></div><div class="mb"><button class="btn" id="eS">СОХРАНИТЬ</button><button class="btn a" id="eC">ОТМЕНА</button></div></div>
 <div class="ov" id="o9"><h2>ФОТО</h2><div class="cw"><canvas id="cc" width="480" height="480"></canvas></div><input type="range" id="cz" min="1" max="3" step="0.01" value="1"><div class="hint">ДВИГАЙ ФОТО ПАЛЬЦЕМ · ПОЛЗУНОК — МАСШТАБ</div><div class="mb"><button class="btn" id="c9ok">ГОТОВО</button><button class="btn a" id="c9">НАЗАД</button></div></div>
+<div class="ov sc" id="o10"><h2>ИДЕЯ ДЛЯ ИГРЫ</h2><div class="sub">ЧТО ДОБАВИТЬ ИЛИ УЛУЧШИТЬ?</div><div class="gl ta"><textarea id="idT" maxlength="300" placeholder="Напиши свою идею…" autocomplete="off" spellcheck="false"></textarea></div><div class="hint" id="idN">0 / 300</div><div class="hint" id="idH"></div><div class="mb"><button class="btn" id="idS">ОТПРАВИТЬ</button><button class="btn a" id="idC">НАЗАД</button></div></div>
 <div class="ov" id="o2"><h2>ПАУЗА</h2><button class="btn" id="bR">ПРОДОЛЖИТЬ</button><button class="btn a" id="bQ">ЗАВЕРШИТЬ</button><button class="btn a" id="bS2">НАСТРОЙКИ</button><button class="btn a" id="bM2">В МЕНЮ</button></div>
 <div class="ov" id="o4"><h2>НАСТРОЙКИ</h2><div id="sb"></div><button class="btn a" id="bRs">СБРОСИТЬ РЕКОРДЫ</button><button class="btn" id="bBk">ГОТОВО</button></div>
 <div class="ov" id="o3"><h2 id="oT">КОНЕЦ ИГРЫ</h2><div class="st"><div><b id="oS">0</b><span>СЧЁТ</span></div><div><b id="oW">0</b><span>СЛОВ</span></div><div><b id="oL">1</b><span>УРОВЕНЬ</span></div></div><div class="sub" id="oB"></div><button class="btn" id="bA">ЕЩЁ РАЗ</button><button class="btn a" id="bM">МЕНЮ</button><button class="btn a" id="bH">ПОДЕЛИТЬСЯ</button></div>
@@ -378,7 +386,7 @@ function loop(t){let dt=Math.min((t-last)/1000,.05);last=t;if(state!=="pause")gt
 if(state==="play")update(dt);if(state!=="pause")fx(dt);
 ds+=(score-ds)*Math.min(1,dt*10);const r=Math.round(ds);if(r!==shown){shown=r;$("score").textContent=r}
 draw();requestAnimationFrame(loop)}
-function ov(a){["o1","o2","o3","o4","o5","o6","o7","o8","o9"].forEach(i=>$(i).classList.toggle("s",i===a))}
+function ov(a){["o1","o2","o3","o4","o5","o6","o7","o8","o9","o10"].forEach(i=>$(i).classList.toggle("s",i===a))}
 function start(){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();ac.resume()}catch(e){}
 items=[];P=[];R=[];F=[];Sh=[];target=null;buf="";bag=[];PF.g++;score=0;ds=0;lives=3;rb=0;hb=0;combo=0;words=0;level=1;spawnT=.4;app.classList.remove("inmenu");size();ov("");hud();{const sn=streakTouch();if(sn)flo(W/2,H*.3,"🔥 СЕРИЯ: "+sn+" "+dn(sn),22,T.n,2.2)}state="play";bkv(1);foc();arp([392,523],.07,"triangle",.05)}
 function pause(){if(state==="play"){state="pause";pfSave();ov("o2");ti.blur();snd(330,.08,"triangle",.05)}}
@@ -445,7 +453,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(a)set(a,e)});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="1.5.1";let upLater=false;
+const VER="1.6.0";let upLater=false;
 function upShow(m,j){$("upt").textContent=m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО";$("upv").textContent="ВЕРСИЯ "+j.version;const l=$("upl");l.innerHTML="";(j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=m==="new"?"ОБНОВИТЬ":"КРУТО";$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if(state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
@@ -456,5 +464,24 @@ async function upApply(){try{const k=await caches.keys();await Promise.all(k.map
 $("upY").onclick=()=>{if($("up").dataset.m==="new")upApply();else $("up").classList.remove("s")};
 $("upN").onclick=()=>{upLater=true;$("up").classList.remove("s")};
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)upCheck()});
+const IDEA_URL="https://slovopad-idea.stasikyarosh2000.workers.dev/",IDEA_GAP=60000;let idBusy=false;
+function idLeft(){let t=0;try{t=+localStorage.getItem("ideaT")||0}catch(e){}return Math.max(0,IDEA_GAP-(Date.now()-t))}
+function idMsg(t,c){const h=$("idH");h.textContent=t;h.className="hint"+(c?" "+c:"")}
+function idCnt(){$("idN").textContent=$("idT").value.length+" / 300"}
+$("idB").onclick=()=>{idMsg("");idCnt();ov("o10");$("o10").scrollTop=0};
+$("idC").onclick=()=>ov("o1");
+$("idT").addEventListener("input",()=>{idCnt();idMsg("")});
+$("idS").onclick=async()=>{if(idBusy)return;const t=$("idT").value.trim();
+if(t.length<5){idMsg("СЛИШКОМ КОРОТКО — НАПИШИ ХОТЯ БЫ 5 СИМВОЛОВ","er");return}
+const w=idLeft();if(w>0){idMsg("ПОДОЖДИ "+Math.ceil(w/1000)+" СЕК И ОТПРАВЬ СНОВА","er");return}
+idBusy=true;$("idS").disabled=true;idMsg("ОТПРАВЛЯЮ…");
+const ac2=new AbortController(),to=setTimeout(()=>ac2.abort(),12000);
+try{const r=await fetch(IDEA_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({t:t,n:PF.n||"",v:VER}),signal:ac2.signal});
+if(r.ok){try{localStorage.setItem("ideaT",Date.now())}catch(e){}$("idT").value="";idCnt();idMsg("СПАСИБО! ИДЕЯ ОТПРАВЛЕНА 💡","ok");hap("success");arp([659,880,1175],.07,"sine",.05);setTimeout(()=>{if($("o10").classList.contains("s"))ov("o1");idMsg("")},1400)}
+else if(r.status===429)idMsg("СЛИШКОМ ЧАСТО — ПОДОЖДИ НЕМНОГО","er");
+else if(r.status===400)idMsg("СЛИШКОМ КОРОТКО — НАПИШИ ПОПОДРОБНЕЕ","er");
+else idMsg("НЕ УДАЛОСЬ ОТПРАВИТЬ, ПОПРОБУЙ ПОЗЖЕ","er")}
+catch(e){idMsg("НЕТ СВЯЗИ — ПРОВЕРЬ ИНТЕРНЕТ И ПОПРОБУЙ СНОВА","er")}
+clearTimeout(to);idBusy=false;$("idS").disabled=false};
 menu();hud();upCheck();requestAnimationFrame(t=>{last=t;loop(t)});
 </script></body></html>
