@@ -102,7 +102,7 @@ h2{margin:0;font-size:15px;letter-spacing:.4em;font-weight:600;color:var(--ac)}
 <div id="lvl"><div id="lv"></div><div id="bar"><div id="bf"></div></div></div>
 <div><button class="ib" id="bk" hidden>←</button><button class="ib" id="mu">🔊</button><button class="ib" id="ps">⏸</button></div></div>
 <div id="fw"><canvas id="g"></canvas><input id="ti" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done">
-<div class="ov s" id="o1"><button class="ib gb" id="gs" style="position:absolute;right:16px;top:calc(16px + env(safe-area-inset-top,0px))">⚙</button><div class="hero"><div class="lg" id="lg"></div><div class="ln"></div><div class="tg">ПЕЧАТАЙ СЛОВА · ЗАЩИЩАЙ ЩИТ</div><div class="hs"><i>🏆 ЛУЧШИЙ <b id="hA">0</b></i><i>⚡ ВСЕГО <b id="hB">0</b></i><i>📁 ТЕМ <b id="hC">0</b></i></div><div class="pk">ВЫБЕРИ ПАПКУ <span>⌄</span></div></div><div id="fg"></div></div>
+<div class="ov s" id="o1"><button class="ib gb" id="gs" style="position:absolute;right:16px;top:calc(16px + env(safe-area-inset-top,0px))">⚙</button><div class="hero"><div class="lg" id="lg"></div><div class="ln"></div><div class="tg">ПЕЧАТАЙ СЛОВА · ЗАЩИЩАЙ ЩИТ</div><div class="hs"><i>🏆 ЛУЧШИЙ <b id="hA">0</b></i><i>⚡ ВСЕГО <b id="hB">0</b></i><i>🔥 СЕРИЯ <b id="hC">0</b></i></div><div class="pk">ВЫБЕРИ ПАПКУ <span>⌄</span></div></div><div id="fg"></div></div>
 <div class="ov" id="o2"><h2>ПАУЗА</h2><button class="btn" id="bR">ПРОДОЛЖИТЬ</button><button class="btn a" id="bQ">ЗАВЕРШИТЬ</button><button class="btn a" id="bS2">НАСТРОЙКИ</button><button class="btn a" id="bM2">В МЕНЮ</button></div>
 <div class="ov" id="o4"><h2>НАСТРОЙКИ</h2><div id="sb"></div><button class="btn a" id="bRs">СБРОСИТЬ РЕКОРДЫ</button><button class="btn" id="bBk">ГОТОВО</button></div>
 <div class="ov" id="o3"><h2 id="oT">КОНЕЦ ИГРЫ</h2><div class="st"><div><b id="oS">0</b><span>СЧЁТ</span></div><div><b id="oW">0</b><span>СЛОВ</span></div><div><b id="oL">1</b><span>УРОВЕНЬ</span></div></div><div class="sub" id="oB"></div><button class="btn" id="bA">ЕЩЁ РАЗ</button><button class="btn a" id="bM">МЕНЮ</button><button class="btn a" id="bH">ПОДЕЛИТЬСЯ</button></div>
@@ -153,7 +153,13 @@ function openSet(f){from=f;sets();ov("o4")}
 function logo(){const L=$("lg");if(L.children.length)return;const w="СЛОВОПАД",a=[94,242,255],m=[255,79,216];
 for(let i=0;i<w.length;i++){const t=i/(w.length-1),c=a.map((v,k)=>Math.round(v+(m[k]-v)*t)).join(","),e=document.createElement("span");
 e.textContent=w[i];e.style.color="rgb("+c+")";e.style.textShadow="0 0 18px rgba("+c+",.65),0 0 2px rgba("+c+",.9)";e.style.setProperty("--d",i*.07+"s");L.appendChild(e)}}
-function stats(){let mx=0,sm=0;THEMES.forEach(t=>{let b=0;try{b=+localStorage.getItem("best_"+t.id)||0}catch(e){}mx=Math.max(mx,b);sm+=b});$("hA").textContent=mx;$("hB").textContent=sm;$("hC").textContent=THEMES.length}
+function dstr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function ystr(){const y=new Date();y.setDate(y.getDate()-1);return dstr(y)}
+function streakGet(){let r={n:0,last:"",max:0};try{Object.assign(r,JSON.parse(localStorage.getItem("streak")||"{}"))}catch(e){}return r}
+function streakNow(){const r=streakGet();return r.last===dstr(new Date())||r.last===ystr()?r.n:0}
+function streakTouch(){const r=streakGet(),td=dstr(new Date());if(r.last===td)return 0;r.n=r.last===ystr()?r.n+1:1;r.last=td;r.max=Math.max(r.max||0,r.n);try{localStorage.setItem("streak",JSON.stringify(r))}catch(e){}return r.n}
+function dn(n){const a=n%10,b=n%100;return a===1&&b!==11?"ДЕНЬ":a>=2&&a<=4&&(b<12||b>14)?"ДНЯ":"ДНЕЙ"}
+function stats(){let mx=0,sm=0;THEMES.forEach(t=>{let b=0;try{b=+localStorage.getItem("best_"+t.id)||0}catch(e){}mx=Math.max(mx,b);sm+=b});$("hA").textContent=mx;$("hB").textContent=sm;$("hC").textContent=streakNow()}
 function menu(){app.classList.add("inmenu");const g=$("fg");g.innerHTML="";logo();stats();THEMES.forEach((t,n)=>{let b=0;try{b=+localStorage.getItem("best_"+t.id)||0}catch(e){}
 const ws=t.w.split(" "),sm=ws.filter(w=>w.length<=8),pk=sm.length>1?sm:ws,a=pk[Math.random()*pk.length|0];let c2=pk[Math.random()*pk.length|0];if(c2===a)c2=pk[(pk.indexOf(a)+1)%pk.length];
 const d=document.createElement("button");d.className="fd";d.style.setProperty("--c",t.c);d.style.setProperty("--d",n*.07+"s");
@@ -264,7 +270,7 @@ ds+=(score-ds)*Math.min(1,dt*10);const r=Math.round(ds);if(r!==shown){shown=r;$(
 draw();requestAnimationFrame(loop)}
 function ov(a){["o1","o2","o3","o4"].forEach(i=>$(i).classList.toggle("s",i===a))}
 function start(){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();ac.resume()}catch(e){}
-items=[];P=[];R=[];F=[];Sh=[];target=null;buf="";bag=[];score=0;ds=0;lives=3;combo=0;words=0;level=1;spawnT=.4;app.classList.remove("inmenu");size();ov("");hud();state="play";bkv(1);foc()}
+items=[];P=[];R=[];F=[];Sh=[];target=null;buf="";bag=[];score=0;ds=0;lives=3;combo=0;words=0;level=1;spawnT=.4;app.classList.remove("inmenu");size();ov("");hud();{const sn=streakTouch();if(sn)flo(W/2,H*.3,"🔥 СЕРИЯ: "+sn+" "+dn(sn),22,T.n,2.2)}state="play";bkv(1);foc()}
 function pause(){if(state==="play"){state="pause";ov("o2");ti.blur()}}
 function resume(){if(state==="pause"){ov("");state="play";foc()}}
 function over(q){state="over";ti.blur();const nb=score>best;if(nb){best=score;try{localStorage.setItem("best_"+TH.id,best)}catch(e){}}
@@ -286,7 +292,7 @@ function goBack(){if(state==="over"){toMenu();return}if(state!=="play"&&state!==
 $("bk").onclick=goBack;try{tg.BackButton.onClick(goBack)}catch(e){}
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(state==="play")pause();else if(state==="pause")resume()}});
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="1.2.0";let upLater=false;
+const VER="1.2.1";let upLater=false;
 function upShow(m,j){$("upt").textContent=m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО";$("upv").textContent="ВЕРСИЯ "+j.version;const l=$("upl");l.innerHTML="";(j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=m==="new"?"ОБНОВИТЬ":"КРУТО";$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if(state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
