@@ -216,8 +216,7 @@ $("tp").onclick=()=>{lgUI();ov("o5");requestAnimationFrame(fgUpd)};$("pl").oncli
 const AVS=[["🧑‍🚀",0],["🦊",0],["🐱",0],["🐼",0],["🐸",0],["🦄",0],["🐲",0],["🤖",0],["👾",0],["🚀",0],["⚡",0],["🎧",0],["🔥",3],["🦅",4],["👑",5]];
 let PF={n:"",a:"🧑‍🚀",p:"",g:0,h:0,m:0,c:0,t:0,w:0};
 try{Object.assign(PF,JSON.parse(localStorage.getItem("pf")||"{}"));PF.p=localStorage.getItem("pfp")||""}catch(e){}
-function pfSave(){try{localStorage.setItem("pf",JSON.stringify(Object.assign({},PF,{p:undefined})))}catch(e){}if(typeof cloudSync==="function"&&localStorage.getItem("slovopadCloudToken"))cloudSync(true)}
-addEventListener("pagehide",pfSave);
+function pfSave(){try{localStorage.setItem("pf",JSON.stringify(Object.assign({},PF,{p:undefined})))}catch(e){}}
 function avSet(el,a,p){if(p){el.textContent="";el.style.backgroundImage='url("'+p+'")'}else{el.style.backgroundImage="";el.textContent=a}}
 function pfUI(){avSet($("pcA"),PF.a,PF.p);$("pcN").textContent=PF.n||tx("ПРОФИЛЬ");const h=$("hi");h.textContent="";if(PF.n){h.append(tx("ПРИВЕТ")+", ");const b=document.createElement("b");b.textContent=PF.n;h.append(b," 👋");h.classList.add("s")}else h.classList.remove("s")}
 function tfmt(s){const m=Math.round(s/60);return m<60?m+" "+tx("мин"):(m/60|0)+" "+tx("ч")+" "+m%60+" "+tx("м")}
