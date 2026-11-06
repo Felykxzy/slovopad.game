@@ -1,3 +1,4 @@
+
 :root{--ac:#5ef2ff;--mg:#ff4fd8;--ink:#e8ecff}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
 html,body{margin:0;position:fixed;width:100%;height:100%;background:#05060f;color:var(--ink);font-family:-apple-system,system-ui,"Segoe UI",sans-serif;overflow:hidden;overscroll-behavior:none;touch-action:none}
@@ -33,7 +34,6 @@ h2{margin:0;font-size:15px;letter-spacing:.4em;font-weight:600;color:var(--ac)}
 .sg button{background:transparent;border:0;color:var(--ink);opacity:.6;padding:10px 12px;font-size:10px;letter-spacing:.15em;font-weight:600}
 .sg button.on{background:var(--ac);color:#001018;opacity:1}
 .st{display:flex;gap:28px}.st b{display:block;font-size:30px;font-weight:200}.st span{font-size:10px;letter-spacing:.25em;opacity:.55}
-
 .fd{position:relative;height:clamp(104px,15.2vh,138px);padding:0;border:0;background:none;color:var(--ink);text-align:left;font-family:inherit;cursor:pointer;animation:rise .55s cubic-bezier(.2,.9,.3,1.2) both;animation-delay:var(--d,0s);transition:transform .2s}
 .fd .bk{position:absolute;left:0;right:0;top:0;bottom:0;border-radius:4px 18px 18px 18px;background:linear-gradient(180deg,rgba(var(--c),.55),rgba(var(--c),.25));box-shadow:0 0 22px rgba(var(--c),.22)}
 .fd .bk:before{content:"";position:absolute;left:0;top:-15px;width:46%;height:18px;border-radius:10px 0 0 0;background:rgba(var(--c),.55);clip-path:polygon(0 0,86% 0,100% 100%,0 100%)}
@@ -52,7 +52,6 @@ h2{margin:0;font-size:15px;letter-spacing:.4em;font-weight:600;color:var(--ac)}
 .fd:active .s2{transform:rotate(5deg) translateY(-8px)}
 @media (hover:hover){.fd:hover{transform:translateY(-3px)}.fd:hover .s1{transform:rotate(-5deg) translateY(-10px)}.fd:hover .s2{transform:rotate(4deg) translateY(-6px)}}
 @keyframes rise{from{opacity:0;transform:translateY(24px) scale(.94)}to{opacity:1;transform:none}}
-
 .hero{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:6px;width:100%}
 .lg{display:flex;justify-content:center;font-size:clamp(34px,10.4vw,68px);font-weight:300;line-height:1}
 .lg span{display:inline-block;margin:0 .02em;animation:drop .75s cubic-bezier(.2,1.3,.4,1) both,bob 3.4s ease-in-out infinite;animation-delay:var(--d),calc(var(--d) + .8s)}
@@ -74,12 +73,10 @@ h2{margin:0;font-size:15px;letter-spacing:.4em;font-weight:600;color:var(--ac)}
 @keyframes sweep{0%,100%{left:0;opacity:0}15%,85%{opacity:1}50%{left:calc(100% - 8px)}}
 @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes nudge{0%,100%{transform:translateY(-2px)}50%{transform:translateY(3px)}}
-
 .inmenu #hud,.inmenu #kb{display:none}
 #o1{gap:clamp(10px,2vh,16px)}
 .lg{font-size:clamp(30px,9.4vw,60px)}
 @supports (height:1dvh){.fd{height:clamp(104px,15.2dvh,138px)}#fg{row-gap:clamp(20px,3.2dvh,26px)}}
-
 #up{position:fixed;inset:0;z-index:20;display:none;align-items:flex-end;justify-content:center;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));background:rgba(5,6,15,.62);backdrop-filter:blur(3px)}
 #up.s{display:flex}
 #upc{width:100%;max-width:420px;border-radius:20px;border:1px solid rgba(94,242,255,.45);background:linear-gradient(160deg,rgba(94,242,255,.16),rgba(10,12,35,.97) 60%);box-shadow:0 0 30px rgba(94,242,255,.25);padding:20px 18px;display:flex;flex-direction:column;gap:12px;animation:rise .45s cubic-bezier(.2,.9,.3,1.2) both}
@@ -88,7 +85,6 @@ h2{margin:0;font-size:15px;letter-spacing:.4em;font-weight:600;color:var(--ac)}
 #upl{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px;font-size:13px;line-height:1.4}
 #upl li:before{content:"✦ ";color:var(--mg)}
 .upb{display:flex;gap:10px;margin-top:4px}.upb .btn{flex:1;padding:13px 10px;letter-spacing:.2em;font-size:12px}
-
 .btn,.ib,.hs i{position:relative;overflow:hidden;-webkit-backdrop-filter:blur(14px) saturate(170%);backdrop-filter:blur(14px) saturate(170%);border:1px solid rgba(255,255,255,.28);background:radial-gradient(120% 70% at 25% 0%,rgba(255,255,255,.34),transparent 55%),linear-gradient(135deg,rgba(255,255,255,.2),rgba(255,255,255,.05));color:var(--ink);box-shadow:inset 0 1px 1px rgba(255,255,255,.55),inset 0 -10px 18px rgba(255,255,255,.04),0 8px 22px rgba(0,0,0,.38);transition:transform .25s cubic-bezier(.3,1.7,.5,1)}
 .btn{border-radius:30px;font-weight:500;text-shadow:0 1px 8px rgba(0,0,0,.35);background:radial-gradient(120% 70% at 25% 0%,rgba(255,255,255,.38),transparent 55%),linear-gradient(135deg,rgba(94,242,255,.48),rgba(255,79,216,.28));color:#fff}
 .btn.a{background:radial-gradient(120% 70% at 25% 0%,rgba(255,255,255,.3),transparent 55%),linear-gradient(135deg,rgba(255,255,255,.18),rgba(255,255,255,.04));color:var(--ink)}
@@ -142,7 +138,6 @@ body.eco .btn,body.eco .ib,body.eco .hs i{-webkit-backdrop-filter:none;backdrop-
 #lvl{flex:none}#lv{font-size:11px;letter-spacing:.2em}#bar{width:84px}
 .lab{font-size:9px;letter-spacing:.12em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ib{width:40px;height:40px;margin-left:0;flex:none;font-size:15px}
-
 .gl{border:1px solid rgba(255,255,255,.22);border-radius:22px;background:radial-gradient(120% 70% at 25% 0%,rgba(255,255,255,.18),transparent 55%),linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.03));box-shadow:inset 0 1px 1px rgba(255,255,255,.4),0 8px 22px rgba(0,0,0,.38)}
 #o7,#o8,#o9{background:rgba(5,6,15,.94)}
 .ov.sc{justify-content:flex-start;overflow-y:auto;touch-action:pan-y;gap:12px;padding:calc(22px + env(safe-area-inset-top,0px)) 18px calc(18px + env(safe-area-inset-bottom,0px))}
@@ -186,8 +181,6 @@ body.eco .btn,body.eco .ib,body.eco .hs i{-webkit-backdrop-filter:none;backdrop-
 #idT::placeholder{opacity:.35}
 .hint.ok{color:var(--ac);opacity:1}.hint.er{color:#ff7a90;opacity:1}
 .btn:disabled{opacity:.5}
-
-/* Desktop: the same PWA becomes a keyboard-first app instead of a stretched phone layout. */
 @media (min-width: 760px) and (hover: hover) {
   html, body { background: radial-gradient(ellipse at 50% 15%, #121b3b 0, #05060f 65%); }
   #app { width: min(100%, 1120px); margin: 0 auto; border-inline: 1px solid rgba(94,242,255,.08); box-shadow: 0 0 90px rgba(0,0,0,.35); }
@@ -217,3 +210,9 @@ body.eco .btn,body.eco .ib,body.eco .hs i{-webkit-backdrop-filter:none;backdrop-
 #cloudRanks { width: min(100%, 480px); display: flex; flex-direction: column; gap: 7px; text-align: left; }
 .cloud-rank { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 13px; border: 1px solid rgba(255,255,255,.1); border-radius: 11px; background: rgba(255,255,255,.045); font-size: 12px; }
 .cloud-rank b { color: var(--ac); font-variant-numeric: tabular-nums; }
+
+/* Облачный интерфейс временно отключён; Telegram-бот и идеи не затрагиваются. */
+#cloudOpen,
+#o11 {
+  display: none !important;
+}
