@@ -1,15 +1,12 @@
 {
-  "version": "1.8.0",
+  "version": "1.8.1",
   "notes": [
-    "Новое: язык игры — весь интерфейс и слова переключаются на русский, английский или украинский (Настройки → Язык)",
-    "Исправлено: после потерянного слова или новой игры буквы иногда определялись неверно и не засчитывались"
+    "Исправлено: чёрная полоса внизу экрана на iPhone"
   ],
   "notes_en": [
-    "New: game language — the whole interface and the words switch between Russian, English and Ukrainian (Settings → Language)",
-    "Fixed: after a lost word or a new game, letters were sometimes misread and not counted"
+    "Fixed: black bar at the bottom of the screen on iPhone"
   ],
   "notes_uk": [
-    "Нове: мова гри — увесь інтерфейс і слова перемикаються на російську, англійську або українську (Налаштування → Мова)",
-    "Виправлено: після втраченого слова або нової гри літери іноді визначалися неправильно й не зараховувалися"
+    "Виправлено: чорна смуга внизу екрана на iPhone"
   ]
 }
