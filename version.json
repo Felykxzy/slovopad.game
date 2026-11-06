@@ -1,12 +1,12 @@
 {
-  "version": "1.8.1",
+  "version": "1.8.3",
   "notes": [
-    "Исправлено: чёрная полоса внизу экрана на iPhone"
+    "Язык слов теперь меняется только в «Тематики», а в настройках остался только язык интерфейса"
   ],
   "notes_en": [
-    "Fixed: black bar at the bottom of the screen on iPhone"
+    "The words language is now changed only in Themes; Settings has only the interface language"
   ],
   "notes_uk": [
-    "Виправлено: чорна смуга внизу екрана на iPhone"
+    "Мова слів тепер змінюється лише в «Тематики», а в налаштуваннях залишилась лише мова інтерфейсу"
   ]
 }
