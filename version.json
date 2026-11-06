@@ -1,12 +1,24 @@
 {
-  "version": "1.8.3",
+  "version": "2.0.0",
   "notes": [
-    "Язык слов теперь меняется только в «Тематики», а в настройках остался только язык интерфейса"
+    "Игра разделена на HTML, CSS и JavaScript-модули",
+    "Добавлен адаптивный интерфейс для компьютеров и клавиатурного управления",
+    "Добавлены облачные аккаунты, синхронизация прогресса и глобальный рейтинг (после настройки сервера)",
+    "Обновлена PWA-установка и офлайн-кэш",
+    "Добавлены автоматические тесты расчёта статистики"
   ],
   "notes_en": [
-    "The words language is now changed only in Themes; Settings has only the interface language"
+    "The app is split into HTML, CSS and JavaScript files",
+    "Added a desktop layout and keyboard-first play",
+    "Added cloud accounts, progress sync and a global leaderboard (after backend setup)",
+    "Updated PWA installation and offline cache",
+    "Added automated statistics tests"
   ],
   "notes_uk": [
-    "Мова слів тепер змінюється лише в «Тематики», а в налаштуваннях залишилась лише мова інтерфейсу"
+    "Гру розділено на HTML, CSS та JavaScript-модулі",
+    "Додано адаптивний інтерфейс для комп’ютерів і керування клавіатурою",
+    "Додано хмарні акаунти, синхронізацію прогресу та глобальний рейтинг (після налаштування сервера)",
+    "Оновлено PWA-встановлення та офлайн-кеш",
+    "Додано автоматичні тести статистики"
   ]
 }
