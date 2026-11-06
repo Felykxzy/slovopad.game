@@ -1,6 +1,7 @@
 {
-  "version": "2.0.0",
+  "version": "2.1.0",
   "notes": [
+    "Новое: анимированное обучение «Как играть». Оно запускается при первом входе, а потом его можно открыть из меню и из паузы",
     "Игра разделена на HTML, CSS и JavaScript-модули",
     "Добавлен адаптивный интерфейс для компьютеров и клавиатурного управления",
     "Добавлены облачные аккаунты, синхронизация прогресса и глобальный рейтинг (после настройки сервера)",
@@ -8,6 +9,7 @@
     "Добавлены автоматические тесты расчёта статистики"
   ],
   "notes_en": [
+    "New: animated “How to play” tutorial. It opens on your first launch and can be replayed from the menu or the pause screen",
     "The app is split into HTML, CSS and JavaScript files",
     "Added a desktop layout and keyboard-first play",
     "Added cloud accounts, progress sync and a global leaderboard (after backend setup)",
@@ -15,6 +17,7 @@
     "Added automated statistics tests"
   ],
   "notes_uk": [
+    "Нове: анімоване навчання «Як грати». Воно запускається під час першого входу, а потім його можна відкрити з меню та з паузи",
     "Гру розділено на HTML, CSS та JavaScript-модулі",
     "Додано адаптивний інтерфейс для комп’ютерів і керування клавіатурою",
     "Додано хмарні акаунти, синхронізацію прогресу та глобальний рейтинг (після налаштування сервера)",
