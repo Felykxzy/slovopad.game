@@ -1,1 +1,16 @@
 
+name = "slovopad-cloud"
+main = "worker.js"
+compatibility_date = "2026-11-06"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "slovopad-cloud"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+[vars]
+ALLOWED_ORIGIN = "https://YOUR-USERNAME.github.io"
+
+# Set JWT_SECRET with:
+# npx wrangler secret put JWT_SECRET
+
