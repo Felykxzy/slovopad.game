@@ -1,12 +1,12 @@
 {
-  "version": "1.8.2",
+  "version": "1.8.1",
   "notes": [
-    "Исправлено: чёрная полоса внизу экрана на iPhone (второй заход)"
+    "Исправлено: чёрная полоса внизу экрана на iPhone"
   ],
   "notes_en": [
-    "Fixed: black bar at the bottom of the screen on iPhone (second attempt)"
+    "Fixed: black bar at the bottom of the screen on iPhone"
   ],
   "notes_uk": [
-    "Виправлено: чорна смуга внизу екрана на iPhone (друга спроба)"
+    "Виправлено: чорна смуга внизу екрана на iPhone"
   ]
 }
