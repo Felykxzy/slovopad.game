@@ -1,15 +1,12 @@
 {
-  "version": "2.4.1",
+  "version": "2.4.2",
   "notes": [
-    "Исправлена сборка приложения для компьютера: установщики для Windows (.exe) и macOS (.dmg) снова собираются",
-    "Сборка берёт иконки и картинки установщика из проекта, а версия приложения всегда совпадает с версией игры"
+    "Исправлен установщик для Windows: убрана отдельная иконка деинсталлятора, из-за которой на некоторых компьютерах появлялась ошибка «Невозможно открыть файл для записи»"
   ],
   "notes_en": [
-    "Fixed the desktop app build: the Windows (.exe) and macOS (.dmg) installers build correctly again",
-    "The build now takes the installer icons and images from the project, and the app version always matches the game version"
+    "Fixed the Windows installer: removed the separate uninstaller icon that caused a \"cannot open file for writing\" error on some computers"
   ],
   "notes_uk": [
-    "Виправлено збірку застосунку для комп’ютера: інсталятори для Windows (.exe) і macOS (.dmg) знову збираються",
-    "Збірка бере іконки й картинки інсталятора з проєкту, а версія застосунку завжди збігається з версією гри"
+    "Виправлено інсталятор для Windows: прибрано окрему іконку деінсталятора, через яку на деяких комп’ютерах з’являлася помилка запису файлу"
   ]
 }

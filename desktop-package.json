@@ -59,7 +59,6 @@
       "runAfterFinish": true,
       "language": "1049",
       "installerIcon": "build/installer-icon.ico",
-      "uninstallerIcon": "build/installer-icon.ico",
       "installerSidebar": "build/installer-sidebar.bmp",
       "uninstallerSidebar": "build/installer-sidebar.bmp",
       "installerHeader": "build/installer-header.bmp",
