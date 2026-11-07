@@ -42,7 +42,8 @@
       {
         "provider": "github",
         "owner": "Felykxzy",
-        "repo": "slovopad.game"
+        "repo": "slovopad.game",
+        "releaseType": "release"
       }
     ],
     "directories": {
