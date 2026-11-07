@@ -261,7 +261,7 @@ body.eco .btn,body.eco .ib,body.eco .hs i{-webkit-backdrop-filter:none;backdrop-
 #coach.ex #csp{display:block}
 #csp::after{content:"";position:absolute;inset:-4px;border-radius:22px;border:2px solid rgba(94,242,255,.85);animation:cring 1.5s ease-out infinite}
 @keyframes cring{from{transform:scale(1);opacity:.9}to{transform:scale(1.12,1.35);opacity:0}}
-#ccard{position:fixed;left:50%;top:20px;width:min(92vw,360px);transform:translateX(-50%);padding:16px 18px;border-radius:22px;text-align:center;background:rgba(10,14,40,.93);border:1px solid rgba(94,242,255,.5);box-shadow:0 0 34px rgba(94,242,255,.25),inset 0 1px 1px rgba(255,255,255,.25);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);transition:top .5s cubic-bezier(.3,1.1,.4,1),border-color .3s,box-shadow .3s}
+#ccard{position:fixed;left:50%;top:20px;width:min(92vw,360px);transform:translateX(-50%);padding:16px 18px;border-radius:22px;text-align:center;background:rgba(10,14,40,.93);border:1px solid rgba(94,242,255,.5);box-shadow:0 0 34px rgba(94,242,255,.25),inset 0 1px 1px rgba(255,255,255,.25);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);transition:top .5s cubic-bezier(.3,1.1,.4,1),left .5s cubic-bezier(.3,1.1,.4,1),border-color .3s,box-shadow .3s}
 #ccard.pop{animation:cpop .5s cubic-bezier(.2,1.3,.4,1) both}
 @keyframes cpop{from{opacity:0;transform:translateX(-50%) scale(.9) translateY(10px)}to{opacity:1;transform:translateX(-50%)}}
 .cct{font-size:15px;font-weight:700;letter-spacing:.2em;margin-right:-.2em;background:linear-gradient(90deg,var(--ac),var(--mg));-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -305,3 +305,26 @@ body.eco .btn,body.eco .ib,body.eco .hs i{-webkit-backdrop-filter:none;backdrop-
 #pAch .ach .aci{width:46px;height:46px;font-size:22px;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18);box-shadow:none;filter:grayscale(1)}
 #pAch .ach.on{opacity:1;background:rgba(255,209,102,.08);border-color:rgba(255,209,102,.65);box-shadow:0 0 24px rgba(255,209,102,.2)}
 #pAch .ach.on .aci{filter:none;background:radial-gradient(circle,rgba(255,209,102,.35),rgba(255,209,102,.08));border-color:rgba(255,209,102,.7);box-shadow:0 0 16px rgba(255,209,102,.5)}
+
+/* Горизонтальный телефон: обучение в две колонки, чтобы кнопки не уезжали за экран */
+@media (max-height:520px) and (orientation:landscape){
+  #tut{padding:calc(8px + env(safe-area-inset-top,0px)) calc(14px + env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) calc(14px + env(safe-area-inset-left,0px))}
+  .tc{width:min(100%,860px);display:grid;grid-template-columns:1.1fr 1fr;grid-template-rows:auto minmax(0,1fr) auto auto;grid-template-areas:"top top" "stage txt" "stage dots" "stage nav";gap:8px 20px;align-content:center}
+  .ttop{grid-area:top}.tstage{grid-area:stage;height:clamp(140px,calc(100dvh - 70px),300px)}
+  .ttxt{grid-area:txt;min-height:0;align-self:center}.tdots{grid-area:dots}.tnav{grid-area:nav;align-self:start}
+  .ttxt h3{margin-bottom:6px;font-size:16px}.ttxt p{font-size:13px;line-height:1.45}
+  .tnav .btn{padding:12px 10px}
+  #ccard{width:min(60vw,360px);padding:11px 14px}
+  .ccp{font-size:12.5px;line-height:1.4;margin-top:5px}
+  #coach.ex .ccb,#coach.dn .ccb{margin-top:9px}
+  #coach.ex .ccb .btn,#coach.dn .ccb .btn{padding:10px}
+  #coach.dn .cce{font-size:34px;margin-bottom:2px}
+  #coach.dn #ccard{padding:14px 16px}
+}
+
+/* Узкие телефоны (iPhone SE и меньше): кнопки обучения не переносят текст */
+@media (max-width:360px){
+  #coach.ex .ccb,#coach.dn .ccb{gap:8px}
+  #coach.ex .ccb .btn,#coach.dn .ccb .btn{white-space:nowrap;letter-spacing:.08em;font-size:11px;padding:12px 6px}
+  .tsk{padding:8px 11px;letter-spacing:.16em}
+}

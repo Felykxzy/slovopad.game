@@ -1,27 +1,27 @@
 {
-  "version": "2.2.0",
+  "version": "2.2.1",
   "notes": [
+    "Исправления: обучение теперь удобно проходить на телефоне в горизонтальном положении и на маленьких экранах, подсказки встают рядом с нужным элементом",
     "Новое: обучение «Как играть» с туром по игровому экрану, режимом «Попробуй сам» и достижением «Туториал пройден» (оно видно в профиле)",
     "Игра разделена на HTML, CSS и JavaScript-модули",
     "Добавлен адаптивный интерфейс для компьютеров и клавиатурного управления",
     "Добавлены облачные аккаунты, синхронизация прогресса и глобальный рейтинг (после настройки сервера)",
-    "Обновлена PWA-установка и офлайн-кэш",
-    "Добавлены автоматические тесты расчёта статистики"
+    "Обновлена PWA-установка и офлайн-кэш"
   ],
   "notes_en": [
+    "Fixes: the tutorial is now easy to complete on a phone in landscape and on small screens, and hints appear next to the highlighted element",
     "New: “How to play” tutorial with a tour of the game screen, a “Try it yourself” practice mode and a “Tutorial complete” achievement (shown in your profile)",
     "The app is split into HTML, CSS and JavaScript files",
     "Added a desktop layout and keyboard-first play",
     "Added cloud accounts, progress sync and a global leaderboard (after backend setup)",
-    "Updated PWA installation and offline cache",
-    "Added automated statistics tests"
+    "Updated PWA installation and offline cache"
   ],
   "notes_uk": [
+    "Виправлення: навчання тепер зручно проходити на телефоні в горизонтальному положенні та на малих екранах, підказки стоять поруч із потрібним елементом",
     "Нове: навчання «Як грати» з туром по ігровому екрану, режимом «Спробуй сам» і досягненням «Туторіал пройдено» (видно в профілі)",
     "Гру розділено на HTML, CSS та JavaScript-модулі",
     "Додано адаптивний інтерфейс для комп’ютерів і керування клавіатурою",
     "Додано хмарні акаунти, синхронізацію прогресу та глобальний рейтинг (після налаштування сервера)",
-    "Оновлено PWA-встановлення та офлайн-кеш",
-    "Додано автоматичні тести статистики"
+    "Оновлено PWA-встановлення та офлайн-кеш"
   ]
 }

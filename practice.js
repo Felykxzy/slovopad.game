@@ -143,16 +143,17 @@
     }, 250);
   }
 
-  function box(els, pad, minW) {
+  function box(els, pad, minW, txt) {
     let l = 1e9, t = 1e9, r = -1e9, b = -1e9;
-    els.forEach(e => { const q = e.getBoundingClientRect(); l = Math.min(l, q.left); t = Math.min(t, q.top); r = Math.max(r, q.right); b = Math.max(b, q.bottom); });
+    els.forEach(e => {
+      let q; if (txt) { const rg = document.createRange(); rg.selectNodeContents(e); q = rg.getBoundingClientRect(); } else q = e.getBoundingClientRect(); l = Math.min(l, q.left); t = Math.min(t, q.top); r = Math.max(r, q.right); b = Math.max(b, q.bottom); });
     if (r - l < minW) { const m = (l + r) / 2; l = m - minW / 2; r = m + minW / 2; }
     l = Math.max(l, pad + 4); // не вылезаем за левый край экрана
     return { left: l - pad, top: t - pad, width: r - l + pad * 2, height: b - t + pad * 2 };
   }
   function rect(i) {
-    if (i === 0) return box([$("score")], 10, 84);
-    if (i === 1) return box([$("cm")], 9, 130);
+    if (i === 0) return box([$("score")], 10, 84, true);
+    if (i === 1) return box([$("cm")], 9, 130, true);
     if (i === 2) return box([$("lvl")], 10, 0);
     if (i === 3) return box([$("mu"), $("ps")], 8, 0);
     const q = $("g").getBoundingClientRect();
@@ -167,9 +168,14 @@
       const ch = card.offsetHeight, below = r.top + r.height / 2 < innerHeight * .5;
       let top = below ? r.top + r.height + 18 : r.top - ch - 18;
       card.style.top = Math.max(8, Math.min(innerHeight - ch - 8, top)) + "px";
+      // на широких экранах карточка стоит рядом с подсвеченным элементом, на телефоне — по центру
+      const cw = card.offsetWidth, mid = Math.max(cw / 2 + 12, Math.min(innerWidth - cw / 2 - 12, r.left + r.width / 2));
+      card.style.left = mid + "px";
     } else if (phase === "hn") {
+      card.style.left = "50%";
       card.style.top = ($("fw").getBoundingClientRect().top + 10) + "px";
     } else if (phase === "dn") {
+      card.style.left = "50%";
       card.style.top = Math.max(8, (innerHeight - card.offsetHeight) / 2) + "px";
     }
   }
