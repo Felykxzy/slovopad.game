@@ -1,18 +1,15 @@
 {
-  "version": "2.4.0",
+  "version": "2.4.1",
   "notes": [
-    "Приложение для компьютера собирается само: при каждом новом релизе в разделе Releases появляются установщик для Windows (.exe), для macOS (.dmg) и для Linux (.AppImage)",
-    "Приложение само проверяет обновления: Windows и Linux скачивают новую версию и предлагают перезапустить игру",
-    "Новый красивый установщик для Windows: мастер установки с фирменной картинкой СЛОВОПАД, выбор папки, ярлык на рабочем столе. Для macOS оформлено окно установки"
+    "Исправлена сборка приложения для компьютера: установщики для Windows (.exe) и macOS (.dmg) снова собираются",
+    "Сборка берёт иконки и картинки установщика из проекта, а версия приложения всегда совпадает с версией игры"
   ],
   "notes_en": [
-    "The desktop app is now built automatically: every new release gets a Windows (.exe), macOS (.dmg) and Linux (.AppImage) installer in Releases",
-    "The app checks for updates itself: Windows and Linux download the new version and offer to restart the game",
-    "New branded Windows installer with a СЛОВОПАД picture, folder choice and a desktop shortcut; the macOS install window is styled too"
+    "Fixed the desktop app build: the Windows (.exe) and macOS (.dmg) installers build correctly again",
+    "The build now takes the installer icons and images from the project, and the app version always matches the game version"
   ],
   "notes_uk": [
-    "Застосунок для комп’ютера збирається сам: з кожним новим релізом у Releases з’являються інсталятор для Windows (.exe), macOS (.dmg) і Linux (.AppImage)",
-    "Застосунок сам перевіряє оновлення: Windows і Linux завантажують нову версію та пропонують перезапустити гру",
-    "Новий гарний інсталятор для Windows із фірмовою картинкою СЛОВОПАД, вибором теки й ярликом на робочому столі; для macOS оформлено вікно встановлення"
+    "Виправлено збірку застосунку для комп’ютера: інсталятори для Windows (.exe) і macOS (.dmg) знову збираються",
+    "Збірка бере іконки й картинки інсталятора з проєкту, а версія застосунку завжди збігається з версією гри"
   ]
 }
