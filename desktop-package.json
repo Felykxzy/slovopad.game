@@ -1,7 +1,7 @@
 {
   "name": "slovopad",
   "productName": "СЛОВОПАД",
-  "version": "2.3.0",
+  "version": "2.3.2",
   "description": "Аркадная игра на скорость печати",
   "author": "Felykxzy",
   "main": "main.js",
@@ -10,6 +10,7 @@
   "build": {
     "appId": "com.felykxzy.slovopad",
     "productName": "СЛОВОПАД",
+    "icon": "game/icon-512.png",
     "files": ["main.js", "game/**"],
     "win": { "target": "nsis" },
     "mac": { "target": "dmg", "category": "public.app-category.games" },

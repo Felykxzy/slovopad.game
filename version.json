@@ -1,12 +1,21 @@
 {
-  "version": "2.3.1",
+  "version": "2.3.2",
   "notes": [
-    "Кнопка «Telegram автора» стала круглой иконкой ✈️ в шапке меню, рядом с лампочкой идей"
+    "Кнопка «Telegram автора» теперь с настоящим значком Telegram вместо самолётика ✈️",
+    "В плашке ранга название ранга и число очков (например, 202 / 600) больше не слипаются: между ними появился отступ",
+    "Исправления для приложения на компьютере: у него есть иконка, внешние ссылки открываются только по https, версия совпадает с игрой",
+    "Выпуск релиза теперь проверяет, что версия в app.js совпадает с version.json"
   ],
   "notes_en": [
-    "The «Author's Telegram» button is now a round ✈️ icon in the menu header, next to the idea lightbulb"
+    "The «Author's Telegram» button now uses the real Telegram logo instead of the ✈️ plane",
+    "In the rank card the rank name and the points (for example 202 / 600) no longer stick together: there is a gap between them",
+    "Desktop app fixes: it has an icon, external links open only over https, and its version matches the game",
+    "Publishing a release now checks that the version in app.js matches version.json"
   ],
   "notes_uk": [
-    "Кнопка «Telegram автора» стала круглою іконкою ✈️ в шапці меню, поруч із лампочкою ідей"
+    "Кнопка «Telegram автора» тепер зі справжнім значком Telegram замість літачка ✈️",
+    "У плашці рангу назва рангу й кількість очок (наприклад, 202 / 600) більше не злипаються: між ними з’явився відступ",
+    "Виправлення для застосунку на комп’ютері: у нього є іконка, зовнішні посилання відкриваються лише через https, версія збігається з грою",
+    "Випуск релізу тепер перевіряє, що версія в app.js збігається з version.json"
   ]
 }
