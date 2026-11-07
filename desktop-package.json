@@ -1,0 +1,18 @@
+{
+  "name": "slovopad",
+  "productName": "СЛОВОПАД",
+  "version": "2.3.0",
+  "description": "Аркадная игра на скорость печати",
+  "author": "Felykxzy",
+  "main": "main.js",
+  "scripts": { "start": "electron .", "dist": "electron-builder --publish never" },
+  "devDependencies": { "electron": "^33.0.0", "electron-builder": "^25.1.8" },
+  "build": {
+    "appId": "com.felykxzy.slovopad",
+    "productName": "СЛОВОПАД",
+    "files": ["main.js", "game/**"],
+    "win": { "target": "nsis" },
+    "mac": { "target": "dmg", "category": "public.app-category.games" },
+    "linux": { "target": "AppImage", "category": "Game" }
+  }
+}

@@ -1,0 +1,35 @@
+name: Desktop app
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Prepare app
+        shell: bash
+        run: |
+          mkdir -p desktop/game
+          cp index.html styles.css core.js app.js tutorial.js practice.js manifest.webmanifest icon-192.png icon-512.png apple-touch-icon.png desktop/game/
+          cp desktop-main.js desktop/main.js
+          cp desktop-package.json desktop/package.json
+      - name: Build
+        shell: bash
+        working-directory: desktop
+        run: |
+          npm install
+          npx electron-builder --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: slovopad-${{ matrix.os }}
+          path: |
+            desktop/dist/*.exe
+            desktop/dist/*.dmg
+            desktop/dist/*.AppImage

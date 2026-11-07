@@ -1,27 +1,24 @@
 {
-  "version": "2.2.1",
+  "version": "2.3.0",
   "notes": [
-    "Исправления: обучение теперь удобно проходить на телефоне в горизонтальном положении и на маленьких экранах, подсказки встают рядом с нужным элементом",
-    "Новое: обучение «Как играть» с туром по игровому экрану, режимом «Попробуй сам» и достижением «Туториал пройден» (оно видно в профиле)",
-    "Игра разделена на HTML, CSS и JavaScript-модули",
-    "Добавлен адаптивный интерфейс для компьютеров и клавиатурного управления",
-    "Добавлены облачные аккаунты, синхронизация прогресса и глобальный рейтинг (после настройки сервера)",
-    "Обновлена PWA-установка и офлайн-кэш"
+    "Магазин косметики: за очки, заработанные в играх (✨), можно купить скины щита и красивые фоны",
+    "6 скинов щита (в том числе радужный) и 6 фонов: закат, аврора, океан, сакура, матрица",
+    "За каждую игру начисляются ✨: 1 за каждые 20 очков и бонус за новый рекорд",
+    "Новая кнопка «Telegram автора» в меню: канал разработчика одним нажатием",
+    "Подготовлена сборка приложения для компьютера (Windows, macOS, Linux)"
   ],
   "notes_en": [
-    "Fixes: the tutorial is now easy to complete on a phone in landscape and on small screens, and hints appear next to the highlighted element",
-    "New: “How to play” tutorial with a tour of the game screen, a “Try it yourself” practice mode and a “Tutorial complete” achievement (shown in your profile)",
-    "The app is split into HTML, CSS and JavaScript files",
-    "Added a desktop layout and keyboard-first play",
-    "Added cloud accounts, progress sync and a global leaderboard (after backend setup)",
-    "Updated PWA installation and offline cache"
+    "Cosmetics shop: spend ✨ earned in games on shield skins and beautiful backgrounds",
+    "6 shield skins (including rainbow) and 6 backgrounds: sunset, aurora, ocean, sakura, matrix",
+    "Every game earns ✨: 1 per 20 points plus a bonus for a new record",
+    "New «Author's Telegram» button in the menu: the developer's channel in one tap",
+    "Desktop app build prepared (Windows, macOS, Linux)"
   ],
   "notes_uk": [
-    "Виправлення: навчання тепер зручно проходити на телефоні в горизонтальному положенні та на малих екранах, підказки стоять поруч із потрібним елементом",
-    "Нове: навчання «Як грати» з туром по ігровому екрану, режимом «Спробуй сам» і досягненням «Туторіал пройдено» (видно в профілі)",
-    "Гру розділено на HTML, CSS та JavaScript-модулі",
-    "Додано адаптивний інтерфейс для комп’ютерів і керування клавіатурою",
-    "Додано хмарні акаунти, синхронізацію прогресу та глобальний рейтинг (після налаштування сервера)",
-    "Оновлено PWA-встановлення та офлайн-кеш"
+    "Магазин косметики: за ✨, зароблені в іграх, можна купити скіни щита й гарні фони",
+    "6 скінів щита (зокрема райдужний) і 6 фонів: захід, аврора, океан, сакура, матриця",
+    "За кожну гру нараховуються ✨: 1 за кожні 20 очок і бонус за новий рекорд",
+    "Нова кнопка «Telegram автора» в меню: канал розробника одним натисканням",
+    "Підготовлено збірку застосунку для комп’ютера (Windows, macOS, Linux)"
   ]
 }
