@@ -1,24 +1,12 @@
 {
-  "version": "2.3.0",
+  "version": "2.3.1",
   "notes": [
-    "Магазин косметики: за очки, заработанные в играх (✨), можно купить скины щита и красивые фоны",
-    "6 скинов щита (в том числе радужный) и 6 фонов: закат, аврора, океан, сакура, матрица",
-    "За каждую игру начисляются ✨: 1 за каждые 20 очков и бонус за новый рекорд",
-    "Новая кнопка «Telegram автора» в меню: канал разработчика одним нажатием",
-    "Подготовлена сборка приложения для компьютера (Windows, macOS, Linux)"
+    "Кнопка «Telegram автора» стала круглой иконкой ✈️ в шапке меню, рядом с лампочкой идей"
   ],
   "notes_en": [
-    "Cosmetics shop: spend ✨ earned in games on shield skins and beautiful backgrounds",
-    "6 shield skins (including rainbow) and 6 backgrounds: sunset, aurora, ocean, sakura, matrix",
-    "Every game earns ✨: 1 per 20 points plus a bonus for a new record",
-    "New «Author's Telegram» button in the menu: the developer's channel in one tap",
-    "Desktop app build prepared (Windows, macOS, Linux)"
+    "The «Author's Telegram» button is now a round ✈️ icon in the menu header, next to the idea lightbulb"
   ],
   "notes_uk": [
-    "Магазин косметики: за ✨, зароблені в іграх, можна купити скіни щита й гарні фони",
-    "6 скінів щита (зокрема райдужний) і 6 фонів: захід, аврора, океан, сакура, матриця",
-    "За кожну гру нараховуються ✨: 1 за кожні 20 очок і бонус за новий рекорд",
-    "Нова кнопка «Telegram автора» в меню: канал розробника одним натисканням",
-    "Підготовлено збірку застосунку для комп’ютера (Windows, macOS, Linux)"
+    "Кнопка «Telegram автора» стала круглою іконкою ✈️ в шапці меню, поруч із лампочкою ідей"
   ]
 }

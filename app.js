@@ -104,7 +104,7 @@ const shI=id=>SHOP.find(x=>x[0]===id);
 function shc(a){const x=shI(EQ.s)||SHOP[0];return x[4]==="rainbow"?"hsla("+((gt*60)%360|0)+",100%,65%,"+a+")":"rgba("+x[4]+","+a+")"}
 function bgd(){return(shI(EQ.b)||shI("b0"))[4]}
 let shTab="s";
-function shUI(){$("shopB").textContent="🛍 "+L3("МАГАЗИН","SHOP","МАГАЗИН")+" · "+coG()+" ✨";$("tgB").textContent="✈ "+L3("TELEGRAM АВТОРА","AUTHOR'S TELEGRAM","TELEGRAM АВТОРА");$("tgB").hidden=!TGK}
+function shUI(){$("shopB").textContent="🛍 "+L3("МАГАЗИН","SHOP","МАГАЗИН")+" · "+coG()+" ✨";$("tgB").title=L3("TELEGRAM автора","Author's Telegram","TELEGRAM автора");$("tgB").hidden=!TGK}
 function shRender(){const own=owG(),co=coG();$("shT2").textContent=L3("МАГАЗИН","SHOP","МАГАЗИН");$("shC").textContent="✨ "+co;$("shB").textContent="← "+L3("НАЗАД","BACK","НАЗАД");
 const tb=$("shT");tb.innerHTML="";[["s",L3("ЩИТЫ","SHIELDS","ЩИТИ")],["b",L3("ФОНЫ","BACKGROUNDS","ФОНИ")]].forEach(([k,n])=>{const b=document.createElement("button");b.textContent=n;b.className=shTab===k?"on":"";b.onclick=()=>{shTab=k;shRender()};tb.appendChild(b)});
 const g=$("shG");g.innerHTML="";SHOP.filter(x=>x[1]===shTab).forEach(x=>{const has=own.includes(x[0]),on=EQ[x[1]]===x[0],d=document.createElement("button");d.className="si"+(on?" on":"")+(has?"":" lk");
@@ -277,7 +277,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(a)set(a,e)});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="2.3.0";let upLater=false;
+const VER="2.3.1";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if(state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
