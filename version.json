@@ -1,21 +1,18 @@
 {
-  "version": "2.3.2",
+  "version": "2.4.0",
   "notes": [
-    "Кнопка «Telegram автора» теперь с настоящим значком Telegram вместо самолётика ✈️",
-    "В плашке ранга название ранга и число очков (например, 202 / 600) больше не слипаются: между ними появился отступ",
-    "Исправления для приложения на компьютере: у него есть иконка, внешние ссылки открываются только по https, версия совпадает с игрой",
-    "Выпуск релиза теперь проверяет, что версия в app.js совпадает с version.json"
+    "Приложение для компьютера собирается само: при каждом новом релизе в разделе Releases появляются установщик для Windows (.exe), для macOS (.dmg) и для Linux (.AppImage)",
+    "Приложение само проверяет обновления: Windows и Linux скачивают новую версию и предлагают перезапустить игру",
+    "Новый красивый установщик для Windows: мастер установки с фирменной картинкой СЛОВОПАД, выбор папки, ярлык на рабочем столе. Для macOS оформлено окно установки"
   ],
   "notes_en": [
-    "The «Author's Telegram» button now uses the real Telegram logo instead of the ✈️ plane",
-    "In the rank card the rank name and the points (for example 202 / 600) no longer stick together: there is a gap between them",
-    "Desktop app fixes: it has an icon, external links open only over https, and its version matches the game",
-    "Publishing a release now checks that the version in app.js matches version.json"
+    "The desktop app is now built automatically: every new release gets a Windows (.exe), macOS (.dmg) and Linux (.AppImage) installer in Releases",
+    "The app checks for updates itself: Windows and Linux download the new version and offer to restart the game",
+    "New branded Windows installer with a СЛОВОПАД picture, folder choice and a desktop shortcut; the macOS install window is styled too"
   ],
   "notes_uk": [
-    "Кнопка «Telegram автора» тепер зі справжнім значком Telegram замість літачка ✈️",
-    "У плашці рангу назва рангу й кількість очок (наприклад, 202 / 600) більше не злипаються: між ними з’явився відступ",
-    "Виправлення для застосунку на комп’ютері: у нього є іконка, зовнішні посилання відкриваються лише через https, версія збігається з грою",
-    "Випуск релізу тепер перевіряє, що версія в app.js збігається з version.json"
+    "Застосунок для комп’ютера збирається сам: з кожним новим релізом у Releases з’являються інсталятор для Windows (.exe), macOS (.dmg) і Linux (.AppImage)",
+    "Застосунок сам перевіряє оновлення: Windows і Linux завантажують нову версію та пропонують перезапустити гру",
+    "Новий гарний інсталятор для Windows із фірмовою картинкою СЛОВОПАД, вибором теки й ярликом на робочому столі; для macOS оформлено вікно встановлення"
   ]
 }

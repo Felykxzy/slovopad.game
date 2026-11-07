@@ -20,3 +20,32 @@ jobs:
           NOTES=$(jq -r '.notes | map("- " + .) | join("\n")' version.json)
           if gh release view "v$V" >/dev/null 2>&1; then echo "already exists"; exit 0; fi
           gh release create "v$V" --title "Версия $V" --notes "$NOTES"
+  desktop:
+    needs: release
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Prepare app
+        shell: bash
+        run: |
+          V=$(jq -r .version version.json)
+          mkdir -p desktop/game desktop/build
+          cp index.html styles.css core.js app.js tutorial.js practice.js manifest.webmanifest icon-192.png icon-512.png apple-touch-icon.png desktop/game/
+          cp installer-icon.ico installer-sidebar.bmp installer-header.bmp dmg-background.png desktop/build/
+          cp desktop-main.js desktop/main.js
+          jq --arg v "$V" '.version=$v' desktop-package.json > desktop/package.json
+      - name: Build and publish to the release
+        shell: bash
+        working-directory: desktop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npm install
+          npx electron-builder --publish always
