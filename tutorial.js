@@ -9,7 +9,7 @@
 
   /* ---------- тексты: 0 = русский, 1 = английский, 2 = украинский ---------- */
   const D = [
-    { sk: "ПРОПУСТИТЬ", nx: "ДАЛЕЕ", go: "▶ ИГРАТЬ", ok: "ГОТОВО", bad: "Ы", gold: "ЗОЛОТО",
+    { sk: "ПРОПУСТИТЬ", nx: "ДАЛЕЕ", go: "▶ ИГРАТЬ", tr: "✋ ПОПРОБУЙ САМ", ach: "ТУТОРИАЛ ПРОЙДЕН", ok: "ГОТОВО", bad: "Ы", gold: "ЗОЛОТО",
       w: ["КОМЕТА", "ЛУНА", "РОБОТ", "ПИЦЦА", "ЗВЕЗДА"],
       st: [
         ["ДОБРО ПОЖАЛОВАТЬ", "С неба падают слова. Твоя задача — успеть напечатать их все, пока они не долетели до щита."],
@@ -18,9 +18,10 @@
         ["СОБИРАЙ КОМБО", "Печатай слова подряд без ошибок: растёт комбо и множитель очков, до ×5. Любая ошибка сбрасывает комбо."],
         ["ОСОБЫЕ СЛОВА", "Золотые слова дают тройные очки. Слово «ЖИЗНЬ» возвращает одну потерянную жизнь, лови его!"],
         ["УРОВНИ И РАНГИ", "Каждые 8 слов начинается новый уровень, и игра ускоряется. Чем больше слов ты напечатал, тем выше ранг: от Новичка до Легенды."],
-        ["ГОТОВ?", "Выбери тему в «Тематиках» или жми «Быстрая» для случайного микса. Пауза: Esc или кнопка ⏸."]
+        ["ГОТОВ?", "Выбери тему в «Тематиках» или жми «Быстрая» для случайного микса. Пауза: Esc или кнопка ⏸."],
+        ["ПОПРОБУЙ САМ", "Покажу, где что находится на игровом экране, а потом ты сам наберёшь пару слов. Пройдёшь до конца — получишь достижение!"]
       ] },
-    { sk: "SKIP", nx: "NEXT", go: "▶ PLAY", ok: "DONE", bad: "Q", gold: "GOLD",
+    { sk: "SKIP", nx: "NEXT", go: "▶ PLAY", tr: "✋ TRY IT", ach: "TUTORIAL COMPLETE", ok: "DONE", bad: "Q", gold: "GOLD",
       w: ["COMET", "MOON", "ROBOT", "PIZZA", "STAR"],
       st: [
         ["WELCOME", "Words rain down from the sky. Type every one of them before it reaches your shield."],
@@ -29,9 +30,10 @@
         ["BUILD COMBOS", "Type words back to back without mistakes: your combo and score multiplier grow, up to ×5. Any typo resets the combo."],
         ["SPECIAL WORDS", "Golden words give triple points. The word “LIFE” brings back one lost life, so catch it!"],
         ["LEVELS AND RANKS", "Every 8 words you reach a new level and the game speeds up. The more words you type, the higher your rank: from Rookie to Legend."],
-        ["READY?", "Pick a theme in “Themes” or hit “Quick play” for a random mix. Pause with Esc or the ⏸ button."]
+        ["READY?", "Pick a theme in “Themes” or hit “Quick play” for a random mix. Pause with Esc or the ⏸ button."],
+        ["TRY IT YOURSELF", "I'll show you what's where on the game screen, then you'll type a few words yourself. Finish it and you earn an achievement!"]
       ] },
-    { sk: "ПРОПУСТИТИ", nx: "ДАЛІ", go: "▶ ГРАТИ", ok: "ГОТОВО", bad: "Ї", gold: "ЗОЛОТО",
+    { sk: "ПРОПУСТИТИ", nx: "ДАЛІ", go: "▶ ГРАТИ", tr: "✋ СПРОБУЙ САМ", ach: "ТУТОРІАЛ ПРОЙДЕНО", ok: "ГОТОВО", bad: "Ї", gold: "ЗОЛОТО",
       w: ["КОМЕТА", "МІСЯЦЬ", "РОБОТ", "ПІЦА", "ЗІРКА"],
       st: [
         ["ЛАСКАВО ПРОСИМО", "З неба падають слова. Твоє завдання — встигнути надрукувати їх усі, поки вони не долетіли до щита."],
@@ -40,11 +42,12 @@
         ["ЗБИРАЙ КОМБО", "Друкуй слова підряд без помилок: росте комбо й множник очок, до ×5. Будь-яка помилка скидає комбо."],
         ["ОСОБЛИВІ СЛОВА", "Золоті слова дають потрійні очки. Слово «ЖИТТЯ» повертає одне втрачене життя, лови його!"],
         ["РІВНІ ТА РАНГИ", "Кожні 8 слів починається новий рівень, і гра пришвидшується. Чим більше слів ти надрукував, тим вищий ранг: від Новачка до Легенди."],
-        ["ГОТОВИЙ?", "Обери тему в «Тематиках» або тисни «Швидка» для випадкового міксу. Пауза: Esc або кнопка ⏸."]
+        ["ГОТОВИЙ?", "Обери тему в «Тематиках» або тисни «Швидка» для випадкового міксу. Пауза: Esc або кнопка ⏸."],
+        ["СПРОБУЙ САМ", "Покажу, що де на ігровому екрані, а потім ти сам набереш кілька слів. Пройдеш до кінця — отримаєш досягнення!"]
       ] }
   ];
-  const N = D[0].st.length;
-  const LEN = [6, 6.4, 5.6, 6.2, 6.2, 6.6, 5]; // длина зацикленной анимации каждого шага, сек
+  const N_ALL = D[0].st.length, NN = () => (from === "menu" ? N_ALL : N_ALL - 1);
+  const LEN = [6, 6.4, 5.6, 6.2, 6.2, 6.6, 5, 6.2]; // длина зацикленной анимации каждого шага, сек
   const dd = () => D[CFG.lang | 0] || D[0];
 
   /* ---------- состояние ---------- */
@@ -306,7 +309,22 @@
     c.save(); c.font = "700 16px " + SANS; c.textAlign = "left"; c.textBaseline = "middle"; c.fillStyle = "rgba(232,236,255,.85)"; c.fillText("=", W / 2 + 12, H - 25);
     c.fillStyle = "rgba(232,236,255,.9)"; rr(W / 2 + 30, H - 33, 5, 16, 2); c.fill(); rr(W / 2 + 40, H - 33, 5, 16, 2); c.fill(); c.restore();
   }
-  const SC = [s0, s1, s2, s3, s4, s5, s6];
+
+  function s7(tm) {
+    const w = dd().w[1], len = w.length, ts = .8, tk = ts + len * .42;
+    shield(3, tm);
+    demo(tm, { txt: w, x: W / 2, y: H * .55, ts, tk, pts: 10, n: 18 });
+    const ba = tm - tk - .25;
+    if (ba >= 0) {
+      const e = clamp(ba / .55, 0, 1), y = 16 + (1 - e) * -70 + Math.sin(e * Math.PI) * 6, bw = Math.min(W - 40, 250), bx = (W - bw) / 2;
+      c.save(); c.shadowColor = "rgba(255,209,102,.8)"; c.shadowBlur = 18; rr(bx, y, bw, 40, 14);
+      c.fillStyle = "rgba(255,209,102,.18)"; c.fill(); c.lineWidth = 1.6; c.strokeStyle = "rgb(" + COL.g + ")"; c.stroke(); c.shadowBlur = 0;
+      c.textAlign = "center"; c.textBaseline = "middle"; c.font = "800 13px " + SANS; c.fillStyle = "rgb(" + COL.g + ")";
+      c.fillText("🎓  " + dd().ach, W / 2, y + 21, bw - 16); c.restore();
+      burst(W / 2, y + 20, ba, COL.g, 30, .9); ring(W / 2, y + 20, ba, COL.g, .5);
+    }
+  }
+  const SC = [s0, s1, s2, s3, s4, s5, s6, s7];
 
   /* ---------- интерфейс ---------- */
   function build() {
@@ -317,10 +335,9 @@
       '<div class="tnav"><button class="btn a" id="tPv" aria-label="←">←</button><button class="btn" id="tNx"></button></div></div>';
     document.body.appendChild(el);
     cvs = $("tCv"); c = cvs.getContext("2d");
-    const dt = $("tDt"); for (let i = 0; i < N; i++) { const b = document.createElement("i"); b.onclick = () => go(i); dt.appendChild(b); }
-    $("tSk").onclick = () => finish(false);
+        $("tSk").onclick = () => finish(false);
     $("tPv").onclick = function () { this.blur(); go(step - 1); };
-    $("tNx").onclick = function () { this.blur(); if (step < N - 1) go(step + 1); else finish(true); };
+    $("tNx").onclick = function () { this.blur(); if (step < NN() - 1) go(step + 1); else finish(true); };
     // свайп влево/вправо
     const tc = el.querySelector(".tc");
     tc.addEventListener("pointerdown", e => { sx = e.target.closest("button") ? null : e.clientX; });
@@ -337,16 +354,16 @@
   function show(n, dir) {
     step = n; t0 = performance.now();
     const D0 = dd(), s = D0.st[n], tb = $("tTx"), sg = $("tSt");
-    $("tCt").textContent = (n + 1) + " / " + N; $("tH").textContent = s[0]; $("tP").textContent = s[1];
+    $("tCt").textContent = (n + 1) + " / " + NN(); $("tH").textContent = s[0]; $("tP").textContent = s[1];
     tb.style.setProperty("--dx", (dir || 1) * 28 + "px"); tb.classList.remove("in"); void tb.offsetWidth; tb.classList.add("in");
     sg.classList.add("sw"); setTimeout(() => sg.classList.remove("sw"), 140);
     [...$("tDt").children].forEach((d, i) => d.classList.toggle("on", i === n));
     $("tPv").style.visibility = n ? "visible" : "hidden";
-    $("tNx").textContent = n < N - 1 ? D0.nx + " →" : (from === "menu" ? D0.go : D0.ok);
+    $("tNx").textContent = n < NN() - 1 ? D0.nx + " →" : (from === "menu" ? D0.tr : D0.ok);
   }
 
   function go(n) {
-    if (n < 0 || n >= N || n === step) return;
+    if (n < 0 || n >= NN() || n === step) return;
     const dir = n > step ? 1 : -1; show(n, dir);
     try { snd(440 + n * 55, .07, "triangle", .05); hap("light", 1); } catch (e) {}
   }
@@ -360,6 +377,8 @@
   function openTut(f) {
     if (isOpen) return; from = f || "menu"; if (!el) build();
     const D0 = dd(); $("tSk").textContent = D0.sk; el.setAttribute("aria-label", tx("❓ КАК ИГРАТЬ"));
+    const dts = $("tDt"); dts.innerHTML = "";
+    for (let i = 0; i < NN(); i++) { const b = document.createElement("i"); b.onclick = () => go(i); dts.appendChild(b); }
     isOpen = true; el.classList.add("s"); resize(); show(0, 1);
     raf = requestAnimationFrame(frame);
     try { snd(523, .08, "triangle", .05); setTimeout(() => snd(784, .1, "triangle", .05), 70); } catch (e) {}
@@ -367,7 +386,9 @@
 
   function finish(play) {
     if (!isOpen) return; isOpen = false; cancelAnimationFrame(raf); el.classList.remove("s"); mark();
-    if (play && from === "menu" && state === "idle") pickTheme(THEMES[THEMES.length - 1]);
+    if (play && from === "menu" && state === "idle") {
+      if (window.startPractice) startPractice(); else pickTheme(THEMES[THEMES.length - 1]);
+    }
   }
 
   // клавиатура: приоритет над паузой по Esc из app.js (слушатель в фазе перехвата)
@@ -375,7 +396,7 @@
     if (!isOpen) return;
     const k = e.key;
     if (k === "Escape") finish(false);
-    else if (k === "ArrowRight" || k === "Enter" || k === " ") { if (step < N - 1) go(step + 1); else if (k !== "ArrowRight") finish(true); }
+    else if (k === "ArrowRight" || k === "Enter" || k === " ") { if (step < NN() - 1) go(step + 1); else if (k !== "ArrowRight") finish(true); }
     else if (k === "ArrowLeft") go(step - 1);
     else return;
     e.preventDefault(); e.stopImmediatePropagation();
