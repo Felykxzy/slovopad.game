@@ -111,32 +111,39 @@
     const v = $("sidVid"); if (v) v.srcObject = null;
   }
 
+  function scanMsg(m, kind) { const e = $("sidScanMsg"); e.textContent = m || ""; e.className = "hint" + (kind ? " " + kind : ""); e.hidden = !m; }
+
   async function scanOpen() {
     const panel = $("sidScanP"), vid = $("sidVid");
-    panel.hidden = false; $("sidCodeIn").value = ""; vid.hidden = false;
+    panel.hidden = false; $("sidCodeIn").value = ""; vid.hidden = true; scanMsg("");
+    setTimeout(() => { try { panel.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {} }, 50);
     // внутри Telegram есть встроенный сканер
     try {
       if (typeof tg !== "undefined" && tg && tg.showScanQrPopup) {
         tg.showScanQrPopup({ text: T("Наведи на QR на компьютере", "Point at the QR on your computer", "Наведи на QR на комп’ютері") }, t => { tg.closeScanQrPopup(); approve(t); return true; });
-        vid.hidden = true; return;
+        return;
       }
     } catch (e) {}
     if (!(window.BarcodeDetector && navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
-      vid.hidden = true;
-      sidStatus(T("Сканер в игре здесь недоступен: наведи на QR камеру телефона или введи код ниже.", "The in-game scanner is not available here: point your phone camera at the QR or type the code below.", "Сканер у грі тут недоступний: наведи на QR камеру телефона або введи код нижче."));
+      scanMsg(T("Сканер внутри игры в этом браузере не работает (так бывает в Safari, Firefox и в некоторых встроенных браузерах). Открой обычное приложение «Камера» на телефоне и наведи на QR на компьютере: игра откроется сама. Или введи код вручную.",
+        "The in-game scanner does not work in this browser (it happens in Safari, Firefox and some in-app browsers). Open your phone’s regular Camera app and point it at the QR on the computer: the game will open by itself. Or type the code by hand.",
+        "Сканер усередині гри в цьому браузері не працює (так буває в Safari, Firefox і деяких вбудованих браузерах). Відкрий звичайну програму «Камера» на телефоні й наведи на QR на комп’ютері: гра відкриється сама. Або введи код вручну."), "er");
       return;
     }
     try {
       const det = new BarcodeDetector({ formats: ["qr_code"] });
       camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-      vid.srcObject = camStream; await vid.play();
+      vid.hidden = false; vid.srcObject = camStream; await vid.play();
+      scanMsg(T("Наведи камеру на QR на компьютере", "Point the camera at the QR on the computer", "Наведи камеру на QR на комп’ютері"));
       camTimer = setInterval(async () => {
         if (!vis()) { scanClose(); return; }
         try { const r = await det.detect(vid); const c = r.length && norm(r[0].rawValue); if (c) { scanClose(); approve(c); } } catch (e) {}
       }, 350);
     } catch (e) {
-      vid.hidden = true; scanClose(); $("sidScanP").hidden = false;
-      sidStatus(T("Нет доступа к камере. Введи код вручную или наведи камеру телефона на QR.", "No camera access. Type the code or point your phone camera at the QR.", "Немає доступу до камери. Введи код вручну або наведи камеру телефона на QR."), "er");
+      scanClose(); $("sidScanP").hidden = false; vid.hidden = true;
+      scanMsg(T("Нет доступа к камере. Разреши камеру для сайта в настройках браузера, либо открой обычное приложение «Камера» и наведи на QR, либо введи код вручную.",
+        "No camera access. Allow the camera for this site in your browser settings, or open the regular Camera app and point it at the QR, or type the code by hand.",
+        "Немає доступу до камери. Дозволь камеру для сайту в налаштуваннях браузера, або відкрий звичайну програму «Камера» й наведи на QR, або введи код вручну."), "er");
     }
   }
 
