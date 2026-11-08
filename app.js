@@ -72,7 +72,7 @@ function stats(){rkUI();let mx=0,sm=0;THEMES.forEach(t=>{const b=gbest(t);mx=Mat
 let cur=0;
 function fgUpd(){const g=$("fg"),m=g.scrollLeft+g.clientWidth/2;let bi=0,bd=1e9;[...g.children].forEach((c,i)=>{const d=Math.abs(c.offsetLeft+c.offsetWidth/2-m),k=Math.min(1,d/(c.offsetWidth*1.1));c.style.setProperty("--s",(1-k*.14).toFixed(3));c.style.setProperty("--o",(1-k*.5).toFixed(2));if(d<bd){bd=d;bi=i}});cur=bi;[...$("dt").children].forEach((x,i)=>x.classList.toggle("on",i===bi))}
 $("fg").addEventListener("scroll",()=>requestAnimationFrame(fgUpd),{passive:true});
-function menu(){shUI();app.classList.add("inmenu");pfUI();$("vr").textContent="v"+VER;const g=$("fg");g.innerHTML="";$("dt").innerHTML="";logo();stats();THEMES.forEach((t,n)=>{const b=gbest(t);
+function menu(){if(window.ACH)ACH.check();shUI();app.classList.add("inmenu");pfUI();$("vr").textContent="v"+VER;const g=$("fg");g.innerHTML="";$("dt").innerHTML="";logo();stats();THEMES.forEach((t,n)=>{const b=gbest(t);
 const ws=lw(t).split(" "),sm=ws.filter(w=>w.length<=8),pk=sm.length>1?sm:ws,pl=[];while(pl.length<3)pl.push(pk[Math.random()*pk.length|0].toUpperCase());const st=b>=600?3:b>=300?2:b>=100?1:0;
 const d=document.createElement("div");d.className="fd";d.style.setProperty("--c",t.c);
 d.innerHTML='<span class="fr"><span class="ic">'+t.i+'</span><span class="wp w1">'+pl[0]+'</span><span class="wp w2">'+pl[1]+'</span><span class="wp w3">'+pl[2]+'</span><b>'+tx(t.n)+'</b><span class="stz">'+"★".repeat(st)+"☆".repeat(3-st)+'</span><span class="mt"><i class="rc">🏆 '+b+'</i><i>'+ws.length+' '+tx("СЛОВ")+'</i></span></span>';
@@ -148,7 +148,7 @@ const cv=document.createElement("canvas");cv._D=D;cv._x=x;cv.width=224*D;cv.heig
 const f=document.createElement("div");f.className="sf";f.innerHTML="<b>"+L3(...x[3])+'</b><span class="pl '+(on?"on":has?"eq":"pr")+'">'+(on?L3("ВЫБРАНО","EQUIPPED","ОБРАНО")+" ✓":has?L3("ВЫБРАТЬ","EQUIP","ОБРАТИ"):"✨ "+x[2])+"</span>";d.appendChild(f);
 d.onclick=()=>{if(has){EQ[x[1]]=x[0];try{localStorage.setItem("eq",JSON.stringify(EQ))}catch(e){}if(x[1]==="b")size();snd(660,.06,"triangle",.06);shRender();return}
 if(coG()<x[2]){snd(150,.2,"square",.06);const c=$("shC");c.classList.remove("no");void c.offsetWidth;c.classList.add("no");return}
-coS(coG()-x[2]);own.push(x[0]);try{localStorage.setItem("ow",JSON.stringify(own))}catch(e){}EQ[x[1]]=x[0];try{localStorage.setItem("eq",JSON.stringify(EQ))}catch(e){}if(x[1]==="b")size();arp([523,659,784],.09);hap("light",1);shRender()};g.appendChild(d)});
+coS(coG()-x[2]);own.push(x[0]);try{localStorage.setItem("ow",JSON.stringify(own))}catch(e){}EQ[x[1]]=x[0];try{localStorage.setItem("eq",JSON.stringify(EQ))}catch(e){}if(x[1]==="b")size();arp([523,659,784],.09);hap("light",1);shRender();if(window.ACH)ACH.check()};g.appendChild(d)});
 ov("o12");if(!shRaf)shRaf=requestAnimationFrame(shLoop)}
 $("shopB").onclick=()=>{shTab="s";shRender()};$("shB").onclick=()=>ov("o1");$("tgB").onclick=()=>{if(TGK)window.open(TGK,"_blank","noopener")};
 let OC=0;
@@ -193,11 +193,11 @@ if(it.type==="h"){lives=Math.min(3,lives+1);flo(it.cx,it.y-60,tx("+ЖИЗНЬ"),
 {const pf=1+(m-1)*.08;snd(520*pf,.08,"triangle",.07);setTimeout(()=>snd(780*pf,.1,"triangle",.06),60)}hap("light",1);
 if(it.type==="g")arp([880,1175,1568],.05,"sine",.05);if(combo%5===0)arp([523,659,784,1047].slice(0,Math.min(4,combo/5+1)),.06);
 if(!PR){const o=tw(),n=o+1;try{localStorage.setItem("tw",n)}catch(e){}if(rki(n)>rki(o)){const k=RK[rki(n)];flo(W/2,H*.45,k.i+" "+tx("РАНГ")+": "+tx(k.n),26,T.g,2.4);arp([523,659,784,1047,1319],.09,"square",.04);hap("success")}}
-const nl=1+(words/8|0);if(nl>level){level=nl;flo(W/2,H*.36,tx("УРОВЕНЬ")+" "+level,32,T.n,1.4);arp([392,523,659],.08,"triangle",.06);sweep(300,900,.25,"triangle",.04)}hud();if(PR&&prHook)prHook("kill",it)}
+const nl=1+(words/8|0);if(nl>level){level=nl;flo(W/2,H*.36,tx("УРОВЕНЬ")+" "+level,32,T.n,1.4);arp([392,523,659],.08,"triangle",.06);sweep(300,900,.25,"triangle",.04)}hud();if(PR&&prHook)prHook("kill",it);else if(!PR&&window.ACH)ACH.kill(it,{lives,words,level,combo,score})}
 function lose(i){const it=items[i];items.splice(i,1);if(target===it){target=null;buf="";ti.value=""}
 if(it.type==="h")return;
 if(PR&&prHook){prHook("lose",it);return}
-hitX=it.cx;hitT=.5;burst(it.cx,H-SY,26,T.r);lives--;combo=0;shake=.35;flashA=.5;hap("error");snd(70,.45,"square",.08);noise(.35,.12,700);hud();if(lives<=0)over(false)}
+hitX=it.cx;hitT=.5;burst(it.cx,H-SY,26,T.r);lives--;combo=0;if(window.ACH)ACH.lose(lives);shake=.35;flashA=.5;hap("error");snd(70,.45,"square",.08);noise(.35,.12,700);hud();if(lives<=0)over(false)}
 function press(ch){if(state!=="play")return;const v=buf+ch;let c=target&&target.name.startsWith(v)?target:null;
 if(!c){let y=-1e9;for(const it of items)if(it.name.startsWith(v)&&it.y>y){y=it.y;c=it}}
 if(!c){if(!PR)PF.m++;const n=performance.now();if(combo){if(combo>=5)sweep(520,110,.3,"sawtooth",.05);combo=0;hud()}flashA=.25;if(n-errT>110){errT=n;hap("warning");snd(120,.14,"sawtooth",.05)}return}
@@ -250,12 +250,12 @@ ds+=(score-ds)*Math.min(1,dt*10);const r=Math.round(ds);if(r!==shown){shown=r;$(
 draw();requestAnimationFrame(loop)}
 function ov(a){["o1","o2","o3","o4","o5","o6","o7","o8","o9","o10","o11","o12"].forEach(i=>$(i).classList.toggle("s",i===a))}
 function start(){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();ac.resume()}catch(e){}
-items=[];P=[];R=[];F=[];Sh=[];target=null;buf="";ti.value="";bag=[];if(!PR)PF.g++;score=0;ds=0;lives=3;rb=0;hb=0;combo=0;words=0;level=1;spawnT=.4;app.classList.remove("inmenu");size();ov("");hud();if(!PR){const sn=streakTouch();if(sn)flo(W/2,H*.3,"🔥 "+tx("СЕРИЯ")+": "+sn+" "+dn(sn),22,T.n,2.2)}state="play";bkv(1);foc();arp([392,523],.07,"triangle",.05)}
+items=[];P=[];R=[];F=[];Sh=[];target=null;buf="";ti.value="";bag=[];if(!PR){PF.g++;if(window.ACH)ACH.start()}score=0;ds=0;lives=3;rb=0;hb=0;combo=0;words=0;level=1;spawnT=.4;app.classList.remove("inmenu");size();ov("");hud();if(!PR){const sn=streakTouch();if(sn)flo(W/2,H*.3,"🔥 "+tx("СЕРИЯ")+": "+sn+" "+dn(sn),22,T.n,2.2)}state="play";bkv(1);foc();arp([392,523],.07,"triangle",.05)}
 function pause(){if(state==="play"){state="pause";pfSave();ov("o2");ti.blur();snd(330,.08,"triangle",.05)}}
 function resume(){if(state==="pause"){ov("");state="play";foc();snd(494,.08,"triangle",.05)}}
-function over(q){if(PR&&prHook){prHook("over");return}pfSave();OC=0;state="over";ti.blur();const nb=score>best;if(!q){OC=Math.floor(score/20)+(nb&&score>0?10:0);if(OC>0)coS(coG()+OC)}if(nb){best=score;try{localStorage.setItem(bkey(TH),best)}catch(e){}}
+function over(q){if(PR&&prHook){prHook("over");return}pfSave();OC=0;state="over";ti.blur();const nb=score>best,pb=best;if(!q){OC=Math.floor(score/20)+(nb&&score>0?10:0);if(OC>0)coS(coG()+OC)}if(nb){best=score;try{localStorage.setItem(bkey(TH),best)}catch(e){}}
 $("oT").textContent=tx(q?"ОСТАНОВЛЕНО":"ЩИТ ПРОБИТ");$("oS").textContent=score;$("oW").textContent=words;$("oL").textContent=level;
-if(nb&&score>0)arp([523,659,784,1047,784,1047],.1);else if(!nb)arp([330,262,196],.14,"sawtooth",.04);$("oB").textContent=nb?tx("НОВЫЙ РЕКОРД"):tx("РЕКОРД")+" "+best;if(OC)$("oB").textContent+=" · +"+OC+" ✨";ov("o3");hud()}
+if(nb&&score>0)arp([523,659,784,1047,784,1047],.1);else if(!nb)arp([330,262,196],.14,"sawtooth",.04);$("oB").textContent=nb?tx("НОВЫЙ РЕКОРД"):tx("РЕКОРД")+" "+best;if(OC)$("oB").textContent+=" · +"+OC+" ✨";ov("o3");hud();if(window.ACH)ACH.over({score,words,level,q:!!q,nb,pb})}
 function share(){const txt=[()=>"Я набрал "+score+" очков в СЛОВОПАДЕ (слов: "+words+", уровень "+level+"). Побей!",()=>"I scored "+score+" points in WORDFALL (words: "+words+", level "+level+"). Beat me!",()=>"Я набрав "+score+" очок у СЛОВОПАДІ (слів: "+words+", рівень "+level+"). Побий!"][CFG.lang](),u=location.href.split("#")[0];
 try{if(tg){tg.openTelegramLink("https://t.me/share/url?url="+encodeURIComponent(u)+"&text="+encodeURIComponent(txt));return}}catch(e){}
 if(navigator.share)navigator.share({text:txt,url:u}).catch(()=>{})}
@@ -286,14 +286,14 @@ THEMES.forEach(t=>{let b=0;["","en_","uk_"].forEach(q=>{try{b=Math.max(b,+localS
 const accValue=SlovopadCore.accuracy(PF.h,PF.m),wpmValue=SlovopadCore.wordsPerMinute(PF.w,PF.t),acc=accValue===null?"—":accValue+"%",wpm=wpmValue===null?"—":wpmValue,sn=streakNow();
 $("pS").innerHTML='<div class="gl"><b>'+mx+'</b><span>'+tx("🏆 РЕКОРД")+'</span></div><div class="gl"><b>'+tw()+'</b><span>'+tx("⚡ СЛОВ ВСЕГО")+'</span></div><div class="gl"><b>'+acc+'</b><span>'+tx("🎯 ТОЧНОСТЬ")+'</span></div><div class="gl'+(sn?" hot":"")+'"><b>'+sn+'</b><span>🔥 '+dn(sn)+' '+tx("ПОДРЯД")+'</span></div>';
 $("pRow").innerHTML="<span>"+tx("🎮 Игр")+" <b>"+PF.g+"</b></span><span>"+tx("💥 Комбо")+" <b>"+PF.c+"</b></span><span>⚡ <b>"+wpm+"</b> "+tx("сл/мин")+"</span><span>⏱ <b>"+tfmt(PF.t)+"</b></span>";
-ov("o7");$("o7").scrollTop=0}
+ov("o7");$("o7").scrollTop=0;if(window.ACH)ACH.open()}
 let dr={};
 function edOpen(){dr={n:PF.n,a:PF.a,p:PF.p};$("ni").value=dr.n;edUI();$("eh").textContent=tx("ЗАМОЧКИ ОТКРЫВАЮТСЯ С РАНГАМИ");ov("o8");$("o8").scrollTop=0}
 function edUI(){avSet($("eAv"),dr.a,dr.p);$("nc").textContent=dr.n.length+" / 12";$("eRm").style.display=dr.p?"":"none";
 const g=$("ag"),r=rki(tw());g.innerHTML="";AVS.forEach(([e,k])=>{const b=document.createElement("button"),lk=r<k;b.className="ao"+(lk?" lk":"")+(!dr.p&&dr.a===e?" on":"");b.textContent=e;
 b.onclick=()=>{if(lk){$("eh").textContent=tx("🔒 ОТКРОЕТСЯ С РАНГОМ")+" «"+tx(RK[k].n)+"»";return}dr.a=e;dr.p="";edUI()};g.appendChild(b)})}
 $("ni").addEventListener("input",e=>{const v=e.target.value.replace(/[^\p{L}\p{N} _.\-]/gu,"").replace(/\s{2,}/g," ").slice(0,12);if(v!==e.target.value)e.target.value=v;dr.n=v;$("nc").textContent=v.length+" / 12"});
-$("eS").onclick=()=>{PF.n=dr.n.trim();PF.a=dr.a;PF.p=dr.p;pfSave();try{if(PF.p)localStorage.setItem("pfp",PF.p);else localStorage.removeItem("pfp")}catch(e){}pfUI();pfOpen()};
+$("eS").onclick=()=>{PF.n=dr.n.trim();PF.a=dr.a;PF.p=dr.p;pfSave();try{if(PF.p)localStorage.setItem("pfp",PF.p);else localStorage.removeItem("pfp")}catch(e){}pfUI();if(window.ACH)ACH.check();pfOpen()};
 $("eC").onclick=()=>ov("o7");$("eRm").onclick=()=>{dr.p="";edUI()};
 $("pc").onclick=pfOpen;$("pHero").onclick=edOpen;$("c7").onclick=()=>ov("o1");
 const CS=480,cc=$("cc"),cx2=cc.getContext("2d");let im=null,cz=1,px=0,py=0,dg=null;
@@ -314,7 +314,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(a)set(a,e)});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="2.5.0";let upLater=false;
+const VER="2.6.0";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if(state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
@@ -363,7 +363,7 @@ pfUI();stats();}
 async function cloudRequest(path,options={}){const base=cloudApi();if(!base)throw new Error("Сначала укажи адрес Cloudflare Worker.");localStorage.setItem(CLOUD_API_KEY,base);const headers={...(options.headers||{})};const token=localStorage.getItem(CLOUD_TOKEN_KEY);if(token)headers.authorization="Bearer "+token;if(options.body)headers["content-type"]="application/json";
 const response=await fetch(base+path,{...options,headers});let data={};try{data=await response.json()}catch(e){}if(!response.ok)throw new Error(data.error||("Ошибка сервера: "+response.status));return data;}
 function cloudOpen(){const saved=localStorage.getItem(CLOUD_API_KEY)||"";$("cloudApi").value=saved;cloudStatus(localStorage.getItem(CLOUD_TOKEN_KEY)?"Аккаунт подключён. Можно синхронизировать прогресс.":"Войди или создай аккаунт. Для облака нужен развернутый сервер.");ov("o11");$("o11").scrollTop=0;}
-async function cloudAuth(mode){if(cloudBusy)return;const username=$("cloudName").value.trim(),password=$("cloudPass").value;if(!username||password.length<8){cloudStatus("Укажи ник (3–20 символов) и пароль от 8 символов.","er");return}cloudBusy=true;$("cloudRegister").disabled=$("cloudLogin").disabled=true;cloudStatus("Подключаюсь…");try{const data=await cloudRequest("/api/"+mode,{method:"POST",body:JSON.stringify({username,password})});localStorage.setItem(CLOUD_TOKEN_KEY,data.token);if(data.profile)cloudRestore(data.profile);cloudStatus("Вход выполнен: "+data.username,"ok");cloudBusy=false;await cloudSync(true);await cloudLoadRanks();}catch(e){cloudStatus(e.message,"er")}finally{cloudBusy=false;$("cloudRegister").disabled=$("cloudLogin").disabled=false;}}
+async function cloudAuth(mode){if(cloudBusy)return;const username=$("cloudName").value.trim(),password=$("cloudPass").value;if(!username||password.length<8){cloudStatus("Укажи ник (3–20 символов) и пароль от 8 символов.","er");return}cloudBusy=true;$("cloudRegister").disabled=$("cloudLogin").disabled=true;cloudStatus("Подключаюсь…");try{const data=await cloudRequest("/api/"+mode,{method:"POST",body:JSON.stringify({username,password})});localStorage.setItem(CLOUD_TOKEN_KEY,data.token);if(data.profile)cloudRestore(data.profile);cloudStatus("Вход выполнен: "+data.username,"ok");if(window.ACH)ACH.cloud();cloudBusy=false;await cloudSync(true);await cloudLoadRanks();}catch(e){cloudStatus(e.message,"er")}finally{cloudBusy=false;$("cloudRegister").disabled=$("cloudLogin").disabled=false;}}
 async function cloudSync(silent){if(cloudBusy)return;if(!localStorage.getItem(CLOUD_TOKEN_KEY)){cloudStatus("Сначала войди в аккаунт.","er");return}cloudBusy=true;$("cloudSync").disabled=true;if(!silent)cloudStatus("Сохраняю прогресс…");try{const snap=cloudSnapshot(),bestScore=Math.max(0,...Object.values(snap.bestScores));const data=await cloudRequest("/api/sync",{method:"POST",body:JSON.stringify({profile:snap,bestScore,totalWords:snap.tw})});if(data.profile)cloudRestore(data.profile);cloudStatus("Прогресс синхронизирован ✓","ok");}catch(e){cloudStatus(e.message,"er")}finally{cloudBusy=false;$("cloudSync").disabled=false;}}
 async function cloudLoadRanks(){const box=$("cloudRanks");box.innerHTML="<div class='hint'>Загружаю рейтинг…</div>";try{const data=await cloudRequest("/api/leaderboard");box.innerHTML="";if(!data.items||!data.items.length){box.innerHTML="<div class='hint'>Пока нет игроков в рейтинге.</div>";return}data.items.forEach((item,index)=>{const row=document.createElement("div");row.className="cloud-rank";const name=document.createElement("span");name.textContent=(index+1)+". "+item.username;const score=document.createElement("b");score.textContent=Number(item.bestScore||0).toLocaleString()+" очков";row.append(name,score);box.appendChild(row)});}catch(e){box.innerHTML="<div class='hint er'></div>";box.firstChild.textContent=e.message;}}
 $("cloudOpen").onclick=cloudOpen;$("cloudClose").onclick=()=>ov("o1");$("cloudRegister").onclick=()=>cloudAuth("register");$("cloudLogin").onclick=()=>cloudAuth("login");$("cloudSync").onclick=()=>cloudSync(false);$("cloudLoadRanks").onclick=cloudLoadRanks;

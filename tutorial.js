@@ -402,7 +402,9 @@
     e.preventDefault(); e.stopImmediatePropagation();
   }, true);
 
-  $("hwB").onclick = () => openTut("menu");
+  // из меню сначала идёт экскурсия по кнопкам (tour.js), потом правила; из паузы — сразу правила
+  const intro = () => (window.startTour ? startTour(() => openTut("menu")) : openTut("menu"));
+  $("hwB").onclick = intro;
   $("hwB2").onclick = () => openTut("pause");
 
   // первый запуск: подсветка кнопки и автозапуск обучения
@@ -410,7 +412,7 @@
     if (PF.g > 0 || tw() > 0) mark(); // игрок уже играл до появления обучения
     else {
       $("hwB").classList.add("new");
-      setTimeout(() => { if (!seen() && !isOpen && state === "idle" && !document.querySelector("#up.s")) openTut("menu"); }, 1800);
+      setTimeout(() => { if (!seen() && !isOpen && state === "idle" && !document.querySelector("#up.s")) intro(); }, 1800);
     }
   }
 })();
