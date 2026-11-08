@@ -7,41 +7,38 @@
 
   /* шаги: какие элементы подсвечивать (если их несколько — рамка охватит все видимые) */
   const STEPS = [
-    ["pc"], ["gs"], ["rk"], ["tp"], ["qp"], ["shopB"], ["cloudOpen"], ["idB", "tgB"], ["hwB"]
+    ["pc"], ["gs"], ["rk"], ["tp"], ["qp"], ["shopB"], ["idB", "tgB"], ["hwB"]
   ];
 
   /* тексты: 0 = русский, 1 = английский, 2 = украинский */
   const D = [
     { sk: "ПРОПУСТИТЬ", nx: "ДАЛЕЕ", rules: "К ПРАВИЛАМ ▶", st: [
-      ["ПРОФИЛЬ", "Здесь твой ник, аватарка и вся статистика: рекорды, точность, скорость. Тут же собираются достижения за твои успехи."],
+      ["ПРОФИЛЬ", "Здесь твой Slovopad ID: один аккаунт на всех устройствах, ник, аватарка, статистика и достижения. Чтобы открыть профиль, нужно создать ID, это бесплатно. А играть можно и без него."],
       ["НАСТРОЙКИ", "Звук, вибрация, скорость слов, качество графики и язык интерфейса. Подстрой игру под себя."],
       ["РАНГИ", "Чем больше слов ты напечатал, тем выше ранг: от Новичка до Легенды. Каждый ранг открывает новые аватарки, но слова падают чуть быстрее."],
       ["ТЕМАТИКИ", "Выбери тему: бренды, игры, города, страны, животные или всё подряд. Здесь же переключаются слова: русские, английские или украинские."],
       ["БЫСТРАЯ ИГРА", "Одно нажатие, и игра стартует со словами изо всех тем. Самый быстрый способ сыграть."],
       ["МАГАЗИН", "За очки ✨, которые ты зарабатываешь в играх и за достижения, покупай скины щита и анимированные фоны."],
-      ["ОБЛАКО И РЕЙТИНГ", "Аккаунт, синхронизация прогресса между устройствами и глобальный топ игроков."],
       ["ИДЕЯ И TELEGRAM", "Лампочка — отправить свою идею для игры. Значок Telegram — канал автора с новостями."],
       ["КАК ИГРАТЬ", "Обучение всегда под рукой: эта кнопка запускает его заново. А сейчас перейдём к правилам игры."]
     ] },
     { sk: "SKIP", nx: "NEXT", rules: "TO THE RULES ▶", st: [
-      ["PROFILE", "Your nickname, avatar and all your stats: records, accuracy, speed. Your achievements are collected here too."],
+      ["PROFILE", "Your Slovopad ID lives here: one account for all devices, nickname, avatar, stats and achievements. Create an ID to open your profile, it's free. You can play without it."],
       ["SETTINGS", "Sound, vibration, word speed, graphics quality and interface language. Tune the game to your liking."],
       ["RANKS", "The more words you type, the higher your rank: from Rookie to Legend. Every rank unlocks new avatars, but words fall a bit faster."],
       ["THEMES", "Pick a theme: brands, games, cities, countries, animals or everything at once. You can also switch the words here: Russian, English or Ukrainian."],
       ["QUICK PLAY", "One tap and the game starts with words from every theme. The fastest way to play."],
       ["SHOP", "Spend the ✨ you earn in games and for achievements on shield skins and animated backgrounds."],
-      ["CLOUD AND RANKING", "An account, progress sync between devices and the global top of players."],
       ["IDEAS AND TELEGRAM", "The light bulb sends your idea for the game. The Telegram icon opens the author's news channel."],
       ["HOW TO PLAY", "The tutorial is always at hand: this button replays it. Now let's move on to the rules of the game."]
     ] },
     { sk: "ПРОПУСТИТИ", nx: "ДАЛІ", rules: "ДО ПРАВИЛ ▶", st: [
-      ["ПРОФІЛЬ", "Тут твій нік, аватарка і вся статистика: рекорди, точність, швидкість. Тут же збираються досягнення за твої успіхи."],
+      ["ПРОФІЛЬ", "Тут твій Slovopad ID: один акаунт на всіх пристроях, нік, аватарка, статистика та досягнення. Щоб відкрити профіль, треба створити ID, це безкоштовно. А грати можна й без нього."],
       ["НАЛАШТУВАННЯ", "Звук, вібрація, швидкість слів, якість графіки та мова інтерфейсу. Налаштуй гру під себе."],
       ["РАНГИ", "Чим більше слів ти надрукував, тим вищий ранг: від Новачка до Легенди. Кожен ранг відкриває нові аватарки, але слова падають трохи швидше."],
       ["ТЕМАТИКИ", "Обери тему: бренди, ігри, міста, країни, тварини або все підряд. Тут же перемикаються слова: російські, англійські чи українські."],
       ["ШВИДКА ГРА", "Одне натискання, і гра стартує зі словами з усіх тем. Найшвидший спосіб зіграти."],
       ["МАГАЗИН", "За очки ✨, які ти заробляєш в іграх і за досягнення, купуй скіни щита та анімовані фони."],
-      ["ХМАРА І РЕЙТИНГ", "Акаунт, синхронізація прогресу між пристроями та глобальний топ гравців."],
       ["ІДЕЯ І TELEGRAM", "Лампочка — надіслати свою ідею для гри. Значок Telegram — канал автора з новинами."],
       ["ЯК ГРАТИ", "Навчання завжди під рукою: ця кнопка запускає його знову. А зараз перейдемо до правил гри."]
     ] }
