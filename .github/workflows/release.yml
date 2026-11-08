@@ -45,7 +45,18 @@ jobs:
         shell: bash
         working-directory: desktop
         run: |
-          npm install
+          for i in 1 2 3; do
+            echo "Установка зависимостей: попытка $i из 3"
+            if npm install --no-audit --no-fund; then
+              break
+            fi
+            if [ "$i" -eq 3 ]; then
+              echo "Не удалось установить зависимости после 3 попыток"
+              exit 1
+            fi
+            echo "Установка не удалась. Повтор через 20 секунд..."
+            sleep 20
+          done
           npx electron-builder --publish never
       - name: Upload files to the release
         shell: bash
