@@ -1,21 +1,18 @@
 {
-  "version": "2.7.0",
+  "version": "2.7.1",
   "notes": [
-    "Slovopad ID: единый аккаунт на всех устройствах. Профиль открывается после создания ID, а играть можно и без него",
-    "Автоматическая синхронизация: достижения, ✨, покупки, рекорды и профиль теперь сохраняются в аккаунте и появляются на других устройствах",
-    "У каждого игрока свой код SP-XXXXXX, его можно отправить друзьям. Есть настройки видимости профиля: ранг, рекорды, достижения, статистика, статус",
-    "Адрес сервера вшит в игру, вводить ничего не нужно. Исправлена ошибка регистрации"
+    "Исправлены стили: вернулись оформление достижений, магазина, обучения и экскурсии, а лампочка идей больше не закрыта кнопкой Telegram",
+    "Исправлена регистрация и вход в Slovopad ID: сервер больше не падает из-за числа итераций хеширования пароля",
+    "Исправлена ошибка «Нет связи с сервером»: настройки доступа к серверу приведены в порядок"
   ],
   "notes_en": [
-    "Slovopad ID: one account for all your devices. The profile opens after you create an ID, and you can still play without it",
-    "Automatic sync: achievements, ✨, purchases, records and profile are now saved to the account and appear on your other devices",
-    "Every player has a personal SP-XXXXXX code to share with friends. Profile visibility settings: rank, records, achievements, stats, status",
-    "The server address is built into the game, nothing to enter. Registration bug fixed"
+    "Fixed styles: achievements, shop, tutorial and menu tour look right again, and the idea lamp is no longer covered by the Telegram button",
+    "Fixed sign-up and login for Slovopad ID: the server no longer fails on the password hashing iteration count",
+    "Fixed the “No connection to the server” error: server access settings were corrected"
   ],
   "notes_uk": [
-    "Slovopad ID: єдиний акаунт на всіх пристроях. Профіль відкривається після створення ID, а грати можна й без нього",
-    "Автоматична синхронізація: досягнення, ✨, покупки, рекорди та профіль тепер зберігаються в акаунті й з’являються на інших пристроях",
-    "У кожного гравця свій код SP-XXXXXX, його можна надіслати друзям. Є налаштування видимості профілю: ранг, рекорди, досягнення, статистика, статус",
-    "Адресу сервера вбудовано в гру, вводити нічого не треба. Виправлено помилку реєстрації"
+    "Виправлено стилі: повернулося оформлення досягнень, магазину, навчання та екскурсії, а лампочка ідей більше не закрита кнопкою Telegram",
+    "Виправлено реєстрацію та вхід у Slovopad ID: сервер більше не падає через кількість ітерацій хешування пароля",
+    "Виправлено помилку «Немає зв’язку із сервером»: налаштування доступу до сервера впорядковано"
   ]
 }
