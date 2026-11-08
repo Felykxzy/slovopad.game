@@ -1,3 +1,6 @@
+function dbgShow(m){try{let d=document.getElementById("dbg");if(!d){d=document.createElement("div");d.id="dbg";d.onclick=()=>d.remove();document.body.appendChild(d)}d.textContent="⚠ "+m}catch(_){}}
+addEventListener("error",e=>{const m=String(e.message||"");if(/ResizeObserver|Script error/i.test(m))return;dbgShow(m+" ["+String(e.filename||"").split("/").pop()+":"+(e.lineno||0)+"]")});
+addEventListener("unhandledrejection",e=>{const r=e.reason,m=String(r&&r.message||r||"");if(/Нет связи|Сессия|Ошибка сервера|abort/i.test(m))return;dbgShow(m)});
 const tg=window.Telegram&&Telegram.WebApp;
 if(tg){tg.ready();tg.expand();try{tg.setHeaderColor('#05060f');tg.setBackgroundColor('#05060f');tg.disableVerticalSwipes()}catch(e){}}
 const $=id=>document.getElementById(id),cv=$("g"),ctx=cv.getContext("2d");
@@ -248,7 +251,7 @@ function loop(t){let dt=Math.min((t-last)/1000,.05);last=t;if(state!=="pause")gt
 if(state==="play")update(dt);if(state!=="pause")fx(dt);
 ds+=(score-ds)*Math.min(1,dt*10);const r=Math.round(ds);if(r!==shown){shown=r;$("score").textContent=r}
 draw();requestAnimationFrame(loop)}
-function ov(a){["o1","o2","o3","o4","o5","o6","o7","o8","o9","o10","o11","o12"].forEach(i=>$(i).classList.toggle("s",i===a))}
+function ov(a){const ids=["o1","o2","o3","o4","o5","o6","o7","o8","o9","o10","o11","o12"];if(!ids.includes(a)||!$(a)){dbgShow("Экран не найден: "+a);a="o1"}ids.forEach(i=>{const e=$(i);if(e)e.classList.toggle("s",i===a)})}
 function start(){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();ac.resume()}catch(e){}
 items=[];P=[];R=[];F=[];Sh=[];target=null;buf="";ti.value="";bag=[];if(!PR){PF.g++;if(window.ACH)ACH.start()}score=0;ds=0;lives=3;rb=0;hb=0;combo=0;words=0;level=1;spawnT=.4;app.classList.remove("inmenu");size();ov("");hud();if(!PR){const sn=streakTouch();if(sn)flo(W/2,H*.3,"🔥 "+tx("СЕРИЯ")+": "+sn+" "+dn(sn),22,T.n,2.2)}state="play";bkv(1);foc();arp([392,523],.07,"triangle",.05)}
 function pause(){if(state==="play"){state="pause";pfSave();ov("o2");ti.blur();snd(330,.08,"triangle",.05)}}
@@ -314,7 +317,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(a)set(a,e)});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="2.7.1";let upLater=false;
+const VER="2.7.2";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if(state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
@@ -415,7 +418,7 @@ $("sidName").placeholder=tx("Никнейм");$("sidPass").placeholder=tx("Па�
 if(!on)return;$("sidNm").textContent=i.username||"";$("sidCode").textContent=i.spCode||"SP-······";
 const box=$("sidPriv"),p=sidPriv();box.textContent="";SID_TOG.forEach(([k,label])=>{const row=document.createElement("button");row.type="button";row.className="sid-sw"+(p[k]?" on":"");const s=document.createElement("span");s.textContent=tx(label);const t=document.createElement("i");row.append(s,t);
 row.onclick=()=>{const q=sidPriv();q[k]=!q[k];localStorage.setItem(SID_PRIV,JSON.stringify(q));sidRender();sidAuto()};box.appendChild(row)})}
-function sidOpen(){sidRender();sidStatus("");ov("o11");$("o11").scrollTop=0;if(sidTok())cloudLoadRanks()}
+function sidOpen(){try{sidRender();sidStatus("")}catch(e){dbgShow("Экран ID: "+e.message)}ov("o11");$("o11").scrollTop=0;if(sidTok())cloudLoadRanks()}
 async function cloudLoadRanks(){const box=$("sidRanks");if(!box.firstChild)box.innerHTML="<div class='hint'>…</div>";
 try{const data=await cloudRequest("/api/leaderboard");box.textContent="";if(!data.items||!data.items.length){const h=document.createElement("div");h.className="hint";h.textContent=tx("Пока нет игроков в рейтинге.");box.appendChild(h);return}
 const me=(sidInfo()||{}).username;data.items.forEach((item,n)=>{const row=document.createElement("div");row.className="cloud-rank"+(me&&item.username.toLowerCase()===me.toLowerCase()?" me":"");const name=document.createElement("span");name.textContent=(n+1)+". "+item.username;const sc=document.createElement("b");sc.textContent=Number(item.bestScore||0).toLocaleString()+" "+tx("очков");row.append(name,sc);box.appendChild(row)})}

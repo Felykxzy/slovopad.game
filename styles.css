@@ -414,3 +414,6 @@ body.eco .btn,body.eco .ib,body.eco .hs i{-webkit-backdrop-filter:none;backdrop-
 .sid-chip.on { display: flex; }
 .sid-chip b { font-size: 14px; letter-spacing: .14em; color: var(--ac); }
 .sid-chip::after { content: "›"; font-size: 20px; opacity: .6; }
+
+/* Сообщение об ошибке на экране */
+#dbg{position:fixed;left:8px;right:8px;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:99;padding:10px 12px;border-radius:12px;background:rgba(255,77,109,.94);color:#fff;font:600 12px/1.35 -apple-system,system-ui,sans-serif;word-break:break-word;text-align:left}
