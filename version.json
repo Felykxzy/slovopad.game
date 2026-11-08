@@ -1,12 +1,15 @@
 {
-  "version": "2.4.2",
+  "version": "2.4.3",
   "notes": [
-    "Исправлен установщик для Windows: убрана отдельная иконка деинсталлятора, из-за которой на некоторых компьютерах появлялась ошибка «Невозможно открыть файл для записи»"
+    "Новый установщик для Windows: тёмное неоновое окно в стиле игры с падающими словами, выбором папки, анимированным прогрессом и кнопкой «Играть» в конце (файл Slovopad-Installer)",
+    "Обычный установщик Slovopad-Setup остаётся, он нужен для автообновления и тоже стал красивее: новые картинки в стиле игры"
   ],
   "notes_en": [
-    "Fixed the Windows installer: removed the separate uninstaller icon that caused a \"cannot open file for writing\" error on some computers"
+    "New Windows installer: a dark neon window in the game's style with falling words, folder choice, animated progress and a Play button at the end (Slovopad-Installer file)",
+    "The regular Slovopad-Setup installer is still there and is used for auto-updates; it also got new game-style images"
   ],
   "notes_uk": [
-    "Виправлено інсталятор для Windows: прибрано окрему іконку деінсталятора, через яку на деяких комп’ютерах з’являлася помилка запису файлу"
+    "Новий інсталятор для Windows: темне неонове вікно в стилі гри з падаючими словами, вибором теки, анімованим прогресом і кнопкою «Грати» наприкінці (файл Slovopad-Installer)",
+    "Звичайний інсталятор Slovopad-Setup залишається, він потрібен для автооновлення й теж став гарнішим: нові картинки в стилі гри"
   ]
 }
