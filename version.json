@@ -1,15 +1,21 @@
 {
-  "version": "2.4.3",
+  "version": "2.5.0",
   "notes": [
-    "Новый установщик для Windows: тёмное неоновое окно в стиле игры с падающими словами, выбором папки, анимированным прогрессом и кнопкой «Играть» в конце (файл Slovopad-Installer)",
-    "Обычный установщик Slovopad-Setup остаётся, он нужен для автообновления и тоже стал красивее: новые картинки в стиле игры"
+    "Новый магазин: у каждого скина и фона живая анимированная карточка прямо в списке, как в самой игре",
+    "Скины щита с настоящими эффектами: огонь, яд (пузырьки), сакура, золото (блики), радуга, лёд и новая плазма",
+    "Анимированные фоны: космос, закат, аврора, снегопад, сакура, дождь кода и новые синтвейв и светлячки",
+    "Выбранный скин и фон теперь видны и в игре, и в меню. В экономном режиме эффекты отключаются"
   ],
   "notes_en": [
-    "New Windows installer: a dark neon window in the game's style with falling words, folder choice, animated progress and a Play button at the end (Slovopad-Installer file)",
-    "The regular Slovopad-Setup installer is still there and is used for auto-updates; it also got new game-style images"
+    "New shop: every skin and background has a live animated card right in the list, just like in the game",
+    "Shield skins with real effects: fire, poison (bubbles), sakura, gold (glints), rainbow, ice and the new plasma",
+    "Animated backgrounds: space, sunset, aurora, snowfall, sakura, code rain and the new synthwave and fireflies",
+    "The chosen skin and background are now shown in the game and the menu. Effects are turned off in eco mode"
   ],
   "notes_uk": [
-    "Новий інсталятор для Windows: темне неонове вікно в стилі гри з падаючими словами, вибором теки, анімованим прогресом і кнопкою «Грати» наприкінці (файл Slovopad-Installer)",
-    "Звичайний інсталятор Slovopad-Setup залишається, він потрібен для автооновлення й теж став гарнішим: нові картинки в стилі гри"
+    "Новий магазин: кожен скін і фон має живу анімовану картку просто в списку, як у самій грі",
+    "Скіни щита зі справжніми ефектами: вогонь, отрута (бульбашки), сакура, золото (відблиски), веселка, лід і нова плазма",
+    "Анімовані фони: космос, захід, аврора, снігопад, сакура, дощ коду та нові синтвейв і світлячки",
+    "Обраний скін і фон тепер видно і в грі, і в меню. В економному режимі ефекти вимикаються"
   ]
 }
