@@ -3,16 +3,19 @@
   "notes": [
     "Вход по QR: на компьютере жмёшь «Войти по QR», на телефоне, где уже есть Slovopad ID, сканируешь код и подтверждаешь, и компьютер входит в тот же аккаунт без ввода пароля",
     "Код живёт 3 минуты, а подсмотренный QR ничего не даёт без подтверждения на телефоне",
+    "Если сканер внутри игры не работает в браузере, в панели сразу видна подсказка: открыть обычную «Камеру» телефона или ввести код вручную",
     "Сервер нужно обновить: в папке backend появились новые адреса /api/qr/*"
   ],
   "notes_en": [
     "QR login: tap “Log in with QR” on the computer, scan the code on the phone that already has a Slovopad ID and confirm, and the computer logs in to the same account with no password",
     "The code lives for 3 minutes, and a QR someone else sees is useless without confirmation on the phone",
+    "If the in-game scanner does not work in your browser, the panel shows a hint right away: open the regular Camera app or type the code by hand",
     "The server needs an update: the backend folder has new /api/qr/* routes"
   ],
   "notes_uk": [
     "Вхід за QR: на комп’ютері тиснеш «Увійти за QR», на телефоні, де вже є Slovopad ID, скануєш код і підтверджуєш, і комп’ютер входить в той самий акаунт без пароля",
     "Код живе 3 хвилини, а підгледіций QR нічого не дає без підтвердження на телефоні",
+    "Якщо сканер усередині гри не працює в браузері, у панелі одразу видно підказку: відкрити звичайну «Камеру» телефона або ввести код вручну",
     "Сервер потрібно оновити: у теці backend зʼявилися нові адреси /api/qr/*"
   ]
 }
