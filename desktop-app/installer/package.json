@@ -1,0 +1,34 @@
+{
+  "name": "slovopad-installer",
+  "version": "2.4.3",
+  "description": "СЛОВОПАД — установщик",
+  "author": "Felykxzy",
+  "main": "main.js",
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "game.slovopad.installer",
+    "productName": "СЛОВОПАД Установщик",
+    "files": [
+      "main.js",
+      "preload.js",
+      "ui.html",
+      "icon.ico"
+    ],
+    "extraResources": [
+      {
+        "from": "setup.exe",
+        "to": "setup.exe"
+      }
+    ],
+    "win": {
+      "target": "portable",
+      "icon": "icon.ico"
+    },
+    "portable": {
+      "artifactName": "Slovopad-Installer-${version}.exe"
+    }
+  }
+}

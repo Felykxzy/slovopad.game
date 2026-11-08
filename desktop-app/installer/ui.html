@@ -1,0 +1,62 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>СЛОВОПАД</title><style>
+:root{--ac:#5ef2ff;--pk:#ff4fd8}*{box-sizing:border-box;-webkit-user-select:none;user-select:none}
+html,body{margin:0;width:760px;height:470px;overflow:hidden;background:#05060f;color:#e8ecff;font:600 13px/1.4 Inter,"Segoe UI",system-ui,sans-serif}
+canvas{position:absolute;inset:0}
+#top{position:absolute;inset:0 0 auto 0;height:40px;-webkit-app-region:drag;display:flex;justify-content:flex-end;align-items:center;padding:0 10px;gap:6px}
+#top button{-webkit-app-region:no-drag;width:30px;height:30px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#cfd6ff;font-size:14px;cursor:pointer}
+#top button:hover{background:rgba(255,79,216,.25)}
+.s{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:30px}.s.on{display:flex}
+.lg{font-size:66px;font-weight:900;letter-spacing:.04em;display:flex}.lg span{animation:fl 3s ease-in-out infinite;animation-delay:var(--d)}
+.sm .lg{font-size:44px}@keyframes fl{50%{transform:translateY(-5px)}}
+.tg{font-size:11px;letter-spacing:.34em;opacity:.65}
+.gl{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:16px;backdrop-filter:blur(14px);box-shadow:inset 0 1px 1px rgba(255,255,255,.25),0 8px 30px rgba(0,0,0,.35)}
+#pa{width:470px;padding:10px 12px 10px 16px;display:flex;align-items:center;gap:12px}
+#pa i{font-style:normal;font-size:18px}#pt{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:12px;opacity:.85;direction:rtl;text-align:left}
+.b{border:1px solid var(--ac);background:rgba(94,242,255,.12);color:var(--ac);padding:13px 38px;border-radius:14px;font:700 14px Inter,"Segoe UI",sans-serif;letter-spacing:.28em;cursor:pointer;box-shadow:0 0 26px rgba(94,242,255,.25),inset 0 1px 1px rgba(255,255,255,.35);transition:transform .15s,box-shadow .15s}
+.b:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 0 38px rgba(94,242,255,.5),inset 0 1px 1px rgba(255,255,255,.45)}.b:active{transform:scale(.97)}
+.b.a{border-color:rgba(255,255,255,.3);color:#dfe5ff;background:rgba(255,255,255,.07);box-shadow:none;padding:9px 18px;letter-spacing:.14em;font-size:12px}
+.b.big{font-size:17px;padding:16px 56px}
+#ver{position:absolute;right:16px;bottom:12px;font-size:10px;opacity:.4;letter-spacing:.1em}
+#bar{width:470px;height:14px;border-radius:9px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);overflow:hidden}
+#bf{height:100%;width:0;border-radius:9px;background:linear-gradient(90deg,var(--ac),var(--pk));box-shadow:0 0 18px rgba(94,242,255,.8);transition:width .25s}
+#st{font-size:13px;letter-spacing:.16em;opacity:.8;height:20px}#pc{font-size:34px;font-weight:900}
+h2{margin:0;font-size:36px;letter-spacing:.18em;font-weight:900;background:linear-gradient(90deg,var(--ac),var(--pk));-webkit-background-clip:text;color:transparent}
+.row{display:flex;gap:12px}.er{color:#ff6b8a;max-width:480px;text-align:center;font-size:12px}
+</style></head><body><canvas id="c" width="760" height="470"></canvas>
+<div id="top"><button id="mn">–</button><button id="cl">✕</button></div>
+<div class="s on" id="s1"><div class="lg" id="lg"></div><div class="tg">ПЕЧАТАЙ СЛОВА · ЗАЩИЩАЙ ЩИТ</div>
+<div class="gl" id="pa"><i>📁</i><div id="pt"></div><button class="b a" id="ch">ИЗМЕНИТЬ</button></div><button class="b big" id="go">▶ УСТАНОВИТЬ</button></div>
+<div class="s sm" id="s2"><div class="lg" id="lg2"></div><div id="pc">0%</div><div id="bar"><div id="bf"></div></div><div id="st">РАСПАКОВЫВАЕМ ФАЙЛЫ…</div></div>
+<div class="s" id="s3"><h2>ГОТОВО!</h2><div class="tg">СЛОВОПАД УСТАНОВЛЕН · ЯРЛЫК НА РАБОЧЕМ СТОЛЕ</div><div class="row"><button class="b big" id="pl">▶ ИГРАТЬ</button></div><button class="b a" id="cl2">ЗАКРЫТЬ</button></div>
+<div class="s" id="s4"><h2 style="background:linear-gradient(90deg,#ff4d6d,#ff8a5c);-webkit-background-clip:text">УПС…</h2><div class="er" id="er"></div><div class="row"><button class="b" id="rt">ПОВТОРИТЬ</button><button class="b a" id="cl3">ЗАКРЫТЬ</button></div></div>
+<div id="ver"></div><script>
+const $=i=>document.getElementById(i),api=window.api;let dir="",VER="";
+function logo(el){const w="СЛОВОПАД",a=[94,242,255],m=[255,79,216];el.innerHTML="";[...w].forEach((ch,i)=>{const t=i/7,c=a.map((v,k)=>Math.round(v+(m[k]-v)*t)).join(","),s=document.createElement("span");s.textContent=ch;s.style.color="rgb("+c+")";s.style.textShadow="0 0 22px rgba("+c+",.7),0 0 3px rgba("+c+",.9)";s.style.setProperty("--d",i*.12+"s");el.appendChild(s)})}
+logo($("lg"));logo($("lg2"));
+function show(n){["s1","s2","s3","s4"].forEach(i=>$(i).classList.toggle("on",i===n))}
+function setDir(d){dir=d;$("pt").textContent=d}
+$("cl").onclick=$("cl2").onclick=$("cl3").onclick=()=>api.close();$("mn").onclick=()=>api.min();
+$("ch").onclick=async()=>{const d=await api.pick(dir);if(d)setDir(d)};
+let p=0,tm=0;const MS=["РАСПАКОВЫВАЕМ ФАЙЛЫ…","КОПИРУЕМ ИГРУ…","СОЗДАЁМ ЯРЛЫКИ…","ПОЧТИ ГОТОВО…"];
+function setP(v){p=v;$("bf").style.width=v+"%";$("pc").textContent=Math.round(v)+"%";$("st").textContent=MS[Math.min(3,v/26|0)]}
+async function run(){show("s2");setP(0);clearInterval(tm);tm=setInterval(()=>{if(p<92)setP(p+(94-p)*.018)},120);
+ const r=await api.install(dir);clearInterval(tm);
+ if(r.ok){setP(100);setTimeout(()=>show("s3"),700)}else{$("er").textContent="Не получилось установить ("+r.msg+"). Попробуй другую папку или закрой антивирус на минуту.";show("s4")}}
+$("go").onclick=run;$("rt").onclick=run;$("pl").onclick=async()=>{await api.launch(dir);api.close()};
+api.info().then(i=>{VER=i.version;$("ver").textContent="v"+VER;setDir(i.dir)});
+const cv=$("c"),x=cv.getContext("2d"),W=760,H=470,WD="кот тигр щит слово бонус звезда комета ракета город игра очки комбо лев луна шторм дракон зебра пицца ветер огонь".split(" "),CL=["94,242,255","255,209,102","255,79,216","184,255,92","160,130,255"];
+const ST=Array.from({length:90},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.1+.2,a:Math.random()*.6+.2}));
+const it=Array.from({length:13},(_,i)=>({t:WD[i%WD.length].toUpperCase(),x:30+Math.random()*(W-110),y:Math.random()*H,v:18+Math.random()*30,s:12+Math.random()*7,c:CL[i%5]})),P=[];let last=0;
+function loop(t){const dt=Math.min(.05,(t-last)/1e3||0);last=t;
+ const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,"#04050d");g.addColorStop(1,"#0c1038");x.fillStyle=g;x.fillRect(0,0,W,H);
+ const rg=x.createRadialGradient(W/2,H+40,0,W/2,H+40,H*.9);rg.addColorStop(0,"rgba(120,70,255,.4)");rg.addColorStop(1,"rgba(120,70,255,0)");x.fillStyle=rg;x.fillRect(0,0,W,H);
+ for(const s of ST){x.fillStyle="rgba(200,220,255,"+s.a*(.7+.3*Math.sin(t/900+s.x))+")";x.beginPath();x.arc(s.x,s.y,s.r,0,6.3);x.fill()}
+ x.textAlign="center";x.textBaseline="middle";
+ for(const o of it){o.y+=o.v*dt;if(o.y>H-30){for(let i=0;i<14;i++){const a=Math.random()*6.3,v=40+Math.random()*90;P.push({x:o.x,y:H-30,vx:Math.cos(a)*v,vy:-Math.abs(Math.sin(a))*v,l:.6,c:o.c})}o.y=-40;o.x=30+Math.random()*(W-110)}
+  const tr=x.createLinearGradient(0,o.y-70,0,o.y);tr.addColorStop(0,"rgba("+o.c+",0)");tr.addColorStop(1,"rgba("+o.c+",.4)");x.fillStyle=tr;x.fillRect(o.x-1,o.y-70,2,70);
+  x.save();x.globalAlpha=.55;x.font="700 "+o.s+"px Inter,Segoe UI,sans-serif";x.shadowColor="rgb("+o.c+")";x.shadowBlur=14;x.fillStyle="rgb("+o.c+")";x.fillText(o.t,o.x,o.y);x.restore()}
+ for(let i=P.length-1;i>=0;i--){const q=P[i];q.l-=dt;if(q.l<=0){P.splice(i,1);continue}q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=200*dt;x.fillStyle="rgba("+q.c+","+q.l*1.5+")";x.fillRect(q.x,q.y,2.5,2.5)}
+ x.save();x.shadowColor="#5ef2ff";x.shadowBlur=18;x.strokeStyle="rgba(94,242,255,.95)";x.lineWidth=3;x.lineCap="round";const sw=(W-40)/3;for(let i=0;i<3;i++){x.beginPath();x.moveTo(20+i*sw+8,H-26);x.lineTo(20+(i+1)*sw-8,H-26);x.stroke()}x.restore();
+ const v=x.createRadialGradient(W/2,H/2,H*.35,W/2,H/2,W*.65);v.addColorStop(0,"rgba(5,6,15,0)");v.addColorStop(1,"rgba(5,6,15,.55)");x.fillStyle=v;x.fillRect(0,0,W,H);
+ requestAnimationFrame(loop)}requestAnimationFrame(loop);
+</script></body></html>
