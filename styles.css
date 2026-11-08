@@ -213,7 +213,7 @@ body.eco .btn,body.eco .ib,body.eco .hs i{-webkit-backdrop-filter:none;backdrop-
 
 /* Облачный интерфейс временно отключён; Telegram-бот и идеи не затрагиваются. */
 #cloudOpen,
-#o11 {
+{
   display: none !important;
 }
 
