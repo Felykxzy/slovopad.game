@@ -1,4 +1,4 @@
-const V="slovopad-v32",A=["./","index.html","styles.css","core.js","app.js","achievements.js","tutorial.js","tour.js","practice.js","manifest.webmanifest","icon-192.png","icon-512.png","apple-touch-icon.png"];
+const V="slovopad-v33",A=["./","index.html","styles.css","core.js","app.js","achievements.js","tutorial.js","tour.js","practice.js","manifest.webmanifest","icon-192.png","icon-512.png","apple-touch-icon.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(V).then(c=>c.addAll(A.map(u=>new Request(u,{cache:"reload"})))).then(()=>self.skipWaiting()))});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==V).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
 self.addEventListener("fetch",e=>{const r=e.request,u=new URL(r.url);if(r.method!=="GET"||u.origin!==location.origin||u.pathname.endsWith("version.json"))return;
