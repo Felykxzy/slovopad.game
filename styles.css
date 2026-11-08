@@ -342,3 +342,11 @@ body.eco .btn,body.eco .ib,body.eco .hs i{-webkit-backdrop-filter:none;backdrop-
 .ib.tgb{right:112px;box-shadow:0 0 14px rgba(94,200,255,.38),inset 0 1px 1px rgba(255,255,255,.55),0 8px 22px rgba(0,0,0,.38)}
 .ib.tgb svg{display:block;width:28px;height:28px;margin:auto}
 .rkt{gap:16px}.rkt em{flex:none;white-space:nowrap}#rkn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.shh{display:flex;align-items:center;gap:12px;width:min(94%,460px)}.shh .ib{position:static;flex:none}.shx{flex:1;text-align:left}.shx h2{margin:0;font-size:22px}.shh .shc{padding:8px 14px;border-radius:16px;border:1px solid rgba(255,209,102,.5);background:rgba(255,209,102,.08);font-size:18px}
+.shtb{display:flex;gap:10px;width:min(94%,460px)}.shtb button{flex:1;padding:13px 8px;border-radius:14px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:var(--ink);font:700 12px inherit;letter-spacing:.2em;opacity:.7}.shtb button.on{opacity:1;border-color:var(--ac);background:linear-gradient(90deg,rgba(94,242,255,.18),rgba(255,79,216,.14));box-shadow:0 0 18px rgba(94,242,255,.25)}
+.sx{padding:0;overflow:hidden;border-radius:20px;border:1px solid rgba(255,255,255,.16);background:rgba(8,10,30,.7);color:var(--ink);cursor:pointer;display:flex;flex-direction:column;transition:transform .2s cubic-bezier(.3,1.7,.5,1)}.sx:active{transform:scale(.97)}.sx.on{border-color:var(--ac);box-shadow:0 0 22px rgba(94,242,255,.35)}
+.sx canvas{display:block;width:100%;aspect-ratio:224/120}.sf{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:10px 10px 11px 12px}.sf b{font-size:12px;letter-spacing:.16em;text-align:left}
+.pl{font-size:11px;font-weight:700;letter-spacing:.08em;padding:6px 11px;border-radius:999px;white-space:nowrap}.pl.on{background:var(--ac);color:#04121a}.pl.eq{border:1px solid rgba(255,255,255,.4)}.pl.pr{border:1px solid rgba(255,209,102,.6);background:rgba(255,209,102,.1);color:#ffd166}
+#o12{background:rgba(4,5,16,.96)}
+.sf{flex-wrap:nowrap;padding:10px 9px 11px 11px}.sf b{min-width:0;font-size:11px;letter-spacing:.09em}.pl{padding:6px 9px;font-size:10px;letter-spacing:.05em}
