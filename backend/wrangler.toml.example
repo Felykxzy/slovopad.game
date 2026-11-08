@@ -1,11 +1,11 @@
 
-name = "slovopad-cloud"
+name = "slovopad-api"
 main = "worker.js"
 compatibility_date = "2026-11-06"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "slovopad-cloud"
+database_name = "slovopad-api"
 database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
 
 [vars]
