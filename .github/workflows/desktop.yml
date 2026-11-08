@@ -18,7 +18,7 @@ jobs:
         run: |
           V=$(jq -r .version version.json)
           mkdir -p desktop/game desktop/build
-          cp index.html styles.css core.js app.js tutorial.js practice.js manifest.webmanifest icon-192.png icon-512.png apple-touch-icon.png desktop/game/
+          cp index.html styles.css manifest.webmanifest *.js *.png desktop/game/
           cp desktop-app/assets/* desktop/build/
           cp desktop-app/main.js desktop/main.js
           jq --arg v "$V" '.version=$v' desktop-app/package.json > desktop/package.json
