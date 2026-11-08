@@ -3,6 +3,7 @@
 
 const enc = new TextEncoder();
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const QR_TTL_MS = 3 * 60 * 1000;   // код для входа по QR живёт 3 минуты
 const PRIVACY_KEYS = ['rank', 'records', 'ach', 'stats', 'online'];
 
 const b64 = bytes => {
@@ -80,6 +81,8 @@ async function ensureSchema(env) {
   }
   await env.DB.prepare('CREATE UNIQUE INDEX IF NOT EXISTS users_spcode_idx ON users(sp_code)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS users_leaderboard_idx ON users(best_score DESC, total_words DESC, username ASC)').run();
+  // вход по QR: короткоживущие сессии (код виден в QR, секрет знает только тот, кто его создал)
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS qr_login (code TEXT PRIMARY KEY, secret_hash TEXT NOT NULL, user_id TEXT, expires INTEGER NOT NULL)').run();
   schemaReady = true;
 }
 
@@ -148,7 +151,7 @@ export default {
 
     try {
       if (url.pathname === '/api/health') {
-        return reply({ ok: true, service: 'slovopad-id', version: 2, secret: !!secretOf(env), db: !!env.DB });
+        return reply({ ok: true, service: 'slovopad-id', version: 3, secret: !!secretOf(env), db: !!env.DB });
       }
       if (!env.DB) return reply({ error: 'К серверу не привязана база данных (binding DB).' }, 500);
       if (!secretOf(env)) return reply({ error: 'На сервере не задан секрет JWT_SECRET.' }, 500);
@@ -185,6 +188,44 @@ export default {
 
         const token = await sign({ sub: user.id, exp: Date.now() + 30 * 24 * 60 * 60 * 1000 }, secretOf(env));
         return reply({ token, ...(await account(env, user)) });
+      }
+
+      /* вход по QR, шаг 1: устройство без входа (например, ПК) просит код. Секрет остаётся только у него */
+      if (url.pathname === '/api/qr/new' && request.method === 'POST') {
+        await env.DB.prepare('DELETE FROM qr_login WHERE expires<?').bind(Date.now()).run();
+        const code = [...random(8)].map(b => CODE_ALPHABET[b % CODE_ALPHABET.length]).join('');
+        const secret = b64(random(24));
+        const secretHash = hex(await crypto.subtle.digest('SHA-256', enc.encode(secret)));
+        await env.DB.prepare('INSERT INTO qr_login (code,secret_hash,user_id,expires) VALUES (?,?,NULL,?)').bind(code, secretHash, Date.now() + QR_TTL_MS).run();
+        return reply({ code, secret, expiresIn: QR_TTL_MS / 1000 });
+      }
+
+      /* шаг 2: вошедшее устройство (телефон) подтверждает вход по коду из QR */
+      if (url.pathname === '/api/qr/approve' && request.method === 'POST') {
+        const user = await userFrom(request, env);
+        if (!user) return reply({ error: 'Нужно войти в аккаунт.' }, 401);
+        const body = await request.json();
+        const code = String(body.code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const row = code ? await env.DB.prepare('SELECT * FROM qr_login WHERE code=?').bind(code).first() : null;
+        if (!row || row.expires < Date.now()) return reply({ error: 'Код не найден или устарел. Обнови QR на экране компьютера.' }, 404);
+        if (row.user_id) return reply({ error: 'Этот код уже использован.' }, 409);
+        await env.DB.prepare('UPDATE qr_login SET user_id=? WHERE code=? AND user_id IS NULL').bind(user.id, code).run();
+        return reply({ ok: true, username: user.username });
+      }
+
+      /* шаг 3: устройство, показавшее QR, опрашивает сервер и забирает вход (один раз) */
+      if (url.pathname === '/api/qr/poll' && request.method === 'GET') {
+        const code = String(url.searchParams.get('code') || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const secret = String(url.searchParams.get('secret') || '');
+        const row = code ? await env.DB.prepare('SELECT * FROM qr_login WHERE code=?').bind(code).first() : null;
+        if (!row || row.expires < Date.now()) return reply({ status: 'expired' });
+        if (hex(await crypto.subtle.digest('SHA-256', enc.encode(secret))) !== row.secret_hash) return reply({ error: 'Неверный секрет.' }, 403);
+        if (!row.user_id) return reply({ status: 'pending' });
+        await env.DB.prepare('DELETE FROM qr_login WHERE code=?').bind(code).run();
+        const user = await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(row.user_id).first();
+        if (!user) return reply({ status: 'expired' });
+        const token = await sign({ sub: user.id, exp: Date.now() + 30 * 24 * 60 * 60 * 1000 }, secretOf(env));
+        return reply({ status: 'ok', token, ...(await account(env, user)) });
       }
 
       /* профиль текущего игрока */
