@@ -1,21 +1,24 @@
 {
-  "version": "2.8.0",
+  "version": "2.8.1",
   "notes": [
-    "Вход по QR: на компьютере жмёшь «Войти по QR», на телефоне, где уже есть Slovopad ID, сканируешь код и подтверждаешь, и компьютер входит в тот же аккаунт без ввода пароля",
-    "Код живёт 3 минуты, а подсмотренный QR ничего не даёт без подтверждения на телефоне",
-    "Если сканер внутри игры не работает в браузере, в панели сразу видна подсказка: открыть обычную «Камеру» телефона или ввести код вручную",
-    "Сервер нужно обновить: в папке backend появились новые адреса /api/qr/*"
+    "Вход по QR безопаснее: на компьютере показывается число, а телефон просит его ввести. Так обманом не получится войти в чужой аккаунт",
+    "Секрет входа по QR больше не передаётся в адресной строке (запрос стал POST)",
+    "Новая кнопка «Удалить ID» в профиле стирает аккаунт и данные на сервере",
+    "Восстановление из облака принимает только рекорды (best_…), чужие ключи отбрасываются",
+    "Сервер ограничивает число одновременных QR-кодов. Worker нужно задеплоить заново"
   ],
   "notes_en": [
-    "QR login: tap “Log in with QR” on the computer, scan the code on the phone that already has a Slovopad ID and confirm, and the computer logs in to the same account with no password",
-    "The code lives for 3 minutes, and a QR someone else sees is useless without confirmation on the phone",
-    "If the in-game scanner does not work in your browser, the panel shows a hint right away: open the regular Camera app or type the code by hand",
-    "The server needs an update: the backend folder has new /api/qr/* routes"
+    "QR login is safer: the computer shows a number and the phone asks you to type it, so nobody can trick you into logging them in",
+    "The QR login secret is no longer sent in the URL (the request is now POST)",
+    "New «Delete ID» button in the profile erases the account and server data",
+    "Cloud restore accepts only records (best_…), foreign keys are dropped",
+    "The server caps the number of active QR codes. The Worker must be redeployed"
   ],
   "notes_uk": [
-    "Вхід за QR: на комп’ютері тиснеш «Увійти за QR», на телефоні, де вже є Slovopad ID, скануєш код і підтверджуєш, і комп’ютер входить в той самий акаунт без пароля",
-    "Код живе 3 хвилини, а підгледіций QR нічого не дає без підтвердження на телефоні",
-    "Якщо сканер усередині гри не працює в браузері, у панелі одразу видно підказку: відкрити звичайну «Камеру» телефона або ввести код вручну",
-    "Сервер потрібно оновити: у теці backend зʼявилися нові адреси /api/qr/*"
+    "Вхід за QR безпечніший: на комп’ютері показується число, а телефон просить його ввести, тож обманом не вдасться увійти в чужий акаунт",
+    "Секрет входу за QR більше не передається в адресному рядку (запит став POST)",
+    "Нова кнопка «Видалити ID» у профілі стирає акаунт і дані на сервері",
+    "Відновлення з хмари приймає лише рекорди (best_…), чужі ключі відкидаються",
+    "Сервер обмежує кількість активних QR-кодів. Worker потрібно задеплоїти заново"
   ]
 }

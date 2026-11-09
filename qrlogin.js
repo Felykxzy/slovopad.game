@@ -19,13 +19,15 @@
   // из ссылки, из «ABCD-EFGH» или из «abcdefgh» достаём 8-символьный код
   const norm = v => { const m = String(v).match(/[?&#]qr=([A-Za-z0-9]+)/), c = (m ? m[1] : String(v)).toUpperCase().replace(/[^A-Z0-9]/g, ""); return c.length === 8 ? c : ""; };
 
-  let sess = null, timer = 0, polling = false, camStream = null, camTimer = 0, pending = "";
+  let pendCode = "", sess = null, timer = 0, polling = false, camStream = null, camTimer = 0, pending = "";
 
   /* ---------- тексты ---------- */
   function texts() {
     const set = (id, a, b, c) => { const e = $(id); if (e) e.textContent = T(a, b, c); };
     set("sidQrBtn", "📱 ВОЙТИ ПО QR", "📱 LOG IN WITH QR", "📱 УВІЙТИ ЗА QR");
     set("sidQrX", "ОТМЕНА", "CANCEL", "СКАСУВАТИ");
+    set("sidDel", "🗑 УДАЛИТЬ ID", "🗑 DELETE ID", "🗑 ВИДАЛИТИ ID");
+    set("sidPinH", "Число с экрана компьютера", "Number from the computer screen", "Число з екрана комп’ютера");
     set("sidQrNew", "НОВЫЙ КОД", "NEW CODE", "НОВИЙ КОД");
     set("sidScanT", "ВХОД НА ДРУГОМ УСТРОЙСТВЕ", "LOG IN ON ANOTHER DEVICE", "ВХІД НА ІНШОМУ ПРИСТРОЇ");
     set("sidScanH", "Открой игру на компьютере, нажми «Войти по QR» и отсканируй код здесь.", "Open the game on your computer, tap “Log in with QR” and scan the code here.", "Відкрий гру на комп’ютері, натисни «Увійти за QR» і скануй код тут.");
@@ -60,6 +62,7 @@
     try { SlovopadQR.draw($("sidQrCv"), base() + "?qr=" + d.code, 480); }
     catch (e) { qrStop(); sidStatus(e.message, "er"); return; }
     $("sidQrCode").textContent = fmt(d.code);
+    $("sidQrPin").textContent = T("Число для телефона: ", "Number for the phone: ", "Число для телефона: ") + (d.pin || "");
     const left = () => T("Открой игру на телефоне, где ты уже вошёл: Профиль → Slovopad ID → «Сканировать QR». Или просто наведи камеру телефона на код. Действует: ",
       "Open the game on the phone where you are already logged in: Profile → Slovopad ID → “Scan QR”. Or just point the phone camera at the code. Valid for: ",
       "Відкрий гру на телефоні, де ти вже увійшов: Профіль → Slovopad ID → «Сканувати QR». Або просто наведи камеру телефона на код. Діє: ") + clock(s.end - Date.now());
@@ -72,7 +75,7 @@
       if (++s.n % 2 || polling) return;           // опрашиваем сервер раз в 2 секунды
       polling = true;
       try {
-        const r = await cloudRequest("/api/qr/poll?code=" + s.code + "&secret=" + encodeURIComponent(s.secret));
+        const r = await cloudRequest("/api/qr/poll", { method: "POST", body: JSON.stringify({ code: s.code, secret: s.secret }) });
         if (sess !== s) return;
         if (r.status === "expired") expired();
         else if (r.status === "ok") await done(r);
@@ -92,13 +95,20 @@
   async function approve(raw) {
     const code = norm(raw);
     if (!code) { sidStatus(T("Не похоже на код входа", "That doesn’t look like a login code", "Не схоже на код входу"), "er"); return; }
+    const pin = ($("sidPinIn").value || "").replace(/\D/g, "");
+    if (pin.length !== 2) {
+      pendCode = code; $("sidScanP").hidden = false; $("sidVid").hidden = true;
+      scanMsg(T("Введи число с экрана компьютера (2 цифры, под QR).", "Enter the number from the computer screen (2 digits, under the QR).", "Введи число з екрана комп’ютера (2 цифри, під QR)."), "er");
+      $("sidPinIn").focus(); return;
+    }
     const nm = (sidInfo() || {}).username || "";
     ask(T("Войти в «" + nm + "» на другом устройстве? Подтверждай, только если этот QR показан на твоём экране.",
       "Log in as “" + nm + "” on another device? Only confirm if this QR is on your own screen.",
       "Увійти в «" + nm + "» на іншому пристрої? Підтверджуй, лише якщо цей QR показано на твоєму екрані."), async ok => {
       if (!ok) return;
       try {
-        await cloudRequest("/api/qr/approve", { method: "POST", body: JSON.stringify({ code }) });
+        await cloudRequest("/api/qr/approve", { method: "POST", body: JSON.stringify({ code, pin }) });
+        pendCode = ""; $("sidPinIn").value = "";
         scanClose(); sidStatus(T("Готово: другое устройство вошло ✓", "Done: the other device is logged in ✓", "Готово: інший пристрій увійшов ✓"), "ok");
       } catch (e) { sidStatus(e.message, "er"); }
     });
@@ -169,6 +179,12 @@
   $("sidQrX").onclick = () => { qrStop(); sidStatus(""); };
   $("sidScan").onclick = scanOpen; $("sidScanX").onclick = scanClose;
   $("sidCodeOk").onclick = () => approve($("sidCodeIn").value);
+  $("sidPinIn").oninput = () => { const v = $("sidPinIn").value.replace(/\D/g, "").slice(0, 2); $("sidPinIn").value = v; if (pendCode && v.length === 2) { const c = pendCode; pendCode = ""; approve(c); } };
+  $("sidDel").onclick = () => ask(T("Удалить аккаунт навсегда? Ник, фото, очки и прогресс на сервере будут стёрты. Прогресс на этом устройстве останется.", "Delete your account permanently? Nickname, photo, score and progress on the server will be erased. Progress on this device stays.", "Видалити акаунт назавжди? Нік, фото, очки та прогрес на сервері буде стерто. Прогрес на цьому пристрої залишиться."), async ok => {
+    if (!ok) return;
+    try { await cloudRequest("/api/delete", { method: "POST", body: "{}" }); sidLogoutLocal(); sidRender(); sidStatus(T("Аккаунт удалён", "Account deleted", "Акаунт видалено"), "ok"); }
+    catch (e) { sidStatus(e.message, "er"); }
+  });
   $("sidCodeIn").addEventListener("input", e => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 9); });
   $("sidClose").addEventListener("click", () => { qrStop(); scanClose(); });
 

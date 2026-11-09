@@ -317,7 +317,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(a)set(a,e)});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="2.8.0";let upLater=false;
+const VER="2.8.1";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if(state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
@@ -400,7 +400,7 @@ function cloudSnapshot(){const bestScores={};for(let i=0;i<localStorage.length;i
 return {pf:{n:PF.n,a:PF.a,g:PF.g,h:PF.h,m:PF.m,c:PF.c,t:PF.t,w:PF.w},pfp:localStorage.getItem("pfp")||"",tw:tw(),streak:streakGet(),bestScores}}
 function cloudRestore(remote){if(!remote||typeof remote!=="object")return;const local=cloudSnapshot(),incoming=remote;
 const a=local.pf||{},b=incoming.pf||{};PF={...PF,...b,...a,n:(a.n||b.n||PF.n),a:(a.a||b.a||PF.a),g:Math.max(+a.g||0,+b.g||0),h:Math.max(+a.h||0,+b.h||0),m:Math.max(+a.m||0,+b.m||0),c:Math.max(+a.c||0,+b.c||0),t:Math.max(+a.t||0,+b.t||0),w:Math.max(+a.w||0,+b.w||0)};
-try{localStorage.setItem("pf",JSON.stringify(PF));const avatar=local.pfp||incoming.pfp;if(avatar)localStorage.setItem("pfp",avatar);localStorage.setItem("tw",Math.max(+local.tw||0,+incoming.tw||0));const merged=SlovopadCore.mergeBestScores(local.bestScores,incoming.bestScores);for(const [k,v] of Object.entries(merged))localStorage.setItem(k,String(v));const st=local.streak||{},rs=incoming.streak||{};if((+rs.max||0)>(+st.max||0))localStorage.setItem("streak",JSON.stringify(rs))}catch(e){}
+try{localStorage.setItem("pf",JSON.stringify(PF));const avatar=local.pfp||incoming.pfp;if(avatar)localStorage.setItem("pfp",avatar);localStorage.setItem("tw",Math.max(+local.tw||0,+incoming.tw||0));const merged=SlovopadCore.mergeBestScores(local.bestScores,incoming.bestScores);for(const [k,v] of Object.entries(merged))if(/^best_[a-z0-9_]{1,40}$/i.test(k)&&Number.isFinite(+v)&&+v>=0&&+v<1e7)localStorage.setItem(k,String(v));const st=local.streak||{},rs=incoming.streak||{};if((+rs.max||0)>(+st.max||0))localStorage.setItem("streak",JSON.stringify(rs))}catch(e){}
 pfUI();stats()}
 async function cloudSync(silent){if(cloudBusy||!sidTok())return false;cloudBusy=true;const btn=$("sidSync");if(btn)btn.disabled=true;if(!silent)sidStatus("Сохраняю прогресс…");
 try{sidApply(await cloudRequest("/api/me"));const snap=cloudSnapshot(),bestScore=Math.max(0,...Object.values(snap.bestScores));
