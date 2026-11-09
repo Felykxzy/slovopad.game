@@ -251,7 +251,7 @@ function loop(t){let dt=Math.min((t-last)/1000,.05);last=t;if(state!=="pause")gt
 if(state==="play")update(dt);if(state!=="pause")fx(dt);
 ds+=(score-ds)*Math.min(1,dt*10);const r=Math.round(ds);if(r!==shown){shown=r;$("score").textContent=r}
 draw();requestAnimationFrame(loop)}
-function ov(a){const ids=["o1","o2","o3","o4","o5","o6","o7","o8","o9","o10","o11","o12"];if(!ids.includes(a)||!$(a)){dbgShow("Экран не найден: "+a);a="o1"}ids.forEach(i=>{const e=$(i);if(e)e.classList.toggle("s",i===a)})}
+function ov(a){const ids=["o1","o2","o3","o4","o5","o6","o7","o8","o9","o10","o11","o12"];if(a&&(!ids.includes(a)||!$(a))){dbgShow("Экран не найден: "+a);a="o1"}ids.forEach(i=>{const e=$(i);if(e)e.classList.toggle("s",i===a)})}
 function start(){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();ac.resume()}catch(e){}
 items=[];P=[];R=[];F=[];Sh=[];target=null;buf="";ti.value="";bag=[];if(!PR){PF.g++;if(window.ACH)ACH.start()}score=0;ds=0;lives=3;rb=0;hb=0;combo=0;words=0;level=1;spawnT=.4;app.classList.remove("inmenu");size();ov("");hud();if(!PR){const sn=streakTouch();if(sn)flo(W/2,H*.3,"🔥 "+tx("СЕРИЯ")+": "+sn+" "+dn(sn),22,T.n,2.2)}state="play";bkv(1);foc();arp([392,523],.07,"triangle",.05)}
 function pause(){if(state==="play"){state="pause";pfSave();ov("o2");ti.blur();snd(330,.08,"triangle",.05)}}
