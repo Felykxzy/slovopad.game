@@ -1,24 +1,15 @@
 {
-  "version": "2.8.1",
+  "version": "2.8.2",
   "notes": [
-    "Вход по QR безопаснее: на компьютере показывается число, а телефон просит его ввести. Так обманом не получится войти в чужой аккаунт",
-    "Секрет входа по QR больше не передаётся в адресной строке (запрос стал POST)",
-    "Новая кнопка «Удалить ID» в профиле стирает аккаунт и данные на сервере",
-    "Восстановление из облака принимает только рекорды (best_…), чужие ключи отбрасываются",
-    "Сервер ограничивает число одновременных QR-кодов. Worker нужно задеплоить заново"
+    "Свой сканер QR внутри игры: «Сканировать QR» теперь работает в Safari, Firefox и встроенных браузерах, а не только в Chrome",
+    "Исправлена таблица блоков в генераторе QR: коды длиной 123–130 байт читались камерами неверно"
   ],
   "notes_en": [
-    "QR login is safer: the computer shows a number and the phone asks you to type it, so nobody can trick you into logging them in",
-    "The QR login secret is no longer sent in the URL (the request is now POST)",
-    "New «Delete ID» button in the profile erases the account and server data",
-    "Cloud restore accepts only records (best_…), foreign keys are dropped",
-    "The server caps the number of active QR codes. The Worker must be redeployed"
+    "Built-in QR scanner: “Scan QR” now works in Safari, Firefox and in-app browsers, not only in Chrome",
+    "Fixed the block table in the QR generator: codes of 123–130 bytes were not readable by cameras"
   ],
   "notes_uk": [
-    "Вхід за QR безпечніший: на комп’ютері показується число, а телефон просить його ввести, тож обманом не вдасться увійти в чужий акаунт",
-    "Секрет входу за QR більше не передається в адресному рядку (запит став POST)",
-    "Нова кнопка «Видалити ID» у профілі стирає акаунт і дані на сервері",
-    "Відновлення з хмари приймає лише рекорди (best_…), чужі ключі відкидаються",
-    "Сервер обмежує кількість активних QR-кодів. Worker потрібно задеплоїти заново"
+    "Власний сканер QR у грі: «Сканувати QR» тепер працює в Safari, Firefox і вбудованих браузерах, а не лише в Chrome",
+    "Виправлено таблицю блоків у генераторі QR: коди завдовжки 123–130 байт камери читали неправильно"
   ]
 }
