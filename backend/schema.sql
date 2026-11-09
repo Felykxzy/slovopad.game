@@ -35,3 +35,9 @@ CREATE TABLE IF NOT EXISTS rate_limit (
   t INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS rate_limit_idx ON rate_limit(k,t);
+
+-- Настройки сервера: off (1 — игра выключена), msg (сообщение игрокам), epoch (растёт при «Перезапустить»), since (когда выключили)
+CREATE TABLE IF NOT EXISTS settings (
+  k TEXT PRIMARY KEY,
+  v TEXT NOT NULL DEFAULT ''
+);

@@ -180,6 +180,25 @@ async function userFrom(request, env) {
   return env.DB.prepare('SELECT * FROM users WHERE id=?').bind(data.sub).first();
 }
 
+/* ---------- Режим техработ (включается из админ-панели admin.html) ---------- */
+const settingsReady = new WeakSet();
+async function ensureSettings(env) {
+  if (settingsReady.has(env.DB)) return;
+  await env.DB.prepare("CREATE TABLE IF NOT EXISTS settings (k TEXT PRIMARY KEY, v TEXT NOT NULL DEFAULT '')").run();
+  settingsReady.add(env.DB);
+}
+async function settings(env) {
+  await ensureSettings(env);
+  const m = {};
+  for (const r of ((await env.DB.prepare('SELECT k,v FROM settings').all()).results || [])) m[r.k] = r.v;
+  return { off: m.off === '1', msg: m.msg || '', epoch: Number(m.epoch) || 0, since: Number(m.since) || 0 };
+}
+async function setSetting(env, k, v) {
+  await ensureSettings(env);
+  await env.DB.prepare('INSERT INTO settings (k,v) VALUES (?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v').bind(k, String(v)).run();
+}
+const publicState = s => ({ off: s.off, msg: s.msg, epoch: s.epoch, since: s.since });
+
 /* ---------- Обработчик ---------- */
 export default {
   async fetch(request, env) {
@@ -203,6 +222,28 @@ export default {
         return reply({ ok: true, service: 'slovopad-id', version: 4, secret: !!secretOf(env), db: !!env.DB });
       }
       if (!env.DB) return reply({ error: 'К серверу не привязана база данных (binding DB).' }, 500);
+
+      /* состояние игры: включена или на техработах (его спрашивает каждая открытая игра) */
+      if (url.pathname === '/api/status' && request.method === 'GET') return reply(publicState(await settings(env)));
+
+      /* админ-панель: только с секретным токеном ADMIN_TOKEN */
+      if (url.pathname === '/api/admin' && request.method === 'POST') {
+        const adminToken = String(env.ADMIN_TOKEN || '');
+        if (adminToken.length < 16) return reply({ error: 'На сервере не задан секрет ADMIN_TOKEN (минимум 16 символов).' }, 403);
+        await ensureSchema(env);   // нужна таблица rate_limit
+        if (!(await allow(env, 'adm:' + await ipHash(request, env), 30, 10 * 60 * 1000))) return reply(TOO_MANY, 429);
+        const body = await request.json().catch(() => ({}));
+        if (!safeEq(String(body.token || ''), adminToken)) return reply({ error: 'Неверный токен.' }, 401);
+        const act = String(body.action || 'status');
+        if (act === 'off') { await setSetting(env, 'msg', String(body.message || '').replace(/\s+/g, ' ').trim().slice(0, 200)); await setSetting(env, 'since', Date.now()); await setSetting(env, 'off', 1); }
+        else if (act === 'on') { await setSetting(env, 'off', 0); await setSetting(env, 'msg', ''); }
+        else if (act === 'restart') { await setSetting(env, 'epoch', (await settings(env)).epoch + 1); }   // все открытые игры перезагрузятся сами
+        else if (act !== 'status') return reply({ error: 'Неизвестная команда.' }, 400);
+        return reply(publicState(await settings(env)));
+      }
+
+      /* пока игра выключена, остальной сервер молчит (чтобы во время обновления никто ничего не записал) */
+      { const st = await settings(env); if (st.off) return reply({ error: 'Идут технические работы. Загляни позже.', maintenance: true }, 503); }
       if (!secretOf(env)) return reply({ error: 'На сервере не задан секрет JWT_SECRET.' }, 500);
       await ensureSchema(env);
 
