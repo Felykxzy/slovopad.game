@@ -199,6 +199,122 @@ async function setSetting(env, k, v) {
 }
 const publicState = s => ({ off: s.off, msg: s.msg, epoch: s.epoch, since: s.since });
 
+/* ---------- Страница управления: отдаётся только по секретному адресу ADMIN_PATH ---------- */
+const ADMIN_PAGE = String.raw`<!DOCTYPE html>
+<html lang="ru"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#05060f">
+<title>·</title>
+<style>
+:root{--ac:#5ef2ff;--mg:#ff4fd8;--ink:#e8ecff;--ok:#6dffb0;--bad:#ff6b8a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;min-height:100vh;background:radial-gradient(900px 500px at 50% -10%,#1a1f4a,#05060f 70%);color:var(--ink);font-family:-apple-system,system-ui,"Segoe UI",sans-serif;display:flex;justify-content:center;padding:24px 16px calc(24px + env(safe-area-inset-bottom,0px))}
+main{width:100%;max-width:440px;display:flex;flex-direction:column;gap:14px}
+h1{margin:6px 0 0;font-size:18px;letter-spacing:.22em;font-weight:800;text-align:center}
+.sub{font-size:11px;letter-spacing:.14em;opacity:.55;text-align:center;margin-top:-8px}
+.card{border-radius:20px;padding:16px;background:rgba(255,255,255,.05);border:1px solid rgba(94,242,255,.25);display:flex;flex-direction:column;gap:10px}
+input,textarea{width:100%;border-radius:14px;border:1px solid rgba(94,242,255,.3);background:rgba(0,0,0,.35);color:var(--ink);padding:13px 14px;font-size:16px;font-family:inherit;outline:none}
+textarea{resize:none;height:68px}
+input:focus,textarea:focus{border-color:var(--ac)}
+label.ck{display:flex;gap:8px;align-items:center;font-size:12px;opacity:.7}
+button{border:0;border-radius:16px;padding:16px;font-size:14px;font-weight:800;letter-spacing:.14em;color:var(--ink);background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);cursor:pointer;font-family:inherit}
+button:active{transform:scale(.98)}button:disabled{opacity:.4;cursor:default}
+.off{background:rgba(255,107,138,.18);border-color:var(--bad);color:var(--bad)}
+.on{background:rgba(109,255,176,.16);border-color:var(--ok);color:var(--ok)}
+.rs{background:rgba(94,242,255,.14);border-color:var(--ac);color:var(--ac)}
+.st{display:flex;align-items:center;gap:12px;font-size:15px;font-weight:800;letter-spacing:.12em}
+.dot{width:14px;height:14px;border-radius:50%;background:#555;flex:none}
+.st.run .dot{background:var(--ok);box-shadow:0 0 14px var(--ok)}.st.stop .dot{background:var(--bad);box-shadow:0 0 14px var(--bad)}
+.hint{font-size:12px;line-height:1.55;opacity:.6}
+#msg{min-height:18px;font-size:13px;text-align:center}#msg.er{color:var(--bad)}#msg.ok{color:var(--ok)}
+#panel{display:flex;flex-direction:column;gap:14px}
+#out{width:100%}
+[hidden]{display:none!important}
+</style></head><body><main>
+<h1>УПРАВЛЕНИЕ</h1><div class="sub">ТОЛЬКО ДЛЯ ВЛАДЕЛЬЦА</div>
+
+<div class="card" id="login">
+  <input id="tok" type="password" autocomplete="current-password" placeholder="Секретный токен">
+  <label class="ck"><input type="checkbox" id="rem" style="width:auto"> запомнить на этом устройстве</label>
+  <button id="go" class="rs">ВОЙТИ</button>
+</div>
+
+<div id="panel" hidden>
+  <div class="card">
+    <div class="st" id="st"><span class="dot"></span><span id="stT">…</span></div>
+    <div class="hint" id="stH"></div>
+  </div>
+  <div class="card">
+    <textarea id="note" maxlength="200" placeholder="Сообщение игрокам (необязательно). Например: «Вернёмся через 15 минут»"></textarea>
+    <button id="bOff" class="off">⏻ ВЫКЛЮЧИТЬ ИГРУ</button>
+    <button id="bOn" class="on">⏻ ВКЛЮЧИТЬ ИГРУ</button>
+    <button id="bRs" class="rs">↻ ПЕРЕЗАПУСТИТЬ</button>
+    <div class="hint">«Выключить» ставит у всех чёрный экран «игра временно не работает» и блокирует запись на сервере. «Включить» возвращает игру, и у всех она обновится сама. «Перезапустить» принудительно перезагружает игру у всех, кто сейчас в ней (после раунда).</div>
+  </div>
+  <button id="out">ВЫЙТИ</button>
+</div>
+<div id="msg"></div>
+</main>
+<script>
+const API = "/api/admin", KEY = "slovopadAdminToken";
+const $ = id => document.getElementById(id);
+let token = "", timer = 0, busy = false;
+try { token = localStorage.getItem(KEY) || ""; } catch (e) {}
+
+function say(t, k) { const m = $("msg"); m.textContent = t || ""; m.className = k || ""; }
+function lock(b) { busy = b; ["go", "bOff", "bOn", "bRs"].forEach(i => { $(i).disabled = b; }); }
+
+function draw(s) {
+  const off = !!s.off;
+  $("st").className = "st " + (off ? "stop" : "run");
+  $("stT").textContent = off ? "ИГРА ВЫКЛЮЧЕНА" : "ИГРА РАБОТАЕТ";
+  const bits = [];
+  if (off && s.since) bits.push("выключена с " + new Date(s.since).toLocaleString("ru-RU"));
+  if (off && s.msg) bits.push("сообщение: «" + s.msg + "»");
+  bits.push("перезапусков: " + (s.epoch || 0));
+  $("stH").textContent = bits.join(" · ");
+  $("bOff").hidden = off; $("bOn").hidden = !off; $("note").hidden = off;
+}
+
+async function call(action, extra) {
+  const r = await fetch(API, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ token, action, ...(extra || {}) }) });
+  let d = {}; try { d = await r.json(); } catch (e) {}
+  if (!r.ok) { const e = new Error(d.error || ("Ошибка " + r.status)); e.status = r.status; throw e; }
+  return d;
+}
+
+async function run(action, extra, okText) {
+  if (busy) return; lock(true); say("…");
+  try { draw(await call(action, extra)); say(okText || "", "ok"); show(true); }
+  catch (e) {
+    if (e.status === 401 || e.status === 404) { say("Неверный токен.", "er"); show(false); }
+    else say(e instanceof TypeError ? "Нет связи с сервером." : e.message, "er");
+  } finally { lock(false); }
+}
+
+function show(on) {
+  $("login").hidden = on; $("panel").hidden = !on;
+  clearInterval(timer);
+  if (on) timer = setInterval(async () => { if (document.hidden || busy) return; try { draw(await call("status")); } catch (e) {} }, 10000);
+}
+
+$("go").onclick = () => {
+  token = $("tok").value.trim(); if (!token) { say("Введи токен.", "er"); return; }
+  try { if ($("rem").checked) localStorage.setItem(KEY, token); else localStorage.removeItem(KEY); } catch (e) {}
+  run("status");
+};
+$("tok").addEventListener("keydown", e => { if (e.key === "Enter") $("go").click(); });
+$("bOff").onclick = () => { if (confirm("Выключить игру у всех? Вместо неё появится чёрный экран.")) run("off", { message: $("note").value }, "Игра выключена"); };
+$("bOn").onclick = () => run("on", null, "Игра включена, у игроков она обновится сама");
+$("bRs").onclick = () => { if (confirm("Перезагрузить игру у всех, кто сейчас в ней?")) run("restart", null, "Команда отправлена: открытые игры перезагрузятся"); };
+$("out").onclick = () => { token = ""; try { localStorage.removeItem(KEY); } catch (e) {} $("tok").value = ""; say(""); show(false); };
+
+if (token) { $("rem").checked = true; run("status"); }
+</script></body></html>
+`;
+
 /* ---------- Обработчик ---------- */
 export default {
   async fetch(request, env) {
@@ -218,6 +334,13 @@ export default {
     const reply = (data, status) => json(data, status, origin);
 
     try {
+      const secretPath = String(env.ADMIN_PATH || '');
+      if (request.method === 'GET' && /^[A-Za-z0-9_-]{12,}$/.test(secretPath) && safeEq(url.pathname, '/' + secretPath)) {
+        return new Response(ADMIN_PAGE, { headers: {
+          'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow', 'referrer-policy': 'no-referrer',
+          'content-security-policy': "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'"
+        } });
+      }
       if (url.pathname === '/api/health') {
         return reply({ ok: true, service: 'slovopad-id', version: 4, secret: !!secretOf(env), db: !!env.DB });
       }
@@ -226,14 +349,14 @@ export default {
       /* состояние игры: включена или на техработах (его спрашивает каждая открытая игра) */
       if (url.pathname === '/api/status' && request.method === 'GET') return reply(publicState(await settings(env)));
 
-      /* админ-панель: только с секретным токеном ADMIN_TOKEN */
+      /* управление: только с секретным токеном */
       if (url.pathname === '/api/admin' && request.method === 'POST') {
         const adminToken = String(env.ADMIN_TOKEN || '');
-        if (adminToken.length < 16) return reply({ error: 'На сервере не задан секрет ADMIN_TOKEN (минимум 16 символов).' }, 403);
+        if (adminToken.length < 16) return reply({ error: 'Not found' }, 404);   // не настроено: делаем вид, что такого адреса нет
         await ensureSchema(env);   // нужна таблица rate_limit
         if (!(await allow(env, 'adm:' + await ipHash(request, env), 30, 10 * 60 * 1000))) return reply(TOO_MANY, 429);
         const body = await request.json().catch(() => ({}));
-        if (!safeEq(String(body.token || ''), adminToken)) return reply({ error: 'Неверный токен.' }, 401);
+        if (!safeEq(String(body.token || ''), adminToken)) return reply({ error: 'Not found' }, 404);
         const act = String(body.action || 'status');
         if (act === 'off') { await setSetting(env, 'msg', String(body.message || '').replace(/\s+/g, ' ').trim().slice(0, 200)); await setSetting(env, 'since', Date.now()); await setSetting(env, 'off', 1); }
         else if (act === 'on') { await setSetting(env, 'off', 0); await setSetting(env, 'msg', ''); }
