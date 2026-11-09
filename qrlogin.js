@@ -3,8 +3,8 @@
    1. На компьютере (где входа ещё нет) жмём «Войти по QR»: сервер выдаёт короткий код, мы рисуем из него QR и опрашиваем сервер.
    2. На телефоне, где уже выполнен вход, QR сканируется (камерой телефона, внутри игры или кодом вручную) и вход подтверждается.
    3. Компьютер получает свой токен и входит. Секрет опроса знает только компьютер, поэтому подсмотренный QR ничего не даёт.
-   Подключается после app.js и qr.js. Использует глобалы игры: $, L3, ask, tg, cloudRequest, sidApply, sidInfo, sidTok, sidStatus,
-   sidRender, sidOpen, cloudSync, pfOpen, CLOUD_TOKEN_KEY, cloudBusy, ACH, SlovopadQR. */
+   Подключается после app.js, qr.js и qrscan.js. Использует глобалы игры: $, L3, ask, tg, cloudRequest, sidApply, sidInfo, sidTok, sidStatus,
+   sidRender, sidOpen, cloudSync, pfOpen, CLOUD_TOKEN_KEY, cloudBusy, ACH, SlovopadQR, SlovopadQRScan. */
 (function () {
   "use strict";
 
@@ -19,7 +19,7 @@
   // из ссылки, из «ABCD-EFGH» или из «abcdefgh» достаём 8-символьный код
   const norm = v => { const m = String(v).match(/[?&#]qr=([A-Za-z0-9]+)/), c = (m ? m[1] : String(v)).toUpperCase().replace(/[^A-Z0-9]/g, ""); return c.length === 8 ? c : ""; };
 
-  let pendCode = "", sess = null, timer = 0, polling = false, camStream = null, camTimer = 0, pending = "";
+  let pendCode = "", sess = null, timer = 0, polling = false, camStream = null, scanner = null, pending = "";
 
   /* ---------- тексты ---------- */
   function texts() {
@@ -115,7 +115,7 @@
   }
 
   function scanClose() {
-    clearInterval(camTimer); camTimer = 0;
+    if (scanner) { scanner.stop(); scanner = null; }
     if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
     const p = $("sidScanP"); if (p) p.hidden = true;
     const v = $("sidVid"); if (v) v.srcObject = null;
@@ -134,21 +134,24 @@
         return;
       }
     } catch (e) {}
-    if (!(window.BarcodeDetector && navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
-      scanMsg(T("Сканер внутри игры в этом браузере не работает (так бывает в Safari, Firefox и в некоторых встроенных браузерах). Открой обычное приложение «Камера» на телефоне и наведи на QR на компьютере: игра откроется сама. Или введи код вручную.",
-        "The in-game scanner does not work in this browser (it happens in Safari, Firefox and some in-app browsers). Open your phone’s regular Camera app and point it at the QR on the computer: the game will open by itself. Or type the code by hand.",
-        "Сканер усередині гри в цьому браузері не працює (так буває в Safari, Firefox і деяких вбудованих браузерах). Відкрий звичайну програму «Камера» на телефоні й наведи на QR на комп’ютері: гра відкриється сама. Або введи код вручну."), "er");
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.SlovopadQRScan)) {
+      scanMsg(T("В этом браузере нет доступа к камере (нужен защищённый адрес https). Открой обычное приложение «Камера» на телефоне и наведи на QR на компьютере: игра откроется сама. Или введи код вручную.",
+        "This browser has no camera access (a secure https address is required). Open your phone’s regular Camera app and point it at the QR on the computer: the game will open by itself. Or type the code by hand.",
+        "У цьому браузері немає доступу до камери (потрібна захищена адреса https). Відкрий звичайну програму «Камера» на телефоні й наведи на QR на комп’ютері: гра відкриється сама. Або введи код вручну."), "er");
       return;
     }
     try {
-      const det = new BarcodeDetector({ formats: ["qr_code"] });
-      camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+      vid.setAttribute("playsinline", ""); vid.muted = true;
       vid.hidden = false; vid.srcObject = camStream; await vid.play();
       scanMsg(T("Наведи камеру на QR на компьютере", "Point the camera at the QR on the computer", "Наведи камеру на QR на комп’ютері"));
-      camTimer = setInterval(async () => {
-        if (!vis()) { scanClose(); return; }
-        try { const r = await det.detect(vid); const c = r.length && norm(r[0].rawValue); if (c) { scanClose(); approve(c); } } catch (e) {}
-      }, 350);
+      // собственный сканер QR (qrscan.js): работает в любом браузере, не зависит от BarcodeDetector
+      scanner = SlovopadQRScan.start(vid, text => {
+        if (!vis()) { scanClose(); return true; }
+        const c = norm(text);
+        if (!c) { scanMsg(T("Это QR не от Slovopad. Наведи на код на экране компьютера.", "This QR is not from Slovopad. Point at the code on the computer screen.", "Це QR не від Slovopad. Наведи на код на екрані комп’ютера."), "er"); return false; }
+        scanClose(); approve(c); return true;
+      });
     } catch (e) {
       scanClose(); $("sidScanP").hidden = false; vid.hidden = true;
       scanMsg(T("Нет доступа к камере. Разреши камеру для сайта в настройках браузера, либо открой обычное приложение «Камера» и наведи на QR, либо введи код вручную.",
