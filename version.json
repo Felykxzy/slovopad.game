@@ -1,15 +1,15 @@
 {
-  "version": "2.8.2",
+  "version": "2.9.0",
   "notes": [
-    "Свой сканер QR внутри игры: «Сканировать QR» теперь работает в Safari, Firefox и встроенных браузерах, а не только в Chrome",
-    "Исправлена таблица блоков в генераторе QR: коды длиной 123–130 байт читались камерами неверно"
+    "Во время обновлений игра показывает экран «Временно не работает» и сама обновляется, когда всё готово",
+    "Worker нужно задеплоить заново"
   ],
   "notes_en": [
-    "Built-in QR scanner: “Scan QR” now works in Safari, Firefox and in-app browsers, not only in Chrome",
-    "Fixed the block table in the QR generator: codes of 123–130 bytes were not readable by cameras"
+    "During updates the game shows a “Temporarily unavailable” screen and refreshes by itself when everything is ready",
+    "The Worker must be redeployed"
   ],
   "notes_uk": [
-    "Власний сканер QR у грі: «Сканувати QR» тепер працює в Safari, Firefox і вбудованих браузерах, а не лише в Chrome",
-    "Виправлено таблицю блоків у генераторі QR: коди завдовжки 123–130 байт камери читали неправильно"
+    "Під час оновлень гра показує екран «Тимчасово не працює» і сама оновлюється, коли все готово",
+    "Worker потрібно задеплоїти заново"
   ]
 }
