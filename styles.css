@@ -566,3 +566,7 @@ body.eco .btn,body.eco .ib,body.eco .hs i{-webkit-backdrop-filter:none;backdrop-
 #o1 .mb #tp{font-size:15px;letter-spacing:.3em;padding:18px 8px}
 @media (max-height:690px){#o1 .mb{gap:8px}#o1 .mb .btn{padding-top:11px;padding-bottom:11px}#o1 .mb #tp{padding:15px 8px}}
 #o1 .mb #shopB{font-size:11px;letter-spacing:.05em}
+
+/* Профиль: кнопка «Готово» всегда внизу экрана */
+#o7 .mb{position:sticky;bottom:calc(-18px - env(safe-area-inset-bottom,0px));z-index:3;width:calc(100% + 36px);max-width:none;margin:8px -18px 0;padding:22px 18px calc(18px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,rgba(5,6,15,0),rgba(5,6,15,.92) 48%);align-items:center}
+#o7 .mb .btn{width:min(100%,420px);flex:none}
