@@ -1,12 +1,18 @@
 {
-  "version": "2.11.1",
+  "version": "2.10.1",
   "notes": [
-    "Блик на кнопках появляется при наклоне телефона или движении мыши, без самостоятельного переливания"
+    "Экран «Как играть» и экскурсия по меню листаются плавнее",
+    "Вибрация на iPhone (iOS 17.4 и новее)",
+    "Профиль: кнопка ✕ всегда сверху, меню из пяти кнопок стало компактнее"
   ],
   "notes_en": [
-    "The button shine appears when you tilt the phone or move the mouse, without moving on its own"
+    "The “How to play” screen and the menu tour scroll more smoothly",
+    "Vibration on iPhone (iOS 17.4 and newer)",
+    "Profile: the ✕ button stays on top; the five-button menu is more compact"
   ],
   "notes_uk": [
-    "Блик на кнопках з’являється при нахилі телефона або русі миші, без самостійного переливання"
+    "Екран «Як грати» та екскурсія по меню гортаються плавніше",
+    "Вібрація на iPhone (iOS 17.4 і новіші)",
+    "Профіль: кнопка ✕ завжди зверху, меню з п’яти кнопок стало компактнішим"
   ]
 }

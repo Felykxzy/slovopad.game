@@ -347,7 +347,7 @@
 
   function resize() {
     if (!cvs) return; const r = $("tSt").getBoundingClientRect(); if (!r.width || !r.height) return;
-    W = r.width; H = r.height; dpr = CFG.q ? Math.min(devicePixelRatio || 1, 2) : 1;
+    W = r.width; H = r.height; dpr = CFG.q ? Math.min(devicePixelRatio || 1, 1.5) : 1;
     cvs.width = Math.round(W * dpr); cvs.height = Math.round(H * dpr);
   }
 
@@ -379,13 +379,13 @@
     const D0 = dd(); $("tSk").textContent = D0.sk; el.setAttribute("aria-label", tx("❓ КАК ИГРАТЬ"));
     const dts = $("tDt"); dts.innerHTML = "";
     for (let i = 0; i < NN(); i++) { const b = document.createElement("i"); b.onclick = () => go(i); dts.appendChild(b); }
-    isOpen = true; el.classList.add("s"); resize(); show(0, 1);
+    isOpen = true; document.body.classList.add("hold"); el.classList.add("s"); resize(); show(0, 1);
     raf = requestAnimationFrame(frame);
     try { snd(523, .08, "triangle", .05); setTimeout(() => snd(784, .1, "triangle", .05), 70); } catch (e) {}
   }
 
   function finish(play) {
-    if (!isOpen) return; isOpen = false; cancelAnimationFrame(raf); el.classList.remove("s"); mark();
+    if (!isOpen) return; isOpen = false; cancelAnimationFrame(raf); document.body.classList.remove("hold"); el.classList.remove("s"); mark();
     if (play && from === "menu" && state === "idle") {
       if (window.startPractice) startPractice(); else pickTheme(THEMES[THEMES.length - 1]);
     }
