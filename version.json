@@ -1,21 +1,18 @@
 {
-  "version": "2.10.0",
+  "version": "2.11.0",
   "notes": [
-    "Друзья: добавляй по коду или нику (с подтверждением), смотри, кто в сети, топ среди друзей, профиль друга",
-    "Вызовы: брось другу «побей мой счёт» в любой теме",
-    "Настройки стали аккуратнее: группы, переключатели",
-    "Профиль чуть красивее: рамка вокруг аватарки и полоска до следующего ранга"
+    "Плавные переходы между экранами и мягкое нажатие кнопок",
+    "Эффект стекла на кнопках: блик переливается при наклоне телефона. Включается в настройках («ЭФФЕКТ СТЕКЛА»). На iPhone спросит доступ к датчикам движения при первом касании",
+    "В режиме «ЭКОНОМ» и при включённом «Уменьшение движения» в iPhone блик отключается"
   ],
   "notes_en": [
-    "Friends: add by code or nickname (with confirmation), see who is online, a friends-only top and friend profiles",
-    "Challenges: send a friend “beat my score” in any theme",
-    "Tidier Settings: groups and switches",
-    "Slightly nicer Profile: a glow around the avatar and a bar to the next rank"
+    "Smoother transitions between screens and softer button presses",
+    "Glass effect on buttons: the shine moves when you tilt the phone. Toggle it in settings (“GLASS EFFECT”). On iPhone it asks for motion access on first tap",
+    "The shine turns off in “ECO” mode and when iPhone “Reduce Motion” is on"
   ],
   "notes_uk": [
-    "Друзі: додавай за кодом або ніком (з підтвердженням), дивись, хто в мережі, топ серед друзів, профіль друга",
-    "Виклики: кинь другу «побий мій рахунок» у будь-якій темі",
-    "Налаштування стали охайнішими: групи, перемикачі",
-    "Профіль трохи гарніший: рамка навколо аватарки та смужка до наступного рангу"
+    "Плавні переходи між екранами та м’яке натискання кнопок",
+    "Ефект скла на кнопках: блик переливається при нахилі телефона. Вмикається в налаштуваннях («ЕФЕКТ СКЛА»). На iPhone запитає доступ до датчиків руху при першому дотику",
+    "Блик вимикається в режимі «ЕКОНОМ» і коли на iPhone увімкнено «Зменшення руху»"
   ]
 }
