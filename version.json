@@ -1,12 +1,12 @@
 {
   "version": "2.11.1",
   "notes": [
-    "Блик на кнопках стал заметен: переливается сам, следует за мышью на компьютере и реагирует на наклон телефона"
+    "Блик на кнопках появляется при наклоне телефона или движении мыши, без самостоятельного переливания"
   ],
   "notes_en": [
-    "The button shine is now visible: it moves on its own, follows the mouse on desktop and reacts to phone tilt"
+    "The button shine appears when you tilt the phone or move the mouse, without moving on its own"
   ],
   "notes_uk": [
-    "Блик на кнопках тепер помітний: переливається сам, слідує за мишею на комп’ютері та реагує на нахил телефона"
+    "Блик на кнопках з’являється при нахилі телефона або русі миші, без самостійного переливання"
   ]
 }

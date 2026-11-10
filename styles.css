@@ -579,10 +579,7 @@ body.gls .btn,body.gls .ib{box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 
 body.eco .btn::after,body.eco .ib::after{display:none}
 @media (prefers-reduced-motion:reduce){.ov,.ov.s,.btn,.ib,.btn::after,.ib::after{transition:none!important}}
 
-/* Блик на стекле: видимый, медленно ходит сам, при наклоне следует за телефоном */
-@keyframes glassSweep{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-.btn::after,.ib::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.07) 40%,rgba(255,255,255,.55) 50%,rgba(255,255,255,.07) 60%,transparent 70%);background-size:250% 100%;background-position:calc(var(--gx,50)*1%) 50%;transition:opacity .4s ease}
-body.gls .btn::after,body.gls .ib::after{opacity:var(--gop,.9);animation:glassSweep 7s ease-in-out infinite}
-body.gls.gyro .btn::after,body.gls.gyro .ib::after{animation:none}
-body.gls:not(.gyro) .btn::after,body.gls:not(.gyro) .ib::after{transition:background-position .35s ease,opacity .4s ease}
-@media (prefers-reduced-motion:reduce){.btn::after,.ib::after,body.gls .btn::after,body.gls .ib::after{animation:none!important}}
+/* Блик на стекле: без автоматического движения, виден только при наклоне телефона или движении мыши */
+.btn::after,.ib::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.07) 40%,rgba(255,255,255,.55) 50%,rgba(255,255,255,.07) 60%,transparent 70%);background-size:250% 100%;background-position:calc(var(--gx,50)*1%) 50%;transition:opacity .4s ease,background-position .35s ease}
+body.gls.gyro .btn::after,body.gls.gyro .ib::after,body.gls.ptr .btn::after,body.gls.ptr .ib::after{opacity:var(--gop,.9)}
+body.eco .btn::after,body.eco .ib::after{display:none}
