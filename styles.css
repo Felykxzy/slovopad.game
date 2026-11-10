@@ -570,6 +570,42 @@ body.eco .btn,body.eco .ib,body.eco .hs i{-webkit-backdrop-filter:none;backdrop-
 /* Профиль: кнопка закрытия ✕ всегда сверху, листать вниз не нужно */
 #o7 .pclose{position:sticky;top:0;align-self:flex-end;z-index:4;flex:none;width:44px;height:44px;margin:-6px 0 -38px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(10,12,28,.8);color:var(--ink);font-size:18px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 
+/* ===== Плавные переходы и стекло (2.11.0) ===== */
+.ov{display:flex;opacity:0;visibility:hidden;transform:scale(.97);transition:opacity .32s cubic-bezier(.2,.7,.2,1),transform .32s cubic-bezier(.2,.7,.2,1),visibility 0s linear .32s}
+.ov.s{opacity:1;visibility:visible;transform:none;transition:opacity .32s cubic-bezier(.2,.7,.2,1),transform .32s cubic-bezier(.2,.7,.2,1),visibility 0s}
+.btn,.ib{transition:transform .22s cubic-bezier(.2,.8,.2,1),background-color .25s ease,box-shadow .25s ease,color .25s ease,border-color .25s ease}
+.btn.pr,.ib.pr{transition:none}
+body.gls .btn,body.gls .ib{box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 -1px 0 rgba(255,255,255,.05),0 8px 22px rgba(0,0,0,.25)}
+body.eco .btn::after,body.eco .ib::after{display:none}
+@media (prefers-reduced-motion:reduce){.ov,.ov.s,.btn,.ib,.btn::after,.ib::after{transition:none!important}}
+
+/* Блик на стекле: без автоматического движения, виден только при наклоне телефона или движении мыши */
+.btn::after,.ib::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.07) 40%,rgba(255,255,255,.55) 50%,rgba(255,255,255,.07) 60%,transparent 70%);background-size:250% 100%;background-position:calc(var(--gx,50)*1%) 50%;transition:opacity .4s ease,background-position .35s ease}
+body.gls.gyro .btn::after,body.gls.gyro .ib::after,body.gls.ptr .btn::after,body.gls.ptr .ib::after{opacity:var(--gop,.9)}
+body.eco .btn::after,body.eco .ib::after{display:none}
+
+/* меню рангов: карточки с цветом каждого ранга */
+#rl{gap:10px}
+.rkh{display:flex;align-items:center;gap:14px;padding:16px;border-radius:22px;border:1px solid rgba(var(--c),.45);background:linear-gradient(135deg,rgba(var(--c),.22),rgba(255,255,255,.04));box-shadow:0 0 28px rgba(var(--c),.18)}
+.rkhi{font-size:46px;line-height:1;flex:none;filter:drop-shadow(0 0 12px rgba(var(--c),.6))}
+.rkhx{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;text-align:left}
+.rkhx small{font-size:10px;letter-spacing:.18em;opacity:.7;font-weight:600}
+.rkhx b{font-size:17px;letter-spacing:.14em;color:rgb(var(--c))}
+.rkbar{height:8px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden;margin:4px 0 2px}
+.rkbar i{display:block;height:100%;background:linear-gradient(90deg,rgb(var(--c)),var(--mg));box-shadow:0 0 10px rgba(var(--c),.7);transition:width .6s}
+.rc{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);text-align:left;position:relative;overflow:hidden}
+.rc::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:rgb(var(--c));opacity:.85}
+.rci{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:22px;flex:none;background:rgba(var(--c),.16);border:1px solid rgba(var(--c),.5)}
+.rcx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.rcx b{font-size:13px;letter-spacing:.16em}
+.rcx small{font-size:10px;opacity:.6;letter-spacing:.12em}
+.rcd{font-size:10px;letter-spacing:.12em;color:rgb(var(--c))}
+.rcs{font-size:16px;flex:none;color:rgb(var(--c))}
+.rc.done .rcs{text-shadow:0 0 10px rgb(var(--c))}
+.rc.cu{border-color:rgba(var(--c),.6);background:rgba(var(--c),.12);box-shadow:0 0 18px rgba(var(--c),.18)}
+.rc.lk{opacity:.5}
+.rc.lk .rci{border-style:dashed;filter:grayscale(.6)}
 body.hold .btn,body.hold .ib{-webkit-backdrop-filter:none;backdrop-filter:none}
 #tut .tc{will-change:transform}
 .ttxt.in h3,.ttxt.in p{will-change:transform,opacity}
+body.hold .btn::after,body.hold .ib::after{display:none}
