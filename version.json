@@ -1,15 +1,12 @@
 {
-  "version": "2.11.3",
+  "version": "2.11.4",
   "notes": [
-    "Блик на кнопках стал настоящим: пятно света сразу следует за наклоном телефона и меняется на каждой кнопке по-своему",
-    "«Как играть»: карточка больше не прыгает между шагами, картинка не мигает"
+    "Клавиатура на iPhone больше не закрывается при наборе слов"
   ],
   "notes_en": [
-    "Real button shine: the light spot follows the phone tilt instantly and lands differently on every button",
-    "“How to play”: the card no longer jumps between steps and the picture no longer flickers"
+    "The keyboard on iPhone no longer closes while typing words"
   ],
   "notes_uk": [
-    "Справжній відблиск на кнопках: пляма світла одразу слідує за нахилом телефона й лягає на кожну кнопку по-різному",
-    "«Як грати»: картка більше не стрибає між кроками, картинка не блимає"
+    "Клавіатура на iPhone більше не закривається під час набору слів"
   ]
 }
