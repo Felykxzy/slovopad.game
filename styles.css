@@ -575,8 +575,14 @@ body.eco .btn,body.eco .ib,body.eco .hs i{-webkit-backdrop-filter:none;backdrop-
 .ov.s{opacity:1;visibility:visible;transform:none;transition:opacity .32s cubic-bezier(.2,.7,.2,1),transform .32s cubic-bezier(.2,.7,.2,1),visibility 0s}
 .btn,.ib{transition:transform .22s cubic-bezier(.2,.8,.2,1),background-color .25s ease,box-shadow .25s ease,color .25s ease,border-color .25s ease}
 .btn.pr,.ib.pr{transition:none}
-.btn::after,.ib::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;background:linear-gradient(105deg,transparent 32%,rgba(255,255,255,.34) 48%,rgba(255,255,255,.06) 53%,transparent 68%);background-size:260% 100%;background-position:calc(var(--gx,50)*1%) 50%;mix-blend-mode:soft-light;transition:opacity .4s ease,background-position .5s cubic-bezier(.2,.7,.2,1)}
-body.gls .btn::after,body.gls .ib::after{opacity:var(--gop,.28)}
 body.gls .btn,body.gls .ib{box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 -1px 0 rgba(255,255,255,.05),0 8px 22px rgba(0,0,0,.25)}
 body.eco .btn::after,body.eco .ib::after{display:none}
 @media (prefers-reduced-motion:reduce){.ov,.ov.s,.btn,.ib,.btn::after,.ib::after{transition:none!important}}
+
+/* Блик на стекле: видимый, медленно ходит сам, при наклоне следует за телефоном */
+@keyframes glassSweep{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.btn::after,.ib::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.07) 40%,rgba(255,255,255,.55) 50%,rgba(255,255,255,.07) 60%,transparent 70%);background-size:250% 100%;background-position:calc(var(--gx,50)*1%) 50%;transition:opacity .4s ease}
+body.gls .btn::after,body.gls .ib::after{opacity:var(--gop,.9);animation:glassSweep 7s ease-in-out infinite}
+body.gls.gyro .btn::after,body.gls.gyro .ib::after{animation:none}
+body.gls:not(.gyro) .btn::after,body.gls:not(.gyro) .ib::after{transition:background-position .35s ease,opacity .4s ease}
+@media (prefers-reduced-motion:reduce){.btn::after,.ib::after,body.gls .btn::after,body.gls .ib::after{animation:none!important}}

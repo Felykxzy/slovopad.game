@@ -1,18 +1,12 @@
 {
-  "version": "2.11.0",
+  "version": "2.11.1",
   "notes": [
-    "Плавные переходы между экранами и мягкое нажатие кнопок",
-    "Эффект стекла на кнопках: блик переливается при наклоне телефона. Включается в настройках («ЭФФЕКТ СТЕКЛА»). На iPhone спросит доступ к датчикам движения при первом касании",
-    "В режиме «ЭКОНОМ» и при включённом «Уменьшение движения» в iPhone блик отключается"
+    "Блик на кнопках стал заметен: переливается сам, следует за мышью на компьютере и реагирует на наклон телефона"
   ],
   "notes_en": [
-    "Smoother transitions between screens and softer button presses",
-    "Glass effect on buttons: the shine moves when you tilt the phone. Toggle it in settings (“GLASS EFFECT”). On iPhone it asks for motion access on first tap",
-    "The shine turns off in “ECO” mode and when iPhone “Reduce Motion” is on"
+    "The button shine is now visible: it moves on its own, follows the mouse on desktop and reacts to phone tilt"
   ],
   "notes_uk": [
-    "Плавні переходи між екранами та м’яке натискання кнопок",
-    "Ефект скла на кнопках: блик переливається при нахилі телефона. Вмикається в налаштуваннях («ЕФЕКТ СКЛА»). На iPhone запитає доступ до датчиків руху при першому дотику",
-    "Блик вимикається в режимі «ЕКОНОМ» і коли на iPhone увімкнено «Зменшення руху»"
+    "Блик на кнопках тепер помітний: переливається сам, слідує за мишею на комп’ютері та реагує на нахил телефона"
   ]
 }

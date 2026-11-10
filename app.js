@@ -321,7 +321,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(a)set(a,e)});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="2.11.0";let upLater=false;
+const VER="2.11.1";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if(state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
@@ -449,7 +449,8 @@ if(sidTok())setTimeout(()=>cloudSync(true),1500);
 /* Эффект стекла: блик на кнопках, реагирует на наклон телефона (если разрешено) */
 function glassApply(){if(!document.body)return;const on=CFG.gls!==0;document.body.classList.toggle("gls",on);if(on)glassReady()}
 let glassDone=false,glassAsked=false;
-function glassStart(){if(glassDone)return;glassDone=true;addEventListener("deviceorientation",e=>{if(e.gamma==null||CFG.gls===0||document.body.classList.contains("eco"))return;const x=Math.max(-1,Math.min(1,e.gamma/30));document.documentElement.style.setProperty("--gx",(50+x*40).toFixed(1));document.documentElement.style.setProperty("--gop",(.22+Math.abs(x)*.3).toFixed(2))},{passive:true})}
+function glassStart(){if(glassDone)return;glassDone=true;document.body.classList.add("gyro");addEventListener("deviceorientation",e=>{if(e.gamma==null||CFG.gls===0||document.body.classList.contains("eco"))return;const x=Math.max(-1,Math.min(1,e.gamma/30));document.documentElement.style.setProperty("--gx",(50+x*40).toFixed(1));document.documentElement.style.setProperty("--gop",(.22+Math.abs(x)*.3).toFixed(2))},{passive:true})}
 function glassReady(){if(glassDone||glassAsked||!window.DeviceOrientationEvent)return;const R=DeviceOrientationEvent.requestPermission;if(typeof R==="function"){glassAsked=true;R.call(DeviceOrientationEvent).then(s=>{if(s==="granted")glassStart()}).catch(()=>{})}else glassStart()}
 document.addEventListener("click",()=>{if(CFG.gls!==0)glassReady()},{passive:true});
+document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.documentElement.style.setProperty("--gx",(e.clientX/innerWidth*80+10).toFixed(1))},{passive:true});
 glassApply();i18nInit();i18nApply();menu();hud();upCheck();requestAnimationFrame(t=>{last=t;loop(t)});
