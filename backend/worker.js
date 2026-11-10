@@ -88,7 +88,8 @@ async function ensureSchema(env) {
     updated_at: 'TEXT NOT NULL DEFAULT \'\'',
     sp_code: 'TEXT',
     privacy_json: 'TEXT NOT NULL DEFAULT \'{}\'',
-    data_json: 'TEXT NOT NULL DEFAULT \'{}\''
+    data_json: 'TEXT NOT NULL DEFAULT \'{}\'',
+    seen: 'INTEGER NOT NULL DEFAULT 0'
   };
   add.username_key = 'TEXT';
   for (const [name, def] of Object.entries(add)) {
@@ -114,6 +115,13 @@ async function ensureSchema(env) {
   // ограничение частоты запросов (журнал обращений, адреса хранятся только в виде хэша)
   await env.DB.prepare('CREATE TABLE IF NOT EXISTS rate_limit (k TEXT NOT NULL, t INTEGER NOT NULL)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS rate_limit_idx ON rate_limit(k,t)').run();
+  // друзья: a отправил запрос, b получил; state — pending (ждёт ответа) или accepted (дружат)
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS friends (a TEXT NOT NULL, b TEXT NOT NULL, state TEXT NOT NULL DEFAULT \'pending\', t INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (a,b))').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS friends_b_idx ON friends(b,state)').run();
+  // вызовы: from_id просит побить его счёт в теме
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS challenges (id TEXT PRIMARY KEY, from_id TEXT NOT NULL, to_id TEXT NOT NULL, theme TEXT NOT NULL, lang INTEGER NOT NULL DEFAULT 0, score INTEGER NOT NULL, t INTEGER NOT NULL, state TEXT NOT NULL DEFAULT \'open\', result INTEGER NOT NULL DEFAULT 0)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS challenges_to_idx ON challenges(to_id,state)').run();
+  await env.DB.prepare('CREATE INDEX IF NOT EXISTS challenges_from_idx ON challenges(from_id)').run();
   schemaReady = true;
 }
 
@@ -150,6 +158,36 @@ async function ipHash(request, env) {
   return hex(await crypto.subtle.digest('SHA-256', enc.encode(ip + ':' + secretOf(env)))).slice(0, 16);
 }
 const num = v => Math.max(0, Math.min(100000000, Number(v) || 0));
+
+/* ---------- Друзья и вызовы ---------- */
+const FR_MAX = 100, FR_IN_MAX = 50, FR_OUT_MAX = 30;       // друзей, ожидающих входящих, ожидающих исходящих
+const ONLINE_MS = 150 * 1000;                              // «в сети», если был активен в последние 2,5 минуты
+const CH_TTL = 7 * 24 * 3600 * 1000;                       // вызов живёт неделю
+const CH_OPEN_PER_FRIEND = 5;
+const findUser = (env, q) => {
+  q = String(q || '').trim().slice(0, 40);
+  return q ? env.DB.prepare('SELECT * FROM users WHERE sp_code=? OR username=? COLLATE NOCASE LIMIT 1').bind(q.toUpperCase(), q).first() : null;
+};
+const relation = (env, x, y) => env.DB.prepare('SELECT a,b,state FROM friends WHERE (a=? AND b=?) OR (a=? AND b=?) LIMIT 1').bind(x, y, y, x).first();
+// короткие данные игроков по id (без тяжёлого фото из профиля), пачками из-за лимита параметров
+async function usersByIds(env, ids) {
+  const out = new Map(), list = [...new Set(ids)];
+  for (let i = 0; i < list.length; i += 80) {
+    const part = list.slice(i, i + 80);
+    const rows = await env.DB.prepare('SELECT id,username,sp_code,privacy_json,best_score,total_words,seen,json_extract(profile_json,\'$.pf.a\') AS av FROM users WHERE id IN (' + part.map(() => '?').join(',') + ')').bind(...part).all();
+    for (const r of (rows.results || [])) out.set(r.id, r);
+  }
+  return out;
+}
+// то, что можно показать другим: цифры и статус только если игрок их не скрыл
+async function pubInfo(env, r, now) {
+  const pv = cleanPrivacy(parse(r.privacy_json, {}));
+  const code = r.sp_code || await ensureCode(env, { id: r.id, sp_code: r.sp_code });
+  const seen = pv.online ? (r.seen || 0) : 0;
+  return { username: r.username, spCode: code, avatar: typeof r.av === 'string' ? r.av : '',
+    online: !!seen && seen > now - ONLINE_MS, seen,
+    bestScore: pv.records ? r.best_score || 0 : null, totalWords: pv.rank ? r.total_words || 0 : null };
+}
 
 /* ---------- Помощники ---------- */
 const parse = (text, fallback) => { try { const v = JSON.parse(text || ''); return v && typeof v === 'object' ? v : fallback; } catch (_) { return fallback; } };
@@ -532,6 +570,116 @@ export default {
         if (pv.ach) out.achievements = Object.keys(parse(row.data_json, {}).ach || {}).length;
         if (pv.stats) out.stats = { games: pf.g || 0, hits: pf.h || 0, misses: pf.m || 0, combo: pf.c || 0 };
         return reply(out);
+      }
+
+      /* ---------- друзья ---------- */
+      if (url.pathname.startsWith('/api/friends') || url.pathname.startsWith('/api/challenge') || url.pathname === '/api/ping') {
+        const user = await userFrom(request, env);
+        if (!user) return reply({ error: 'Нужно войти в аккаунт.' }, 401);
+        const now = Date.now(), post = request.method === 'POST', body = post ? await request.json().catch(() => ({})) : {};
+
+        // «я здесь» + сколько ждёт ответа (для значка на кнопке)
+        if (url.pathname === '/api/ping' && post) {
+          if (!await allow(env, 'pg:' + user.id, 40, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+          await env.DB.prepare('UPDATE users SET seen=? WHERE id=?').bind(now, user.id).run();
+          const rq = await env.DB.prepare('SELECT COUNT(*) AS n FROM friends WHERE b=? AND state=\'pending\'').bind(user.id).first();
+          const ch = await env.DB.prepare('SELECT COUNT(*) AS n FROM challenges WHERE to_id=? AND state=\'open\' AND t>?').bind(user.id, now - CH_TTL).first();
+          return reply({ ok: true, requests: rq ? rq.n : 0, challenges: ch ? ch.n : 0 });
+        }
+
+        // список друзей, запросы и вызовы
+        if (url.pathname === '/api/friends' && request.method === 'GET') {
+          if (!await allow(env, 'fl:' + user.id, 60, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+          await env.DB.prepare('UPDATE users SET seen=? WHERE id=?').bind(now, user.id).run();
+          const rel = (await env.DB.prepare('SELECT a,b,state FROM friends WHERE a=? OR b=?').bind(user.id, user.id).all()).results || [];
+          const chIn = (await env.DB.prepare('SELECT * FROM challenges WHERE to_id=? AND state=\'open\' AND t>? ORDER BY t DESC LIMIT 20').bind(user.id, now - CH_TTL).all()).results || [];
+          const chOut = (await env.DB.prepare('SELECT * FROM challenges WHERE from_id=? AND t>? ORDER BY t DESC LIMIT 20').bind(user.id, now - CH_TTL).all()).results || [];
+          const ids = [...rel.map(r => (r.a === user.id ? r.b : r.a)), ...chIn.map(c => c.from_id), ...chOut.map(c => c.to_id)];
+          const people = await usersByIds(env, ids), info = new Map();
+          for (const id of new Set(ids)) { const r = people.get(id); if (r) info.set(id, await pubInfo(env, r, now)); }
+          const pick = r => info.get(r.a === user.id ? r.b : r.a);
+          const byBest = (x, y) => (y.bestScore || 0) - (x.bestScore || 0) || x.username.localeCompare(y.username);
+          const friends = rel.filter(r => r.state === 'accepted').map(pick).filter(Boolean).sort(byBest);
+          const incoming = rel.filter(r => r.state === 'pending' && r.b === user.id).map(pick).filter(Boolean);
+          const outgoing = rel.filter(r => r.state === 'pending' && r.a === user.id).map(pick).filter(Boolean);
+          const mapIn = chIn.map(c => ({ id: c.id, from: info.get(c.from_id), theme: c.theme, lang: c.lang, score: c.score, t: c.t })).filter(c => c.from);
+          const mapOut = chOut.map(c => ({ id: c.id, to: info.get(c.to_id), theme: c.theme, lang: c.lang, score: c.score, state: c.state, result: c.result, t: c.t })).filter(c => c.to);
+          return reply({ me: { username: user.username, spCode: await ensureCode(env, user), bestScore: user.best_score || 0 }, friends, incoming, outgoing, challenges: { incoming: mapIn, sent: mapOut } });
+        }
+
+        // отправить запрос в друзья (по коду или нику)
+        if (url.pathname === '/api/friends/request' && post) {
+          if (!await allow(env, 'fr:' + user.id, 30, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+          const other = await findUser(env, body.q);
+          if (!other) return reply({ error: 'Игрок не найден.' }, 404);
+          if (other.id === user.id) return reply({ error: 'Это твой собственный код.' }, 400);
+          const rel = await relation(env, user.id, other.id);
+          if (rel && rel.state === 'accepted') return reply({ error: 'Вы уже друзья.' }, 409);
+          if (rel && rel.a === user.id) return reply({ error: 'Запрос уже отправлен. Ждём ответа.' }, 409);
+          const count = async (sql, id) => ((await env.DB.prepare(sql).bind(id).first()) || {}).n || 0;
+          const mine = ((await env.DB.prepare('SELECT COUNT(*) AS n FROM friends WHERE (a=? OR b=?) AND state=\'accepted\'').bind(user.id, user.id).first()) || {}).n || 0;
+          if (mine >= FR_MAX) return reply({ error: 'У тебя уже ' + FR_MAX + ' друзей.' }, 409);
+          if (rel && rel.b === user.id) {   // он уже просил нас: сразу дружим
+            await env.DB.prepare('UPDATE friends SET state=\'accepted\', t=? WHERE a=? AND b=?').bind(now, other.id, user.id).run();
+            return reply({ state: 'accepted', username: other.username });
+          }
+          if (await count('SELECT COUNT(*) AS n FROM friends WHERE a=? AND state=\'pending\'', user.id) >= FR_OUT_MAX) return reply({ error: 'Слишком много неотвеченных запросов. Подожди ответов.' }, 429);
+          if (await count('SELECT COUNT(*) AS n FROM friends WHERE b=? AND state=\'pending\'', other.id) >= FR_IN_MAX) return reply({ error: 'Этому игроку сейчас нельзя отправить запрос. Попробуй позже.' }, 429);
+          await env.DB.prepare('INSERT INTO friends (a,b,state,t) VALUES (?,?,\'pending\',?)').bind(user.id, other.id, now).run();
+          return reply({ state: 'sent', username: other.username });
+        }
+
+        // ответ на запрос: принять или отклонить
+        if (url.pathname === '/api/friends/respond' && post) {
+          const other = await findUser(env, body.code);
+          const rel = other && await env.DB.prepare('SELECT a FROM friends WHERE a=? AND b=? AND state=\'pending\'').bind(other.id, user.id).first();
+          if (!rel) return reply({ error: 'Запрос не найден.' }, 404);
+          if (body.accept === true) await env.DB.prepare('UPDATE friends SET state=\'accepted\', t=? WHERE a=? AND b=?').bind(now, other.id, user.id).run();
+          else await env.DB.prepare('DELETE FROM friends WHERE a=? AND b=?').bind(other.id, user.id).run();
+          return reply({ ok: true, accepted: body.accept === true });
+        }
+
+        // удалить из друзей или отменить свой запрос
+        if (url.pathname === '/api/friends/remove' && post) {
+          const other = await findUser(env, body.code);
+          if (!other) return reply({ error: 'Игрок не найден.' }, 404);
+          await env.DB.prepare('DELETE FROM friends WHERE (a=? AND b=?) OR (a=? AND b=?)').bind(user.id, other.id, other.id, user.id).run();
+          await env.DB.prepare('DELETE FROM challenges WHERE (from_id=? AND to_id=?) OR (from_id=? AND to_id=?)').bind(user.id, other.id, other.id, user.id).run();
+          return reply({ ok: true });
+        }
+
+        // вызов: «побей мой счёт»
+        if (url.pathname === '/api/challenge' && post) {
+          if (!await allow(env, 'ch:' + user.id, 20, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+          const other = await findUser(env, body.code);
+          const rel = other && await relation(env, user.id, other.id);
+          if (!rel || rel.state !== 'accepted') return reply({ error: 'Вызвать можно только друга.' }, 403);
+          const theme = String(body.theme || ''), score = num(body.score), lang = Math.max(0, Math.min(2, Number(body.lang) | 0));
+          if (!/^[a-z]{2,12}$/.test(theme) || score < 1) return reply({ error: 'Некорректный вызов.' }, 400);
+          const open = await env.DB.prepare('SELECT COUNT(*) AS n FROM challenges WHERE from_id=? AND to_id=? AND state=\'open\' AND t>?').bind(user.id, other.id, now - CH_TTL).first();
+          if (open && open.n >= CH_OPEN_PER_FRIEND) return reply({ error: 'Другу уже отправлено много вызовов. Подожди, пока он ответит.' }, 429);
+          await env.DB.prepare('INSERT INTO challenges (id,from_id,to_id,theme,lang,score,t,state) VALUES (?,?,?,?,?,?,?,\'open\')').bind(hex(random(8)), user.id, other.id, theme, lang, score, now).run();
+          if (Math.random() < 0.05) await env.DB.prepare('DELETE FROM challenges WHERE t<?').bind(now - 2 * CH_TTL).run();
+          return reply({ ok: true, username: other.username });
+        }
+
+        // результат попытки: побил или нет
+        if (url.pathname === '/api/challenge/done' && post) {
+          const row = await env.DB.prepare('SELECT * FROM challenges WHERE id=? AND to_id=? AND state=\'open\' AND t>?').bind(String(body.id || ''), user.id, now - CH_TTL).first();
+          if (!row) return reply({ error: 'Вызов не найден.' }, 404);
+          const score = num(body.score);
+          if (score > row.score) {
+            await env.DB.prepare('UPDATE challenges SET state=\'won\', result=? WHERE id=?').bind(score, row.id).run();
+            return reply({ won: true, need: row.score + 1 });
+          }
+          return reply({ won: false, need: row.score + 1 });
+        }
+
+        // отклонить вызов (получатель) или убрать из списка (отправитель)
+        if (url.pathname === '/api/challenge/remove' && post) {
+          await env.DB.prepare('DELETE FROM challenges WHERE id=? AND (to_id=? OR from_id=?)').bind(String(body.id || ''), user.id, user.id).run();
+          return reply({ ok: true });
+        }
       }
 
       /* рейтинг */
