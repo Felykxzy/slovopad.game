@@ -558,3 +558,11 @@ body.eco .btn,body.eco .ib,body.eco .hs i{-webkit-backdrop-filter:none;backdrop-
 #o7 .psec{display:flex;align-items:center;gap:10px;margin-top:6px}
 #o7 .psec::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.25),transparent)}
 @media (max-height:690px){#o1 .mb{gap:7px}#o1 .mb .btn{padding-top:10px;padding-bottom:10px;font-size:12px}#o1 .rkb{padding:10px 14px}}
+
+/* Главное меню: одна большая кнопка и две пары поменьше */
+#o1 .mb{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:min(88%,380px)}
+#o1 .mb #tp{grid-column:1/-1}
+#o1 .mb .btn{width:auto;min-width:0;padding:14px 6px;font-size:12px;letter-spacing:.1em;white-space:nowrap}
+#o1 .mb #tp{font-size:15px;letter-spacing:.3em;padding:18px 8px}
+@media (max-height:690px){#o1 .mb{gap:8px}#o1 .mb .btn{padding-top:11px;padding-bottom:11px}#o1 .mb #tp{padding:15px 8px}}
+#o1 .mb #shopB{font-size:11px;letter-spacing:.05em}
