@@ -115,13 +115,14 @@ async function ensureSchema(env) {
   // ограничение частоты запросов (журнал обращений, адреса хранятся только в виде хэша)
   await env.DB.prepare('CREATE TABLE IF NOT EXISTS rate_limit (k TEXT NOT NULL, t INTEGER NOT NULL)').run();
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS rate_limit_idx ON rate_limit(k,t)').run();
-  // друзья: a отправил запрос, b получил; state — pending (ждёт ответа) или accepted (дружат)
-  await env.DB.prepare('CREATE TABLE IF NOT EXISTS friends (a TEXT NOT NULL, b TEXT NOT NULL, state TEXT NOT NULL DEFAULT \'pending\', t INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (a,b))').run();
-  await env.DB.prepare('CREATE INDEX IF NOT EXISTS friends_b_idx ON friends(b,state)').run();
-  // вызовы: from_id просит побить его счёт в теме
-  await env.DB.prepare('CREATE TABLE IF NOT EXISTS challenges (id TEXT PRIMARY KEY, from_id TEXT NOT NULL, to_id TEXT NOT NULL, theme TEXT NOT NULL, lang INTEGER NOT NULL DEFAULT 0, score INTEGER NOT NULL, t INTEGER NOT NULL, state TEXT NOT NULL DEFAULT \'open\', result INTEGER NOT NULL DEFAULT 0)').run();
-  await env.DB.prepare('CREATE INDEX IF NOT EXISTS challenges_to_idx ON challenges(to_id,state)').run();
-  await env.DB.prepare('CREATE INDEX IF NOT EXISTS challenges_from_idx ON challenges(from_id)').run();
+  // друзья и вызовы: сбой здесь не должен ломать остальную игру
+  try {
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS friends (a TEXT NOT NULL, b TEXT NOT NULL, state TEXT NOT NULL DEFAULT \'pending\', t INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (a,b))').run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS friends_b_idx ON friends(b,state)').run();
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS challenges (id TEXT PRIMARY KEY, from_id TEXT NOT NULL, to_id TEXT NOT NULL, theme TEXT NOT NULL, lang INTEGER NOT NULL DEFAULT 0, score INTEGER NOT NULL, t INTEGER NOT NULL, state TEXT NOT NULL DEFAULT \'open\', result INTEGER NOT NULL DEFAULT 0)').run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS challenges_to_idx ON challenges(to_id,state)').run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS challenges_from_idx ON challenges(from_id)').run();
+  } catch (e) { console.error('friends schema', e); }
   schemaReady = true;
 }
 
@@ -696,7 +697,7 @@ export default {
       return reply({ error: 'Not found' }, 404);
     } catch (error) {
       console.error('server error', error);
-      return reply({ error: 'Ошибка сервера. Попробуй позже.' }, 500);
+      return reply({ error: 'Ошибка сервера. Попробуй позже.', detail: String((error && error.message) || error).slice(0, 160) }, 500);
     }
   }
 };
