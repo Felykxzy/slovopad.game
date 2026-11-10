@@ -1,18 +1,21 @@
 {
-  "version": "2.9.1",
+  "version": "2.10.0",
   "notes": [
-    "Во время обновлений игра показывает экран «Временно не работает» и сама обновляется, когда всё готово",
-    "Новый вид экрана Slovopad ID",
-    "Исправлена ошибка: после выбора темы игра шла на фоне меню"
+    "Друзья: добавляй по коду или нику (с подтверждением), смотри, кто в сети, топ среди друзей, профиль друга",
+    "Вызовы: брось другу «побей мой счёт» в любой теме",
+    "Настройки стали аккуратнее: группы, переключатели",
+    "Профиль чуть красивее: рамка вокруг аватарки и полоска до следующего ранга"
   ],
   "notes_en": [
-    "During updates the game shows a “Temporarily unavailable” screen and refreshes by itself when everything is ready",
-    "Redesigned Slovopad ID screen",
-    "Fixed a bug: after choosing a theme the game ran behind the menu"
+    "Friends: add by code or nickname (with confirmation), see who is online, a friends-only top and friend profiles",
+    "Challenges: send a friend “beat my score” in any theme",
+    "Tidier Settings: groups and switches",
+    "Slightly nicer Profile: a glow around the avatar and a bar to the next rank"
   ],
   "notes_uk": [
-    "Під час оновлень гра показує екран «Тимчасово не працює» і сама оновлюється, коли все готово",
-    "Новий вигляд екрана Slovopad ID",
-    "Виправлено помилку: після вибору теми гра йшла на тлі меню"
+    "Друзі: додавай за кодом або ніком (з підтвердженням), дивись, хто в мережі, топ серед друзів, профіль друга",
+    "Виклики: кинь другу «побий мій рахунок» у будь-якій темі",
+    "Налаштування стали охайнішими: групи, перемикачі",
+    "Профіль трохи гарніший: рамка навколо аватарки та смужка до наступного рангу"
   ]
 }
