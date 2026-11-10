@@ -31,7 +31,7 @@
     set("sidQrNew", "НОВЫЙ КОД", "NEW CODE", "НОВИЙ КОД");
     set("sidScanT", "ВХОД НА ДРУГОМ УСТРОЙСТВЕ", "LOG IN ON ANOTHER DEVICE", "ВХІД НА ІНШОМУ ПРИСТРОЇ");
     set("sidScanH", "Открой игру на компьютере, нажми «Войти по QR» и отсканируй код здесь.", "Open the game on your computer, tap “Log in with QR” and scan the code here.", "Відкрий гру на комп’ютері, натисни «Увійти за QR» і скануй код тут.");
-    set("sidScan", "📷 СКАНИРОВАТЬ QR", "📷 SCAN QR", "📷 СКАНУВАТИ QR");
+    set("sidScan", "СКАНИРОВАТЬ QR", "SCAN QR", "СКАНУВАТИ QR");
     set("sidCodeOk", "ПОДТВЕРДИТЬ", "CONFIRM", "ПІДТВЕРДИТИ");
     set("sidScanX", "ЗАКРЫТЬ", "CLOSE", "ЗАКРИТИ");
     const i = $("sidCodeIn"); if (i) i.placeholder = T("ИЛИ ВВЕДИ КОД: ABCD-EFGH", "OR TYPE THE CODE: ABCD-EFGH", "АБО ВВЕДИ КОД: ABCD-EFGH");

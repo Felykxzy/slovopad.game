@@ -317,7 +317,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(a)set(a,e)});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="2.9.0";let upLater=false;
+const VER="2.9.1";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if(state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
@@ -369,7 +369,8 @@ let cloudBusy=false,sidTimer=0;
 ["Нет связи с сервером. Проверь интернет.","No connection to the server. Check your internet.","Немає зв’язку з сервером. Перевір інтернет."],
 ["Сессия истекла. Войди снова.","Session expired. Log in again.","Сесію завершено. Увійди знову."],
 ["Вы вышли из ID. Локальный прогресс сохранён.","Logged out. Local progress is kept.","Ти вийшов з ID. Локальний прогрес збережено."],
-["Пока нет игроков в рейтинге.","No players in the ranking yet.","Поки що немає гравців у рейтингу."],["очков","points","очок"],["Никнейм","Nickname","Нікнейм"],["Пароль (минимум 8 символов)","Password (8+ characters)","Пароль (мінімум 8 символів)"]
+["Пока нет игроков в рейтинге.","No players in the ranking yet.","Поки що немає гравців у рейтингу."],["очков","points","очок"],["Никнейм","Nickname","Нікнейм"],["Пароль (минимум 8 символов)","Password (8+ characters)","Пароль (мінімум 8 символів)"],
+["или","or","або"],["С возвращением! Введи ник и пароль.","Welcome back! Enter your nickname and password.","З поверненням! Введи нік і пароль."],["Показать пароль","Show password","Показати пароль"]
 ].forEach(a=>IM.set(a[0],a));
 const SID_TOG=[["rank","РАНГ И СЛОВА"],["records","РЕКОРДЫ"],["ach","ДОСТИЖЕНИЯ"],["stats","СТАТИСТИКА"],["online","СТАТУС «В СЕТИ»"]];
 const sidTok=()=>{try{return localStorage.getItem(CLOUD_TOKEN_KEY)||""}catch(e){return""}};
@@ -413,15 +414,24 @@ if(username.length<3||password.length<8){sidStatus("Укажи ник (3–20 с
 cloudBusy=true;$("sidReg").disabled=$("sidLogin").disabled=true;sidStatus("Подключаюсь…");
 try{const data=await cloudRequest("/api/"+mode,{method:"POST",body:JSON.stringify({username,password})});localStorage.setItem(CLOUD_TOKEN_KEY,data.token);sidApply(data);$("sidPass").value="";if(window.ACH)ACH.cloud();cloudBusy=false;await cloudSync(true);pfOpen()}
 catch(e){sidStatus(e.message,"er")}finally{cloudBusy=false;$("sidReg").disabled=$("sidLogin").disabled=false}}
+let sidM="reg";
+function sidMode(m){sidM=m;const reg=m==="reg";$("sidReg").hidden=!reg;$("sidLogin").hidden=reg;
+$("sidTabReg").classList.toggle("on",reg);$("sidTabIn").classList.toggle("on",!reg);$("sidTabReg").setAttribute("aria-selected",reg);$("sidTabIn").setAttribute("aria-selected",!reg);
+$("sidPass").autocomplete=reg?"new-password":"current-password";$("sidEye").setAttribute("aria-label",tx("Показать пароль"));
+$("sidHint").textContent=tx(reg?"Создай Slovopad ID, чтобы открыть профиль. Игра доступна и без него, а прогресс сохранится в аккаунте и появится на всех твоих устройствах.":"С возвращением! Введи ник и пароль.")}
+$("sidTabReg").onclick=()=>sidMode("reg");$("sidTabIn").onclick=()=>sidMode("login");
+$("sidEye").onclick=()=>{const p=$("sidPass"),show=p.type==="password";p.type=show?"text":"password";$("sidEye").classList.toggle("on",show)};
+$("sidName").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();$("sidPass").focus()}};
+$("sidPass").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();(sidM==="reg"?$("sidReg"):$("sidLogin")).click()}};
 function sidRender(){const on=!!sidTok(),i=sidInfo()||{};$("sidFormOut").style.display=on?"none":"";$("sidFormIn").style.display=on?"":"none";
 $("sidName").placeholder=tx("Никнейм");$("sidPass").placeholder=tx("Пароль (минимум 8 символов)");
-if(!on)return;$("sidNm").textContent=i.username||"";$("sidCode").textContent=i.spCode||"SP-······";
+if(!on){sidMode(sidM);return}avSet($("sidAv"),PF.a,PF.p);$("sidNm").textContent=i.username||"";$("sidCode").textContent=i.spCode||"SP-······";
 const box=$("sidPriv"),p=sidPriv();box.textContent="";SID_TOG.forEach(([k,label])=>{const row=document.createElement("button");row.type="button";row.className="sid-sw"+(p[k]?" on":"");const s=document.createElement("span");s.textContent=tx(label);const t=document.createElement("i");row.append(s,t);
 row.onclick=()=>{const q=sidPriv();q[k]=!q[k];localStorage.setItem(SID_PRIV,JSON.stringify(q));sidRender();sidAuto()};box.appendChild(row)})}
 function sidOpen(){try{sidRender();sidStatus("")}catch(e){dbgShow("Экран ID: "+e.message)}ov("o11");$("o11").scrollTop=0;if(sidTok())cloudLoadRanks()}
 async function cloudLoadRanks(){const box=$("sidRanks");if(!box.firstChild)box.innerHTML="<div class='hint'>…</div>";
 try{const data=await cloudRequest("/api/leaderboard");box.textContent="";if(!data.items||!data.items.length){const h=document.createElement("div");h.className="hint";h.textContent=tx("Пока нет игроков в рейтинге.");box.appendChild(h);return}
-const me=(sidInfo()||{}).username;data.items.forEach((item,n)=>{const row=document.createElement("div");row.className="cloud-rank"+(me&&item.username.toLowerCase()===me.toLowerCase()?" me":"");const name=document.createElement("span");name.textContent=(n+1)+". "+item.username;const sc=document.createElement("b");sc.textContent=Number(item.bestScore||0).toLocaleString()+" "+tx("очков");row.append(name,sc);box.appendChild(row)})}
+const me=(sidInfo()||{}).username;data.items.forEach((item,n)=>{const row=document.createElement("div");row.className="cloud-rank"+(me&&item.username.toLowerCase()===me.toLowerCase()?" me":"");const name=document.createElement("span");name.textContent=(["🥇","🥈","🥉"][n]||(n+1)+".")+" "+item.username;const sc=document.createElement("b");sc.textContent=Number(item.bestScore||0).toLocaleString()+" "+tx("очков");row.append(name,sc);box.appendChild(row)})}
 catch(e){box.textContent="";const h=document.createElement("div");h.className="hint er";h.textContent=e.message;box.appendChild(h)}}
 async function sidCopy(){const c=(sidInfo()||{}).spCode;if(!c)return;try{await navigator.clipboard.writeText(c)}catch(e){const t=document.createElement("textarea");t.value=c;document.body.appendChild(t);t.select();try{document.execCommand("copy")}catch(_){}t.remove()}sidStatus("КОД СКОПИРОВАН ✓","ok")}
 $("sidReg").onclick=()=>cloudAuth("register");$("sidLogin").onclick=()=>cloudAuth("login");$("sidSync").onclick=()=>cloudSync(false);$("sidCopy").onclick=sidCopy;$("sidClose").onclick=()=>ov(sidTok()?"o7":"o1");

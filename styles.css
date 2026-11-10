@@ -432,3 +432,47 @@ body.eco .btn,body.eco .ib,body.eco .hs i{-webkit-backdrop-filter:none;backdrop-
 
 #sidQrPin{font-size:20px;letter-spacing:.1em;color:#ffd166}
 #sidDel{color:#ff6b81;border-color:rgba(255,107,129,.5)}
+
+/* ===== Slovopad ID: обновлённый вид ===== */
+#o11 .sid-form { gap: 12px; }
+#o11 [hidden] { display: none !important; }
+.sid-lock { width: 72px; height: 72px; margin: 0 auto 2px; display: grid; place-items: center; font-size: 32px; border-radius: 50%; filter: none;
+  background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.3), transparent 55%), linear-gradient(135deg, rgba(94,242,255,.38), rgba(255,79,216,.26));
+  border: 1px solid rgba(255,255,255,.32); box-shadow: 0 0 30px rgba(94,242,255,.35), inset 0 1px 1px rgba(255,255,255,.5); }
+.sid-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 18px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); }
+.sid-tabs button { padding: 13px 6px; border: 0; border-radius: 14px; background: transparent; color: rgba(232,236,255,.6); font-size: 11px; font-weight: 700; letter-spacing: .18em; transition: background .2s, color .2s; }
+.sid-tabs button.on { color: #fff; background: linear-gradient(135deg, rgba(94,242,255,.46), rgba(255,79,216,.3)); box-shadow: 0 0 16px rgba(94,242,255,.25), inset 0 1px 1px rgba(255,255,255,.4); }
+.sid-pw { position: relative; }
+.sid-pw input { padding-right: 54px; }
+.sid-eye { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 42px; height: 42px; padding: 0; border: 0; border-radius: 12px; background: transparent; font-size: 18px; line-height: 1; opacity: .55; }
+.sid-eye.on { opacity: 1; }
+#sidReg, #sidLogin { flex: 1 1 100%; padding: 16px 10px; font-size: 13px; letter-spacing: .22em; }
+.sid-or { display: flex; align-items: center; gap: 12px; font-size: 10px; letter-spacing: .3em; text-transform: uppercase; opacity: .45; }
+.sid-or::before, .sid-or::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,.28); }
+#sidQrBtn { padding: 14px 10px; font-size: 12px; letter-spacing: .2em; }
+
+.sid-card { align-items: stretch; gap: 14px; padding: 16px; }
+.sid-id { display: flex; align-items: center; gap: 14px; text-align: left; }
+.sid-av { width: 62px; height: 62px; font-size: 32px; }
+.sid-who { min-width: 0; flex: 1; }
+.sid-nm { font-size: 19px; text-align: left; }
+.sid-cap { margin-top: 4px; font-size: 8.5px; letter-spacing: .2em; text-align: left; }
+.sid-codebar { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 16px 12px 12px; border-radius: 16px; background: rgba(0,0,0,.28); border: 1px solid rgba(94,242,255,.25); }
+.sid-code { font-size: 28px; letter-spacing: .12em; white-space: nowrap; }
+.sid-card .sid-codebar .btn { margin: 0; width: 100%; padding: 11px 12px; font-size: 10px; letter-spacing: .16em; }
+.sid-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sid-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 84px; padding: 12px 8px; border-radius: 22px; font-size: 10px; font-weight: 600; letter-spacing: .14em; line-height: 1.3; }
+.sid-tile::before { font-size: 24px; line-height: 1; letter-spacing: 0; }
+#sidSync::before { content: "↻"; color: var(--ac); }
+#sidScan::before { content: "📷"; }
+#sidScanH { margin-top: -2px; }
+#sidPriv { gap: 0; border-radius: 18px; overflow: hidden; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.04); }
+#sidPriv .sid-sw { border: 0; border-bottom: 1px solid rgba(255,255,255,.08); border-radius: 0; background: transparent; padding: 14px 16px; font-size: 11px; letter-spacing: .14em; }
+#sidPriv .sid-sw:last-child { border-bottom: 0; }
+#sidRanks { gap: 6px; }
+.sid-danger { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+.sid-danger .btn { padding: 13px 8px; font-size: 10px; letter-spacing: .14em; opacity: .85; }
+.sid-foot { position: sticky; bottom: calc(-18px - env(safe-area-inset-bottom, 0px)); z-index: 3; margin: auto -18px 0; width: calc(100% + 36px); padding: 18px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; align-items: center; gap: 8px; background: linear-gradient(to top, rgba(5,6,15,.92) 48%, rgba(5,6,15,0)); }
+.sid-foot .hint { min-height: 0; }
+.sid-foot .btn { width: min(100%, 440px); }
