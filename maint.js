@@ -52,11 +52,12 @@
   }
 
   async function check() {
-    if (busy || typeof CLOUD_URL === "undefined") return;
+    let url; try { url = CLOUD_URL; } catch (e) { return; }
+    if (busy) return;
     busy = true;
     const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 8000);
     try {
-      const r = await fetch(CLOUD_URL + "/api/status", { cache: "no-store", signal: ctl.signal });
+      const r = await fetch(url + "/api/status", { cache: "no-store", signal: ctl.signal });
       if (r.ok) apply(await r.json());
     } catch (e) { /* нет связи — не мешаем игре */ }
     finally { clearTimeout(tm); busy = false; }
