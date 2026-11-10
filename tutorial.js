@@ -356,7 +356,7 @@
     const D0 = dd(), s = D0.st[n], tb = $("tTx"), sg = $("tSt");
     $("tCt").textContent = (n + 1) + " / " + NN(); $("tH").textContent = s[0]; $("tP").textContent = s[1];
     tb.style.setProperty("--dx", (dir || 1) * 28 + "px"); tb.classList.remove("in"); void tb.offsetWidth; tb.classList.add("in");
-    sg.classList.add("sw"); setTimeout(() => sg.classList.remove("sw"), 140);
+    
     [...$("tDt").children].forEach((d, i) => d.classList.toggle("on", i === n));
     $("tPv").style.visibility = n ? "visible" : "hidden";
     $("tNx").textContent = n < NN() - 1 ? D0.nx + " →" : (from === "menu" ? D0.tr : D0.ok);

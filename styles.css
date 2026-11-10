@@ -230,7 +230,7 @@ body.eco .btn,body.eco .ib,body.eco .hs i{-webkit-backdrop-filter:none;backdrop-
 .tstage{height:clamp(190px,36dvh,280px);border-radius:26px;overflow:hidden;border:1px solid rgba(94,242,255,.38);box-shadow:0 0 34px rgba(94,242,255,.2),inset 0 1px 1px rgba(255,255,255,.3);transition:opacity .14s;flex:none}
 .tstage.sw{opacity:.15}
 .tstage canvas{width:100%;height:100%;display:block}
-.ttxt{text-align:center;min-height:134px;padding:0 4px;flex:none}
+.ttxt{text-align:center;min-height:172px;padding:0 4px;flex:none}
 .ttxt h3{margin:0 0 10px;font-size:clamp(17px,5vw,21px);font-weight:700;letter-spacing:.22em;margin-right:-.22em;background:linear-gradient(90deg,var(--ac),var(--mg));-webkit-background-clip:text;background-clip:text;color:transparent}
 .ttxt p{margin:0;font-size:14px;line-height:1.55;letter-spacing:.02em;opacity:.86}
 .ttxt.in h3{animation:tin .5s cubic-bezier(.2,.9,.3,1.2) both}
@@ -249,7 +249,7 @@ body.eco .btn,body.eco .ib,body.eco .hs i{-webkit-backdrop-filter:none;backdrop-
   .tsk,.tdots i{cursor:pointer}
   .ttxt p{font-size:15px}
 }
-@media (max-height:620px){.ttxt{min-height:118px}.ttxt p{font-size:13px;line-height:1.45}.tc{gap:10px}}
+@media (max-height:620px){.ttxt{min-height:150px}.ttxt p{font-size:13px;line-height:1.45}.tc{gap:10px}}
 
 /* ===== Обучение на живом экране ===== */
 #coach{position:fixed;inset:0;z-index:25;pointer-events:none;display:none}
@@ -580,8 +580,8 @@ body.eco .btn::after,body.eco .ib::after{display:none}
 @media (prefers-reduced-motion:reduce){.ov,.ov.s,.btn,.ib,.btn::after,.ib::after{transition:none!important}}
 
 /* Блик на стекле: без автоматического движения, виден только при наклоне телефона или движении мыши */
-.btn::after,.ib::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.07) 40%,rgba(255,255,255,.55) 50%,rgba(255,255,255,.07) 60%,transparent 70%);background-size:250% 100%;background-position:calc(var(--gx,50)*1%) 50%;transition:opacity .4s ease,background-position .35s ease}
-body.gls.gyro .btn::after,body.gls.gyro .ib::after,body.gls.ptr .btn::after,body.gls.ptr .ib::after{opacity:var(--gop,.9)}
+.btn::after,.ib::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;background:radial-gradient(circle 150px at var(--lx,50%) var(--ly,-200%),rgba(255,255,255,.6) 0,rgba(255,255,255,.28) 30%,rgba(255,255,255,.07) 62%,transparent 100%);transition:opacity .3s ease}
+body.gls.gyro .btn::after,body.gls.gyro .ib::after,body.gls.ptr .btn::after,body.gls.ptr .ib::after{opacity:1}
 body.eco .btn::after,body.eco .ib::after{display:none}
 
 /* меню рангов: карточки с цветом каждого ранга */
@@ -609,3 +609,7 @@ body.hold .btn,body.hold .ib{-webkit-backdrop-filter:none;backdrop-filter:none}
 #tut .tc{will-change:transform}
 .ttxt.in h3,.ttxt.in p{will-change:transform,opacity}
 body.hold .btn::after,body.hold .ib::after{display:none}
+
+/* Обучение: карточка не прыгает между шагами */
+.tc{justify-content:flex-start}
+.tdots{margin-top:auto}

@@ -321,10 +321,10 @@ $("c9").onclick=()=>ov("o8");
 const set=(b,e)=>{const r=b.getBoundingClientRect(),x=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),y=Math.min(1,Math.max(0,(e.clientY-r.top)/r.height));b.style.setProperty("--mx",x*100+"%");b.style.setProperty("--my",y*100+"%");b.style.setProperty("--tx",((x-.5)*2).toFixed(2));b.style.setProperty("--ty",((y-.5)*2).toFixed(2))};
 const end=()=>{if(!a)return;const b=a;a=null;b.classList.remove("pr","jl");void b.offsetWidth;b.classList.add("jl");clearTimeout(tm);tm=setTimeout(()=>{b.classList.remove("jl");["--mx","--my","--tx","--ty"].forEach(k=>b.style.removeProperty(k))},520)};
 document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();ac.resume()}catch(_){}const b=e.target.closest&&e.target.closest(".btn,.ib");if(!b)return;if(a&&a!==b)end();a=b;b.classList.remove("jl");set(b,e);b.classList.add("pr");hap("light",1);snd(b.id==="qp"||b.id==="tp"?620:480,.05,"sine",.04)});
-document.addEventListener("pointermove",e=>{if(a)set(a,e)});
+document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");glassSet((e.clientX/innerWidth-.5)/.55,(e.clientY/innerHeight-.5)/.5)},{passive:true});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="2.11.2";let upLater=false;
+const VER="2.11.3";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if(state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
@@ -452,7 +452,11 @@ if(sidTok())setTimeout(()=>cloudSync(true),1500);
 /* Эффект стекла: блик на кнопках, реагирует на наклон телефона (если разрешено) */
 function glassApply(){if(!document.body)return;const on=CFG.gls!==0;document.body.classList.toggle("gls",on);if(on)glassReady()}
 let glassDone=false,glassAsked=false;
-function glassStart(){if(glassDone)return;glassDone=true;document.body.classList.add("gyro");addEventListener("deviceorientation",e=>{if(e.gamma==null||CFG.gls===0||document.body.classList.contains("eco"))return;const x=Math.max(-1,Math.min(1,e.gamma/30));document.documentElement.style.setProperty("--gx",(50+x*40).toFixed(1));document.documentElement.style.setProperty("--gop",(.22+Math.abs(x)*.3).toFixed(2))},{passive:true})}
+const GLS={tx:0,ty:0,cx:0,cy:0,raf:0};
+function glassPaint(){if(document.body.classList.contains("hold")||document.body.classList.contains("eco"))return;const W=innerWidth,H=innerHeight,hx=W*(.5+GLS.cx*.55),hy=H*(.55+GLS.cy*.4),els=document.querySelectorAll(".btn,.ib"),rs=[];for(const e of els){const r=e.getBoundingClientRect();rs.push(r.width&&r.bottom>0&&r.top<H?r:null)}els.forEach((e,k)=>{const r=rs[k];if(!r)return;e.style.setProperty("--lx",((hx-r.left)/r.width*100).toFixed(1)+"%");e.style.setProperty("--ly",((hy-r.top)/r.height*100).toFixed(1)+"%")})}
+function glassTick(){GLS.cx+=(GLS.tx-GLS.cx)*.35;GLS.cy+=(GLS.ty-GLS.cy)*.35;glassPaint();GLS.raf=(Math.abs(GLS.tx-GLS.cx)>.003||Math.abs(GLS.ty-GLS.cy)>.003)?requestAnimationFrame(glassTick):0}
+function glassSet(x,y){GLS.tx=Math.max(-1.4,Math.min(1.4,x));GLS.ty=Math.max(-1.4,Math.min(1.4,y));if(!GLS.raf)GLS.raf=requestAnimationFrame(glassTick)}
+function glassStart(){if(glassDone)return;glassDone=true;document.body.classList.add("gyro");addEventListener("deviceorientation",e=>{if(e.gamma==null||CFG.gls===0)return;glassSet(e.gamma/30,((e.beta==null?45:e.beta)-45)/30)},{passive:true});addEventListener("scroll",()=>{if(!GLS.raf)GLS.raf=requestAnimationFrame(glassTick)},{capture:true,passive:true})}
 function glassReady(){if(glassDone||glassAsked||!window.DeviceOrientationEvent)return;const R=DeviceOrientationEvent.requestPermission;if(typeof R==="function"){glassAsked=true;R.call(DeviceOrientationEvent).then(s=>{if(s==="granted")glassStart()}).catch(()=>{})}else glassStart()}
 document.addEventListener("click",()=>{if(CFG.gls!==0)glassReady()},{passive:true});
 document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");document.documentElement.style.setProperty("--gx",(e.clientX/innerWidth*80+10).toFixed(1))},{passive:true});

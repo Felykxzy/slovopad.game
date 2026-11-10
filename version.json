@@ -1,18 +1,15 @@
 {
-  "version": "2.11.2",
+  "version": "2.11.3",
   "notes": [
-    "Экран «Как играть» и экскурсия по меню листаются плавнее",
-    "Вибрация на iPhone (iOS 17.4 и новее)",
-    "Профиль: кнопка ✕ всегда сверху, меню из пяти кнопок стало компактнее"
+    "Блик на кнопках стал настоящим: пятно света сразу следует за наклоном телефона и меняется на каждой кнопке по-своему",
+    "«Как играть»: карточка больше не прыгает между шагами, картинка не мигает"
   ],
   "notes_en": [
-    "The “How to play” screen and the menu tour scroll more smoothly",
-    "Vibration on iPhone (iOS 17.4 and newer)",
-    "Profile: the ✕ button stays on top; the five-button menu is more compact"
+    "Real button shine: the light spot follows the phone tilt instantly and lands differently on every button",
+    "“How to play”: the card no longer jumps between steps and the picture no longer flickers"
   ],
   "notes_uk": [
-    "Екран «Як грати» та екскурсія по меню гортаються плавніше",
-    "Вібрація на iPhone (iOS 17.4 і новіші)",
-    "Профіль: кнопка ✕ завжди зверху, меню з п’яти кнопок стало компактнішим"
+    "Справжній відблиск на кнопках: пляма світла одразу слідує за нахилом телефона й лягає на кожну кнопку по-різному",
+    "«Як грати»: картка більше не стрибає між кроками, картинка не блимає"
   ]
 }

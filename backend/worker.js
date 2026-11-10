@@ -8,6 +8,7 @@ const PRIVACY_KEYS = ['rank', 'records', 'ach', 'stats', 'online'];
 const QR_MAX_TRIES = 3;               // сколько раз можно ошибиться в числе на телефоне
 const QR_PER_IP = 5;                  // сколько живых QR-кодов может быть у одного адреса
 const QR_TOTAL = 500;                 // и сколько всего на сервере
+const MAX_PTS_PER_WORD = 150;
 const DUMMY_SALT = 'AAAAAAAAAAAAAAAAAAAAAA';   // для выравнивания времени входа, если ника нет
 
 const b64 = bytes => {
@@ -152,6 +153,16 @@ async function allow(env, key, limit, windowMs) {
     if (Math.random() < 0.02) await env.DB.prepare('DELETE FROM rate_limit WHERE t<?').bind(now - 24 * 3600 * 1000).run();
     return true;
   } catch (_) { return true; }   // сбой базы не должен блокировать игроков
+}
+// только подсчёт, без записи: нужен для лимитов, которые считаются по неудачным попыткам
+async function countHits(env, key, windowMs) {
+  try {
+    const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM rate_limit WHERE k=? AND t>?').bind(key, Date.now() - windowMs).first();
+    return row ? row.n : 0;
+  } catch (_) { return 0; }
+}
+async function recordHit(env, key) {
+  try { await env.DB.prepare('INSERT INTO rate_limit (k,t) VALUES (?,?)').bind(key, Date.now()).run(); } catch (_) {}
 }
 const TOO_MANY = { error: 'Слишком много попыток. Подожди несколько минут.' };
 async function ipHash(request, env) {
@@ -438,11 +449,16 @@ export default {
           }
           user = await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(id).first();
         } else {
-          if (!await allow(env, 'ip:' + ipH, 20, 10 * 60 * 1000) || !await allow(env, 'lg:' + nickKey(username), 15, 15 * 60 * 1000)) return reply(TOO_MANY, 429);
+          // общий лимит на адрес (все попытки), и отдельный лимит неудачных попыток на пару «адрес + ник»:
+          // так чужой ник нельзя запереть, даже зная его, и правильный пароль не блокируется
+          const failKey = 'lf:' + ipH + ':' + nickKey(username);
+          if (!await allow(env, 'ip:' + ipH, 20, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+          if (await countHits(env, failKey, 15 * 60 * 1000) >= 15) return reply(TOO_MANY, 429);
           user = await env.DB.prepare('SELECT * FROM users WHERE username=? COLLATE NOCASE OR username_key=? LIMIT 1').bind(username, nickKey(username)).first();
           // считаем хэш и для несуществующего ника, чтобы по времени ответа нельзя было узнать, есть ли такой игрок
           const hash = await passwordHash(password, user ? user.salt : DUMMY_SALT);
           if (!user || !safeEq(hash, user.password_hash)) {
+            await recordHit(env, failKey);
             return reply({ error: 'Неверный ник или пароль.' }, 401);
           }
         }
@@ -517,6 +533,8 @@ export default {
         const user = await userFrom(request, env);
         if (!user) return reply({ error: 'Нужно войти в аккаунт.' }, 401);
         await env.DB.prepare('DELETE FROM qr_login WHERE user_id=?').bind(user.id).run();
+        await env.DB.prepare('DELETE FROM friends WHERE a=? OR b=?').bind(user.id, user.id).run();
+        await env.DB.prepare('DELETE FROM challenges WHERE from_id=? OR to_id=?').bind(user.id, user.id).run();
         await env.DB.prepare('DELETE FROM users WHERE id=?').bind(user.id).run();
         return reply({ ok: true });
       }
@@ -545,7 +563,8 @@ export default {
         const now = Date.now(), last = Date.parse(user.updated_at) || now, oldWords = user.total_words || 0;
         const allowance = oldWords === 0 ? 50000 : 20 + Math.ceil((now - last) / 60000) * 150;
         const totalWords = Math.min(num(body.totalWords), oldWords + allowance);
-        const bestScore = Math.min(num(body.bestScore), Math.max(2000, totalWords * 1000));
+        // Лучшая игра не может содержать больше слов, чем всего набрано, а за слово дают не больше 150 очков (10 × множитель 5 × золотое ×3)
+        const bestScore = Math.min(num(body.bestScore), totalWords * MAX_PTS_PER_WORD + MAX_PTS_PER_WORD);
         const privacy = JSON.stringify(cleanPrivacy(body.privacy || parse(user.privacy_json, {})));
 
         await env.DB.prepare(
