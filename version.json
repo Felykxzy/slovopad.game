@@ -1,12 +1,12 @@
 {
-  "version": "2.11.9",
+  "version": "2.11.10",
   "notes": [
-    "Фоны в магазине стали детальнее: горы, лес, луна, планета и живые частицы"
+    "Обновление теперь на экране загрузки: игра сразу сообщает о новой версии и обновляется по кнопке"
   ],
   "notes_en": [
-    "Shop backgrounds are more detailed: mountains, forest, moon, planet and lively particles"
+    "Updates now appear on the loading screen: the game tells you about a new version right away and updates with one button"
   ],
   "notes_uk": [
-    "Фони в магазині стали детальнішими: гори, ліс, місяць, планета й живі частинки"
+    "Оновлення тепер на екрані завантаження: гра одразу повідомляє про нову версію й оновлюється за кнопкою"
   ]
 }

@@ -631,3 +631,12 @@ body.hold .btn::after,body.hold .ib::after{display:none}
 #splB{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,var(--ac),var(--mg));box-shadow:0 0 12px rgba(94,242,255,.6)}
 #splT{position:relative;font-size:11px;letter-spacing:.28em;opacity:.7;font-weight:600}
 @media (prefers-reduced-motion:reduce){#splW i,#splL{animation:none}#spl{transition:opacity .2s}}
+
+#splU{position:relative;display:none;flex-direction:column;align-items:center;gap:12px;width:min(80%,320px)}
+#spl.upd #splU{display:flex}#spl.upd #splT{display:none}
+#spl.upd #splBar{margin-top:-4px}
+#splUt{font-size:13px;letter-spacing:.18em;font-weight:700;color:var(--ac);text-align:center}
+#splUv{font-size:12px;letter-spacing:.2em;opacity:.7;margin-top:-6px}
+#splY{width:100%;padding:14px 10px;letter-spacing:.24em;font-size:13px}
+#splN{background:none;border:0;color:var(--ink);opacity:.55;font-size:11px;letter-spacing:.22em;padding:8px;font-family:inherit;cursor:pointer}
+#spl.busy #splUv{display:none}#spl.busy #splT{display:block;order:9;font-size:10px;opacity:.6}
