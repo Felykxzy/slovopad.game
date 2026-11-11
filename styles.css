@@ -619,3 +619,15 @@ body.hold .btn::after,body.hold .ib::after{display:none}
 /* Обучение: карточка не прыгает между шагами */
 .tc{justify-content:flex-start}
 .tdots{margin-top:auto}
+
+#spl{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:radial-gradient(120% 80% at 50% 30%,#171a48 0%,#070918 60%,#05060f 100%);transition:opacity .55s ease,transform .55s ease}
+#spl.out{opacity:0;transform:scale(1.04);pointer-events:none}
+#splW{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+#splW i{position:absolute;top:-10%;font-style:normal;font-weight:700;font-size:15px;letter-spacing:.2em;color:rgba(94,242,255,.5);text-shadow:0 0 12px rgba(94,242,255,.6);animation:splfall 5s linear infinite}
+@keyframes splfall{to{transform:translateY(120vh)}}
+#splL{position:relative;font-size:clamp(34px,11vw,54px);font-weight:800;letter-spacing:.14em;background:linear-gradient(90deg,var(--ac),var(--mg));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 18px rgba(94,242,255,.35));animation:splpulse 2s ease-in-out infinite}
+@keyframes splpulse{50%{filter:drop-shadow(0 0 26px rgba(255,79,216,.5))}}
+#splBar{position:relative;width:min(70%,300px);height:8px;border-radius:6px;background:rgba(255,255,255,.1);overflow:hidden}
+#splB{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,var(--ac),var(--mg));box-shadow:0 0 12px rgba(94,242,255,.6)}
+#splT{position:relative;font-size:11px;letter-spacing:.28em;opacity:.7;font-weight:600}
+@media (prefers-reduced-motion:reduce){#splW i,#splL{animation:none}#spl{transition:opacity .2s}}

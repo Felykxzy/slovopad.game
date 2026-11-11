@@ -1,15 +1,12 @@
 {
-  "version": "2.11.6",
+  "version": "2.11.7",
   "notes": [
-    "Обновление прямо в игре: окно с полоской загрузки, прогресс сохраняется",
-    "Игра сама проверяет новую версию каждые 5 минут, пока ты в меню"
+    "Экран загрузки при запуске: логотип, полоска с процентами, плавный вход в игру"
   ],
   "notes_en": [
-    "Update inside the game: a window with a loading bar, your progress is kept",
-    "The game checks for a new version every 5 minutes while you are in the menu"
+    "Loading screen on launch: logo, a percentage bar and a smooth fade into the game"
   ],
   "notes_uk": [
-    "Оновлення прямо в грі: вікно зі смужкою завантаження, прогрес зберігається",
-    "Гра сама перевіряє нову версію кожні 5 хвилин, поки ти в меню"
+    "Екран завантаження під час запуску: логотип, смужка з відсотками, плавний вхід у гру"
   ]
 }

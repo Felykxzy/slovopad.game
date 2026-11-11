@@ -6,6 +6,12 @@
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="theme-color" content="#05060f"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script>if(/tgWebApp/.test(location.hash+location.search)||window.TelegramWebviewProxy)document.write('<script src="https://telegram.org/js/telegram-web-app.js"><\/script>')</script>
 <link rel="stylesheet" href="styles.css"></head><body>
+<div id="spl"><div id="splW"><i style="left:8%;animation-delay:-1s">ЛУНА</i><i style="left:64%;animation-delay:-3.2s;animation-duration:5.4s">ЩИТ</i><i style="left:30%;animation-delay:-2.2s;animation-duration:6.2s">ЗВЕЗДА</i><i style="left:76%;animation-delay:-4.4s;animation-duration:4.8s">КОМЕТА</i><i style="left:2%;animation-delay:-5s;animation-duration:5.8s">СЛОВО</i></div><div id="splL">СЛОВОПАД</div><div id="splBar"><i id="splB"></i></div><div id="splT">ЗАГРУЗКА ИГРЫ 0%</div></div>
+<script>(function(){var s=document.getElementById("spl"),b=document.getElementById("splB"),t=document.getElementById("splT"),L="ru";try{L=["ru","en","uk"][JSON.parse(localStorage.getItem("cfg")||"{}").lang||0]||"ru"}catch(e){}
+var W={ru:["ЗАГРУЗКА ИГРЫ","ЗАПУСК"],en:["LOADING THE GAME","STARTING"],uk:["ЗАВАНТАЖЕННЯ ГРИ","ЗАПУСК"]}[L],p=0,tg=6,ready=false,done=false,t0=Date.now();
+function fin(){if(done)return;done=true;s.classList.add("out");setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s)},600)}
+function tick(){if(done)return;tg=ready?100:Math.min(88,tg+(88-tg)*.03+.25);p+=(tg-p)*.18;if(ready&&p>99)p=100;var n=Math.round(p);b.style.width=p+"%";t.textContent=(n>=88?W[1]:W[0])+" "+n+"%";if(p>=100&&Date.now()-t0>1500)fin();else requestAnimationFrame(tick)}
+addEventListener("load",function(){ready=true});setTimeout(function(){ready=true},7000);setTimeout(fin,9000);requestAnimationFrame(tick)})()</script>
 <div id="app">
 <div id="hud"><div><div id="score">0</div><div class="lab" id="cm"></div></div>
 <div id="lvl"><div id="lv"></div><div id="bar"><div id="bf"></div></div></div>
