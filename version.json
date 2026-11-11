@@ -1,12 +1,15 @@
 {
-  "version": "2.11.5",
+  "version": "2.11.6",
   "notes": [
-    "Клавиатуру на iPhone можно открыть снова после того, как спрятал её во время игры"
+    "Обновление прямо в игре: окно с полоской загрузки, прогресс сохраняется",
+    "Игра сама проверяет новую версию каждые 5 минут, пока ты в меню"
   ],
   "notes_en": [
-    "You can bring the keyboard back on iPhone after hiding it during a game"
+    "Update inside the game: a window with a loading bar, your progress is kept",
+    "The game checks for a new version every 5 minutes while you are in the menu"
   ],
   "notes_uk": [
-    "Клавіатуру на iPhone можна відкрити знову, після того як сховав її під час гри"
+    "Оновлення прямо в грі: вікно зі смужкою завантаження, прогрес зберігається",
+    "Гра сама перевіряє нову версію кожні 5 хвилин, поки ти в меню"
   ]
 }
