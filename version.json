@@ -1,12 +1,12 @@
 {
-  "version": "2.11.4",
+  "version": "2.11.5",
   "notes": [
-    "Клавиатура на iPhone больше не закрывается при наборе слов"
+    "Клавиатуру на iPhone можно открыть снова после того, как спрятал её во время игры"
   ],
   "notes_en": [
-    "The keyboard on iPhone no longer closes while typing words"
+    "You can bring the keyboard back on iPhone after hiding it during a game"
   ],
   "notes_uk": [
-    "Клавіатура на iPhone більше не закривається під час набору слів"
+    "Клавіатуру на iPhone можна відкрити знову, після того як сховав її під час гри"
   ]
 }

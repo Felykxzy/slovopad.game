@@ -94,7 +94,8 @@ ti.addEventListener("input",()=>{if(state!=="play"){ti.value="";return}
 const L=GL,raw=ti.value.toLowerCase(),v=(L===0?raw.replace(/ё/g,"е"):raw).replace(LRX[L],"");if(raw.replace(/\s/g,"").length>v.length&&v.length<=buf.length&&performance.now()-lyT>3000){lyT=performance.now();flo(W/2,H*.5,tx("ПЕРЕКЛЮЧИ КЛАВИАТУРУ")+": "+tx(LKB[L]),16,T.r,1.8)}
 if(v.length<buf.length){while(buf&&buf.length>v.length)back()}else if(v.startsWith(buf)){for(const ch of v.slice(buf.length))press(ch)}else if(v.length>buf.length){press(v[v.length-1])}
 if(ti.value!==buf)ti.value=buf});
-$("fw").addEventListener("pointerdown",()=>{if(state==="play")foc()});
+let kbT=0;function kbTap(){if(state!=="play")return;const n=performance.now();if(n-kbT<700)return;kbT=n;const vv=window.visualViewport,shut=!vv||innerHeight-vv.height<120;if(shut&&document.activeElement===ti)ti.blur();foc()}
+$("fw").addEventListener("pointerdown",kbTap);$("fw").addEventListener("click",()=>{if(state==="play"&&document.activeElement!==ti)foc()});
 let vhH=0;function vh(){const vv=window.visualViewport?visualViewport.height:innerHeight,bh=document.body.getBoundingClientRect().height||vv,h=Math.round(bh-vv>120?vv:bh);if(h!==vhH){vhH=h;app.style.height=h+"px"}if(window.scrollY||window.pageYOffset)window.scrollTo(0,0)}
 if(window.visualViewport){visualViewport.addEventListener("resize",vh);visualViewport.addEventListener("scroll",vh)}addEventListener("resize",vh);vh();
 let W=0,H=0,bgc,bg,glow,vig,items=[],P=[],R=[],F=[],Sh=[],target=null,buf="",state="idle",last=0,gt=0,spawnT=0,shake=0,flashA=0,hitX=0,hitT=0,mute=false,ac=null;
@@ -324,7 +325,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");glassSet((e.clientX/innerWidth-.5)/.55,(e.clientY/innerHeight-.5)/.5)},{passive:true});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="2.11.4";let upLater=false;
+const VER="2.11.5";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if(state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
