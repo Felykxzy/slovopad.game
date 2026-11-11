@@ -1,12 +1,12 @@
 {
-  "version": "2.11.7",
+  "version": "2.11.8",
   "notes": [
-    "Экран загрузки при запуске: логотип, полоска с процентами, плавный вход в игру"
+    "Экран загрузки дольше и плавнее"
   ],
   "notes_en": [
-    "Loading screen on launch: logo, a percentage bar and a smooth fade into the game"
+    "The loading screen is longer and smoother"
   ],
   "notes_uk": [
-    "Екран завантаження під час запуску: логотип, смужка з відсотками, плавний вхід у гру"
+    "Екран завантаження триваліший і плавніший"
   ]
 }
