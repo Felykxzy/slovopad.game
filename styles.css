@@ -644,3 +644,29 @@ body.hold .btn::after,body.hold .ib::after{display:none}
 @media (max-width:400px){.hs{gap:5px;flex-wrap:nowrap}.hs i{padding:7px 8px;letter-spacing:.1em;font-size:9px}.rkt{font-size:10.5px;letter-spacing:.14em;gap:8px}.rkb{padding-left:14px;padding-right:14px}}
 @media (max-width:340px){.hs i{padding:6px 6px;letter-spacing:.06em;font-size:8.5px}.rkt{font-size:9.5px;letter-spacing:.08em}}
 @media (max-width:420px){.tg{letter-spacing:.14em;font-size:10px;white-space:nowrap}.tg::before,.tg::after{flex:none}}
+/* ---------- чат с другом ---------- */
+#o15{justify-content:flex-start;gap:10px;padding:calc(18px + var(--sat)) 14px calc(12px + var(--sab));overflow:hidden;touch-action:manipulation}
+#o15 [hidden]{display:none!important}
+#o15 .frh{width:100%;flex:none}
+.chl{flex:1;min-height:0;width:100%;max-width:520px;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:6px;padding:6px 2px;text-align:left}
+.chm{display:flex;flex-direction:column;align-items:flex-start;max-width:82%}
+.chm.me{align-self:flex-end;align-items:flex-end}
+.chb{display:block;padding:9px 13px;border-radius:18px 18px 18px 6px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);font-size:15px;line-height:1.35;word-break:break-word;overflow-wrap:anywhere}
+.chm.me .chb{border-radius:18px 18px 6px 18px;background:linear-gradient(135deg,rgba(94,242,255,.3),rgba(255,79,216,.22));border-color:rgba(94,242,255,.3)}
+.chm.rx .chb{background:none;border:0;padding:2px 4px;font-size:38px;line-height:1.1}
+.cht{font-style:normal;font-size:9px;letter-spacing:.1em;opacity:.45;margin:2px 6px 0}
+.chem{margin:auto;opacity:.6;font-size:13px;letter-spacing:.06em;text-align:center;padding:20px}
+.chbar{display:flex;gap:8px;align-items:center;width:100%;max-width:520px;flex:none;padding:6px;border-radius:26px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16)}
+.chbar input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:var(--ink);font:inherit;font-size:16px;padding:9px 6px}
+.chbar input:disabled{opacity:.4}
+.chrx{width:40px;height:40px;flex:none;font-size:20px;padding:0;display:flex;align-items:center;justify-content:center}
+.chsn{flex:none;padding:0;width:44px;height:40px;border-radius:20px;letter-spacing:0;font-size:18px;line-height:1}
+.chrp{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;width:100%;max-width:520px;flex:none;padding:8px;border-radius:22px;background:rgba(20,22,50,.92);border:1px solid rgba(255,255,255,.16)}
+.chre{background:none;border:0;font-size:28px;line-height:1;padding:6px 8px;border-radius:14px}
+.chre:active{transform:scale(1.25);background:rgba(255,255,255,.1)}
+.chmenu{display:flex;flex-direction:column;gap:8px;width:100%;max-width:520px;flex:none}
+.chmenu .btn{padding:12px;font-size:12px}
+.frchat{position:relative;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:var(--ink);font-size:16px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center}
+.frchat .bdg{top:-5px;right:-5px;min-width:18px;height:18px;line-height:18px;padding:0 5px;font-size:10px}
+.fracts{align-items:center}
+#o15 .hint{flex:none;min-height:0;margin:0}

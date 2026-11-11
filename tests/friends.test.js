@@ -125,3 +125,48 @@ test('hidden records are not shown in the leaderboard at all', async t => {
   const lb = await s.raw('/api/leaderboard');
   assert.deepEqual(lb.data.items.map(x => x.username), ['Bobby']);
 });
+
+async function makeFriends(s, a, b) {
+  await s.raw('/api/friends/request', { q: b.name }, a.token);
+  await s.raw('/api/friends/respond', { code: a.code, accept: true }, b.token);
+}
+
+test('chat: friends exchange texts and reactions, unread counts, strangers cannot write', async t => {
+  const s = await setup(); if (!s) return t.skip('нет node:sqlite');
+  const a = await s.reg('Alice'), b = await s.reg('Bobby'), c = await s.reg('Carol');
+  assert.equal((await s.raw('/api/chat/send', { to: b.code, text: 'привет' }, a.token)).status, 403);   // ещё не друзья
+  await makeFriends(s, a, b);
+  assert.equal((await s.raw('/api/chat/send', { to: b.code, text: '  привет,   друг  ' }, a.token)).status, 200);
+  assert.equal((await s.raw('/api/chat/send', { to: b.code, react: '🔥' }, a.token)).status, 200);
+  assert.equal((await s.raw('/api/chat/send', { to: b.code, react: '💩' }, a.token)).status, 400);   // реакции только из списка
+  assert.equal((await s.raw('/api/chat/send', { to: b.code, text: 'x'.repeat(121) }, a.token)).status, 400);
+  assert.equal((await s.raw('/api/chat/send', { to: b.code, text: '   ' }, a.token)).status, 400);
+  assert.equal((await s.raw('/api/ping', {}, b.token)).data.messages, 2);
+  const lb = (await s.raw('/api/friends', null, b.token)).data;
+  assert.equal(lb.friends[0].unread, 2);
+  const got = (await s.raw('/api/chat?with=' + a.code, null, b.token)).data;
+  assert.deepEqual(got.messages.map(m => [m.mine, m.kind, m.body]), [[false, 'text', 'привет, друг'], [false, 'react', '🔥']]);
+  assert.equal((await s.raw('/api/ping', {}, b.token)).data.messages, 0);   // прочитано
+  const mine = (await s.raw('/api/chat?with=' + b.code, null, a.token)).data;
+  assert.equal(mine.messages[0].mine, true);
+  assert.equal((await s.raw('/api/chat?with=' + a.code + '&after=' + got.messages[1].id, null, b.token)).data.messages.length, 0);
+  assert.equal((await s.raw('/api/chat?with=' + a.code, null, c.token)).status, 403);   // чужую переписку не прочитать
+});
+
+test('chat: block stops messages, report is stored, removing a friend wipes the history', async t => {
+  const s = await setup(); if (!s) return t.skip('нет node:sqlite');
+  const a = await s.reg('Alice'), b = await s.reg('Bobby');
+  await makeFriends(s, a, b);
+  await s.raw('/api/chat/send', { to: b.code, text: 'hi' }, a.token);
+  assert.equal((await s.raw('/api/chat/report', { to: a.code }, b.token)).status, 200);
+  assert.equal((await s.raw('/api/chat/block', { to: a.code, on: true }, b.token)).data.blocked, true);
+  assert.equal((await s.raw('/api/chat/send', { to: b.code, text: 'ещё' }, a.token)).status, 403);
+  assert.equal((await s.raw('/api/chat/send', { to: a.code, text: 'ответ' }, b.token)).status, 409);   // сам заблокировал
+  assert.equal((await s.raw('/api/chat?with=' + a.code, null, b.token)).data.blocked, true);
+  await s.raw('/api/chat/block', { to: a.code, on: false }, b.token);
+  assert.equal((await s.raw('/api/chat/send', { to: b.code, text: 'снова' }, a.token)).status, 200);
+  await s.raw('/api/friends/remove', { code: b.code }, a.token);
+  assert.equal((await s.raw('/api/chat?with=' + b.code, null, a.token)).status, 403);
+  await makeFriends(s, a, b);
+  assert.equal((await s.raw('/api/chat?with=' + b.code, null, a.token)).data.messages.length, 0);
+});

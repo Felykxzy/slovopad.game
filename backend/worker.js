@@ -123,6 +123,11 @@ async function ensureSchema(env) {
     await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_challenges (id TEXT PRIMARY KEY, from_id TEXT NOT NULL, to_id TEXT NOT NULL, theme TEXT NOT NULL, lang INTEGER NOT NULL DEFAULT 0, score INTEGER NOT NULL, t INTEGER NOT NULL, state TEXT NOT NULL DEFAULT \'open\', result INTEGER NOT NULL DEFAULT 0)').run();
     await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_challenges_to_idx ON sp_challenges(to_id,state)').run();
     await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_challenges_from_idx ON sp_challenges(from_id)').run();
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_msgs (id INTEGER PRIMARY KEY AUTOINCREMENT, a TEXT NOT NULL, b TEXT NOT NULL, kind TEXT NOT NULL, body TEXT NOT NULL, t INTEGER NOT NULL, rd INTEGER NOT NULL DEFAULT 0)').run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_msgs_ab_idx ON sp_msgs(a,b,id)').run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_msgs_b_idx ON sp_msgs(b,rd)').run();
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_blocks (a TEXT NOT NULL, b TEXT NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (a,b))').run();
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_reports (id INTEGER PRIMARY KEY AUTOINCREMENT, reporter TEXT NOT NULL, target TEXT NOT NULL, body TEXT NOT NULL, t INTEGER NOT NULL)').run();
   } catch (e) { console.error('friends schema', e); }
   schemaReady = true;
 }
@@ -177,6 +182,8 @@ const FR_MAX = 100, FR_IN_MAX = 50, FR_OUT_MAX = 30;       // друзей, ож
 const ONLINE_MS = 150 * 1000;                              // «в сети», если был активен в последние 2,5 минуты
 const CH_TTL = 7 * 24 * 3600 * 1000;                       // вызов живёт неделю
 const CH_OPEN_PER_FRIEND = 5;
+const MSG_MAX = 120, MSG_KEEP = 50;                         // длина сообщения и сколько последних хранить для пары друзей
+const REACTS = ['🔥', '👏', '😂', '😎', '💪', '🎯', '❤️', '👋', '🤯', '🥳'];
 const findUser = (env, q) => {
   q = String(q || '').trim().slice(0, 40);
   return q ? env.DB.prepare('SELECT * FROM users WHERE sp_code=? OR username=? COLLATE NOCASE ORDER BY (sp_code=?) DESC LIMIT 1').bind(q.toUpperCase(), q, q.toUpperCase()).first() : null;
@@ -540,6 +547,9 @@ export default {
         if (!user) return reply({ error: 'Нужно войти в аккаунт.' }, 401);
         await env.DB.prepare('DELETE FROM qr_login WHERE user_id=?').bind(user.id).run();
         await env.DB.prepare('DELETE FROM sp_friends WHERE a=? OR b=?').bind(user.id, user.id).run();
+        await env.DB.prepare('DELETE FROM sp_msgs WHERE a=? OR b=?').bind(user.id, user.id).run();
+        await env.DB.prepare('DELETE FROM sp_blocks WHERE a=? OR b=?').bind(user.id, user.id).run();
+        await env.DB.prepare('DELETE FROM sp_reports WHERE reporter=? OR target=?').bind(user.id, user.id).run();
         await env.DB.prepare('DELETE FROM sp_challenges WHERE from_id=? OR to_id=?').bind(user.id, user.id).run();
         await env.DB.prepare('DELETE FROM users WHERE id=?').bind(user.id).run();
         return reply({ ok: true });
@@ -602,7 +612,7 @@ export default {
       }
 
       /* ---------- друзья ---------- */
-      if (url.pathname.startsWith('/api/friends') || url.pathname.startsWith('/api/challenge') || url.pathname === '/api/ping') {
+      if (url.pathname.startsWith('/api/friends') || url.pathname.startsWith('/api/challenge') || url.pathname.startsWith('/api/chat') || url.pathname === '/api/ping') {
         const user = await userFrom(request, env);
         if (!user) return reply({ error: 'Нужно войти в аккаунт.' }, 401);
         const now = Date.now(), post = request.method === 'POST', body = post ? await request.json().catch(() => ({})) : {};
@@ -613,7 +623,8 @@ export default {
           try { await env.DB.prepare('UPDATE users SET seen=? WHERE id=?').bind(now, user.id).run(); } catch (_) { /* колонки seen может не быть: не ломаем из-за этого весь запрос */ }
           const rq = await env.DB.prepare('SELECT COUNT(*) AS n FROM sp_friends WHERE b=? AND state=\'pending\'').bind(user.id).first();
           const ch = await env.DB.prepare('SELECT COUNT(*) AS n FROM sp_challenges WHERE to_id=? AND state=\'open\' AND t>?').bind(user.id, now - CH_TTL).first();
-          return reply({ ok: true, requests: rq ? rq.n : 0, challenges: ch ? ch.n : 0 });
+          const ms = await env.DB.prepare('SELECT COUNT(*) AS n FROM sp_msgs WHERE b=? AND rd=0').bind(user.id).first();
+          return reply({ ok: true, requests: rq ? rq.n : 0, challenges: ch ? ch.n : 0, messages: ms ? ms.n : 0 });
         }
 
         // список друзей, запросы и вызовы
@@ -628,7 +639,8 @@ export default {
           for (const id of new Set(ids)) { const r = people.get(id); if (r) info.set(id, await pubInfo(env, r, now)); }
           const pick = r => info.get(r.a === user.id ? r.b : r.a);
           const byBest = (x, y) => (y.bestScore || 0) - (x.bestScore || 0) || x.username.localeCompare(y.username);
-          const friends = rel.filter(r => r.state === 'accepted').map(pick).filter(Boolean).sort(byBest);
+          const unread = new Map(((await env.DB.prepare('SELECT a, COUNT(*) AS n FROM sp_msgs WHERE b=? AND rd=0 GROUP BY a').bind(user.id).all()).results || []).map(r => [r.a, r.n]));
+          const friends = rel.filter(r => r.state === 'accepted').map(r => { const id = r.a === user.id ? r.b : r.a, i = info.get(id); return i ? { ...i, unread: unread.get(id) || 0 } : null; }).filter(Boolean).sort(byBest);
           const incoming = rel.filter(r => r.state === 'pending' && r.b === user.id).map(pick).filter(Boolean);
           const outgoing = rel.filter(r => r.state === 'pending' && r.a === user.id).map(pick).filter(Boolean);
           const mapIn = chIn.map(c => ({ id: c.id, from: info.get(c.from_id), theme: c.theme, lang: c.lang, score: c.score, t: c.t })).filter(c => c.from);
@@ -674,7 +686,63 @@ export default {
           if (!other) return reply({ error: 'Игрок не найден.' }, 404);
           await env.DB.prepare('DELETE FROM sp_friends WHERE (a=? AND b=?) OR (a=? AND b=?)').bind(user.id, other.id, other.id, user.id).run();
           await env.DB.prepare('DELETE FROM sp_challenges WHERE (from_id=? AND to_id=?) OR (from_id=? AND to_id=?)').bind(user.id, other.id, other.id, user.id).run();
+          await env.DB.prepare('DELETE FROM sp_msgs WHERE (a=? AND b=?) OR (a=? AND b=?)').bind(user.id, other.id, other.id, user.id).run();
           return reply({ ok: true });
+        }
+
+        /* ---------- чат между друзьями ---------- */
+        if (url.pathname.startsWith('/api/chat')) {
+          const withCode = (url.searchParams.get('with') || body.to || '');
+          const other = await findUser(env, withCode);
+          if (!other || other.id === user.id) return reply({ error: 'Игрок не найден.' }, 404);
+          const rl = await relation(env, user.id, other.id);
+          if (!rl || rl.state !== 'accepted') return reply({ error: 'Писать можно только друзьям.' }, 403);
+          const iBlocked = await env.DB.prepare('SELECT 1 AS x FROM sp_blocks WHERE a=? AND b=?').bind(user.id, other.id).first();
+
+          if (url.pathname === '/api/chat' && request.method === 'GET') {
+            if (!await allow(env, 'cg:' + user.id, 100, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+            const after = Math.max(0, Math.floor(Number(url.searchParams.get('after')) || 0));
+            const rows = (await env.DB.prepare('SELECT id,a,kind,body,t FROM sp_msgs WHERE ((a=? AND b=?) OR (a=? AND b=?)) AND id>? ORDER BY id ASC LIMIT 50')
+              .bind(user.id, other.id, other.id, user.id, after).all()).results || [];
+            await env.DB.prepare('UPDATE sp_msgs SET rd=1 WHERE a=? AND b=? AND rd=0').bind(other.id, user.id).run();
+            return reply({ with: other.username, blocked: !!iBlocked, messages: rows.map(r => ({ id: r.id, mine: r.a === user.id, kind: r.kind, body: r.body, t: r.t })) });
+          }
+
+          if (url.pathname === '/api/chat/send' && post) {
+            if (!await allow(env, 'cs:' + user.id, 30, 60 * 1000)) return reply(TOO_MANY, 429);
+            if (iBlocked) return reply({ error: 'Ты заблокировал этого игрока. Сначала разблокируй.' }, 409);
+            const theyBlocked = await env.DB.prepare('SELECT 1 AS x FROM sp_blocks WHERE a=? AND b=?').bind(other.id, user.id).first();
+            if (theyBlocked) return reply({ error: 'Игрок сейчас не принимает сообщения.' }, 403);
+            let kind = 'text', text = '';
+            if (typeof body.react === 'string' && body.react) {
+              if (!REACTS.includes(body.react)) return reply({ error: 'Такой реакции нет.' }, 400);
+              kind = 'react'; text = body.react;
+            } else {
+              text = String(body.text || '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
+              if (!text) return reply({ error: 'Пустое сообщение.' }, 400);
+              if ([...text].length > MSG_MAX) return reply({ error: 'Сообщение длиннее ' + MSG_MAX + ' символов.' }, 400);
+            }
+            const ins = await env.DB.prepare('INSERT INTO sp_msgs (a,b,kind,body,t,rd) VALUES (?,?,?,?,?,0)').bind(user.id, other.id, kind, text, now).run();
+            await env.DB.prepare('DELETE FROM sp_msgs WHERE id IN (SELECT id FROM sp_msgs WHERE (a=? AND b=?) OR (a=? AND b=?) ORDER BY id DESC LIMIT -1 OFFSET ?)')
+              .bind(user.id, other.id, other.id, user.id, MSG_KEEP).run();
+            return reply({ ok: true, id: ins && ins.meta ? ins.meta.last_row_id || 0 : 0 });
+          }
+
+          if (url.pathname === '/api/chat/block' && post) {
+            if (!await allow(env, 'cb:' + user.id, 20, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+            if (body.on === false) await env.DB.prepare('DELETE FROM sp_blocks WHERE a=? AND b=?').bind(user.id, other.id).run();
+            else await env.DB.prepare('INSERT OR IGNORE INTO sp_blocks (a,b,t) VALUES (?,?,?)').bind(user.id, other.id, now).run();
+            return reply({ ok: true, blocked: body.on !== false });
+          }
+
+          if (url.pathname === '/api/chat/report' && post) {
+            if (!await allow(env, 'cr:' + user.id, 5, 60 * 60 * 1000)) return reply(TOO_MANY, 429);
+            const last = (await env.DB.prepare('SELECT body FROM sp_msgs WHERE a=? AND b=? AND kind=\'text\' ORDER BY id DESC LIMIT 5').bind(other.id, user.id).all()).results || [];
+            await env.DB.prepare('INSERT INTO sp_reports (reporter,target,body,t) VALUES (?,?,?,?)').bind(user.id, other.id, last.map(r => r.body).reverse().join(' | ').slice(0, 800), now).run();
+            await env.DB.prepare('DELETE FROM sp_reports WHERE t<?').bind(now - 60 * 24 * 3600 * 1000).run();
+            return reply({ ok: true });
+          }
+          return reply({ error: 'Not found' }, 404);
         }
 
         // вызов: «побей мой счёт»

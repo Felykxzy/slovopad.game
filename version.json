@@ -1,21 +1,18 @@
 {
-  "version": "2.12.0",
+  "version": "2.13.0",
   "notes": [
-    "Telegram: кнопки сверху больше не прячутся под шапкой",
-    "Узкие телефоны: ранг и плашки статистики помещаются",
-    "Фоны работают быстрее, игра меньше греет телефон",
-    "Исправлен офлайн-режим и усилена защита сервера"
+    "Чат между друзьями: сообщения и быстрые реакции кнопкой 😊",
+    "Значки непрочитанных сообщений",
+    "Блокировка и жалоба прямо в чате"
   ],
   "notes_en": [
-    "Telegram: the top buttons no longer hide under its header",
-    "Narrow phones: the rank and stat chips fit",
-    "Backgrounds run faster, the game heats the phone less",
-    "Fixed offline mode and strengthened server protection"
+    "Chat between friends: messages and quick reactions with the 😊 button",
+    "Unread message badges",
+    "Block and report right in the chat"
   ],
   "notes_uk": [
-    "Telegram: кнопки зверху більше не ховаються під шапкою",
-    "Вузькі телефони: ранг і плашки статистики вміщаються",
-    "Фони працюють швидше, гра менше гріє телефон",
-    "Виправлено офлайн-режим і посилено захист сервера"
+    "Чат між друзями: повідомлення й швидкі реакції кнопкою 😊",
+    "Значки непрочитаних повідомлень",
+    "Блокування і скарга просто в чаті"
   ]
 }

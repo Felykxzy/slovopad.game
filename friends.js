@@ -6,7 +6,9 @@
   const T = (a, b, c) => L3(a, b, c);
   const g = id => document.getElementById(id);
   let data = null, tab = 0, pick = null, cur = null, busy = false, CH = null, lastErr = "";
-  const badge = { r: 0, c: 0 };
+  const badge = { r: 0, c: 0, m: 0 };
+  const REACTS = ["🔥", "👏", "😂", "😎", "💪", "🎯", "❤️", "👋", "🤯", "🥳"];
+  const chat = { p: null, last: 0, timer: 0, blocked: false, busy: false, sure: 0 };
 
   function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
   function btn(cls, text, fn) { const b = h("button", cls, text); b.type = "button"; b.onclick = fn; return b; }
@@ -42,8 +44,15 @@
       '<div class="frtabs" id="frTabs"></div><div class="frlist" id="frList"></div><div class="hint" id="frSt"></div>';
     const p = h("div", "ov sc"); p.id = "o14";
     p.innerHTML = '<div class="fph" id="fpH"></div><div class="frlist" id="fpB"></div><div class="hint" id="fpSt"></div><div class="mb"><button class="btn" id="fpBk" type="button"></button></div>';
+    const c15 = h("div", "ov"); c15.id = "o15";
+    c15.innerHTML = '<div class="frh"><button class="ib" id="chBk" type="button">←</button><div class="frt"><h2 id="chT"></h2><div class="sub" id="chS"></div></div><button class="ib" id="chMn" type="button">⋯</button></div>' +
+      '<div class="chmenu" id="chMenu" hidden><button class="btn a" id="chBl" type="button"></button><button class="btn a" id="chRpb" type="button"></button></div>' +
+      '<div class="chl" id="chL"></div><div class="hint" id="chSt"></div>' +
+      '<div class="chrp" id="chRp" hidden></div>' +
+      '<div class="chbar"><button class="ib chrx" id="chRx" type="button" aria-label="reactions">😊</button><input id="chIn" type="text" maxlength="120" autocomplete="off" enterkeyhint="send"><button class="btn chsn" id="chSn" type="button">➤</button></div>';
     const after = g("o11");
-    after.parentNode.insertBefore(o, after.nextSibling); o.parentNode.insertBefore(p, o.nextSibling);
+    after.parentNode.insertBefore(o, after.nextSibling); o.parentNode.insertBefore(p, o.nextSibling); p.parentNode.insertBefore(c15, p.nextSibling);
+    chatWire();
     g("frBk").onclick = () => { pick = null; ov("o1"); };
     g("fpBk").onclick = () => { render(); ov("o13"); };
     g("frAdd").onclick = addFriend;
@@ -61,7 +70,7 @@
   async function load(silent) {
     if (!sidTok() || busy) return;
     busy = true;
-    try { data = await cloudRequest("/api/friends"); badge.r = data.incoming.length; badge.c = data.challenges.incoming.length; paintBadge(); if (!silent) setStatus(""); }
+    try { data = await cloudRequest("/api/friends"); badge.r = data.incoming.length; badge.c = data.challenges.incoming.length; badge.m = data.friends.reduce((s, x) => s + (x.unread || 0), 0); paintBadge(); if (!silent) setStatus(""); }
     catch (e) { if (!silent) setStatus(e.message, true); }
     finally { busy = false }
     if (g("o13").classList.contains("s")) render();
@@ -121,7 +130,13 @@
     box.appendChild(h("div", "frsec", T("В СЕТИ: ", "ONLINE: ", "У МЕРЕЖІ: ") + on + " / " + data.friends.length));
     const sorted = [...data.friends].sort((a, b) => (b.online - a.online) || ((b.bestScore || 0) - (a.bestScore || 0)));
     sorted.forEach(f => {
-      const act = pick ? btn("frgo", T("ВЫЗВАТЬ", "CHALLENGE", "ВИКЛИК"), e => { e.stopPropagation(); sendChallenge(f, pick) }) : scoreTag(f);
+      let act;
+      if (pick) act = btn("frgo", T("ВЫЗВАТЬ", "CHALLENGE", "ВИКЛИК"), e => { e.stopPropagation(); sendChallenge(f, pick) });
+      else {
+        act = h("div", "fracts"); const cb = btn("frchat", "💬", e => { e.stopPropagation(); chatOpen(f) });
+        if (f.unread) cb.appendChild(h("i", "bdg", f.unread > 9 ? "9+" : String(f.unread)));
+        act.append(scoreTag(f), cb);
+      }
       box.appendChild(row(f, act, () => profile(f.spCode)));
     });
   }
@@ -193,6 +208,7 @@
     if (p.bestScore === null) box.appendChild(h("div", "hint", T("Друг скрыл цифры в настройках приватности.", "This friend hides numbers in privacy settings.", "Друг сховав цифри в налаштуваннях приватності.")));
     const mine = data.challenges.sent.filter(c => c.to.spCode === spCode && c.state === "won").length;
     if (mine) box.appendChild(h("div", "hint", T("Вызовов, которые он побил: ", "Challenges they beat: ", "Викликів, які він побив: ") + mine));
+    box.appendChild(btn("btn", "💬 " + T("НАПИСАТЬ", "MESSAGE", "НАПИСАТИ"), () => chatOpen(p)));
     const c = h("div", "fpchal"); box.appendChild(c);
     c.appendChild(btn("btn", "⚔ " + T("ВЫЗВАТЬ", "CHALLENGE", "КИНУТИ ВИКЛИК"), () => themeChooser(p, c)));
     let sure = 0;
@@ -253,6 +269,97 @@
     }
   }
 
+
+  /* ---------- чат с другом ---------- */
+  const clock = ms => { const d = new Date(ms); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") };
+  function chatWire() {
+    g("chBk").onclick = chatClose;
+    g("chSn").onclick = chatSend;
+    g("chIn").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); chatSend() } });
+    g("chRx").onclick = () => { const r = g("chRp"); r.hidden = !r.hidden; g("chMenu").hidden = true };
+    g("chMn").onclick = () => { g("chMenu").hidden = !g("chMenu").hidden; g("chRp").hidden = true; chatMenuLabels() };
+    g("chBl").onclick = chatBlock;
+    g("chRpb").onclick = chatReport;
+    const r = g("chRp"); REACTS.forEach(x => r.appendChild(btn("chre", x, () => { r.hidden = true; chatSend(x) })));
+    if (window.visualViewport) {
+      const fit = () => { const o = g("o15"); if (!o || !o.classList.contains("s")) return; const v = window.visualViewport; o.style.height = v.height + "px"; o.style.transform = "translateY(" + v.offsetTop + "px)"; const l = g("chL"); l.scrollTop = l.scrollHeight };
+      window.visualViewport.addEventListener("resize", fit); window.visualViewport.addEventListener("scroll", fit);
+    }
+  }
+  function chatLabels() {
+    g("chIn").placeholder = T("Сообщение…", "Message…", "Повідомлення…");
+    g("chBl").textContent = chat.blocked ? T("РАЗБЛОКИРОВАТЬ", "UNBLOCK", "РОЗБЛОКУВАТИ") : T("ЗАБЛОКИРОВАТЬ", "BLOCK", "ЗАБЛОКУВАТИ");
+    chatMenuLabels();
+  }
+  function chatMenuLabels() {
+    g("chBl").textContent = chat.blocked ? T("РАЗБЛОКИРОВАТЬ", "UNBLOCK", "РОЗБЛОКУВАТИ") : T("ЗАБЛОКИРОВАТЬ", "BLOCK", "ЗАБЛОКУВАТИ");
+    g("chRpb").textContent = chat.sure ? T("ТОЧНО ПОЖАЛОВАТЬСЯ?", "REALLY REPORT?", "ТОЧНО СКАРЖИТИСЬ?") : T("ПОЖАЛОВАТЬСЯ", "REPORT", "СКАРЖИТИСЬ");
+  }
+  function chatOpen(p) {
+    build(); chat.p = p; chat.last = 0; chat.blocked = false; chat.sure = 0;
+    g("chL").textContent = ""; g("chSt").textContent = ""; g("chMenu").hidden = true; g("chRp").hidden = true; g("chIn").value = "";
+    g("chT").textContent = p.username; g("chS").textContent = status(p) || " ";
+    chatLabels(); ov("o15"); chatFit();
+    chatPoll(true);
+    clearInterval(chat.timer); chat.timer = setInterval(() => chatPoll(false), 8000);
+  }
+  function chatFit() { const o = g("o15"), v = window.visualViewport; if (v) { o.style.height = v.height + "px"; o.style.transform = "translateY(" + v.offsetTop + "px)" } }
+  function chatClose() {
+    clearInterval(chat.timer); chat.timer = 0; chat.p = null;
+    const o = g("o15"); o.style.height = ""; o.style.transform = "";
+    g("chIn").blur(); load(true).then(() => { render() }); render(); ov("o13");
+  }
+  function chatAdd(m) {
+    const l = g("chL"), box = h("div", "chm" + (m.mine ? " me" : "") + (m.kind === "react" ? " rx" : ""));
+    box.appendChild(h("span", "chb", m.body)); box.appendChild(h("i", "cht", clock(m.t)));
+    l.appendChild(box);
+  }
+  async function chatPoll(first) {
+    if (!chat.p) return;
+    if (!g("o15").classList.contains("s")) { clearInterval(chat.timer); chat.timer = 0; chat.p = null; return }
+    if (chat.busy || document.hidden) return;
+    chat.busy = true; const who = chat.p;
+    try {
+      const r = await cloudRequest("/api/chat?with=" + encodeURIComponent(who.spCode) + "&after=" + chat.last);
+      if (chat.p !== who) return;
+      chat.blocked = !!r.blocked; chatLabels();
+      const l = g("chL"), stick = first || l.scrollHeight - l.scrollTop - l.clientHeight < 80;
+      r.messages.forEach(m => { chat.last = Math.max(chat.last, m.id); chatAdd(m) });
+      if (!l.children.length && !l.querySelector(".chem")) { const e = h("div", "chem", T("Напиши первым или отправь реакцию 😊", "Write first or send a reaction 😊", "Напиши першим або надішли реакцію 😊")); l.appendChild(e) }
+      else if (r.messages.length && l.querySelector(".chem")) l.querySelector(".chem").remove();
+      if (stick) l.scrollTop = l.scrollHeight;
+      g("chIn").disabled = g("chSn").disabled = g("chRx").disabled = chat.blocked;
+      g("chSt").textContent = chat.blocked ? T("Ты заблокировал этого игрока.", "You blocked this player.", "Ти заблокував цього гравця.") : "";
+      who.unread = 0;
+    } catch (e) { if (chat.p === who) g("chSt").textContent = e.message }
+    finally { chat.busy = false }
+  }
+  async function chatSend(react) {
+    if (!chat.p || chat.blocked) return;
+    const inp = g("chIn"), text = typeof react === "string" ? "" : inp.value.trim();
+    if (typeof react !== "string" && !text) return;
+    g("chSn").disabled = true;
+    try {
+      await post("/api/chat/send", typeof react === "string" ? { to: chat.p.spCode, react } : { to: chat.p.spCode, text });
+      if (typeof react !== "string") inp.value = "";
+      g("chSt").textContent = ""; chat.busy = false; await chatPoll(true);
+    } catch (e) { g("chSt").textContent = e.message }
+    finally { g("chSn").disabled = chat.blocked }
+    if (typeof react !== "string" && !("ontouchstart" in window)) inp.focus();
+  }
+  async function chatBlock() {
+    if (!chat.p) return;
+    try { const r = await post("/api/chat/block", { to: chat.p.spCode, on: !chat.blocked }); chat.blocked = r.blocked; g("chMenu").hidden = true; chat.busy = false; await chatPoll(false) }
+    catch (e) { g("chSt").textContent = e.message }
+  }
+  async function chatReport() {
+    if (!chat.p) return;
+    if (!chat.sure) { chat.sure = 1; chatMenuLabels(); setTimeout(() => { chat.sure = 0; chatMenuLabels() }, 4000); return }
+    chat.sure = 0; chatMenuLabels();
+    try { await post("/api/chat/report", { to: chat.p.spCode }); g("chMenu").hidden = true; g("chSt").textContent = T("Жалоба отправлена. Можно ещё и заблокировать игрока.", "Report sent. You can also block the player.", "Скаргу надіслано. Можна ще й заблокувати гравця.") }
+    catch (e) { g("chSt").textContent = e.message }
+  }
+
   /* ---------- вход на экран, значок, «я здесь» ---------- */
   async function open(fromPick) {
     build(); labels(); if (!fromPick) pick = null;
@@ -260,13 +367,13 @@
     if (sidTok()) { setStatus(""); await load() }
   }
   function paintBadge() {
-    const b = g("frBd"); if (!b) return; const n = badge.r + badge.c; b.hidden = !n; b.textContent = n > 9 ? "9+" : String(n);
+    const b = g("frBd"); if (!b) return; const n = badge.r + badge.c + badge.m; b.hidden = !n; b.textContent = n > 9 ? "9+" : String(n);
   }
   let lastPing = 0;
   async function ping(force) {
     if (!sidTok() || document.hidden || (force !== true && Date.now() - lastPing < 20000)) return;
     lastPing = Date.now();
-    try { const r = await post("/api/ping"); badge.r = r.requests; badge.c = r.challenges; paintBadge() } catch (e) { }
+    try { const r = await post("/api/ping"); badge.r = r.requests; badge.c = r.challenges; badge.m = r.messages || 0; paintBadge() } catch (e) { }
   }
 
   build();
