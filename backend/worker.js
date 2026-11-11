@@ -166,7 +166,8 @@ async function recordHit(env, key) {
 }
 const TOO_MANY = { error: 'Слишком много попыток. Подожди несколько минут.' };
 async function ipHash(request, env) {
-  const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || 'unknown';
+  let ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || 'unknown';
+  if (ip.includes(':')) ip = ip.split(':').slice(0, 4).join(':'); // IPv6: считаем всю подсеть /64 одним клиентом
   return hex(await crypto.subtle.digest('SHA-256', enc.encode(ip + ':' + secretOf(env)))).slice(0, 16);
 }
 const num = v => Math.max(0, Math.min(100000000, Number(v) || 0));
@@ -178,7 +179,7 @@ const CH_TTL = 7 * 24 * 3600 * 1000;                       // вызов жив�
 const CH_OPEN_PER_FRIEND = 5;
 const findUser = (env, q) => {
   q = String(q || '').trim().slice(0, 40);
-  return q ? env.DB.prepare('SELECT * FROM users WHERE sp_code=? OR username=? COLLATE NOCASE LIMIT 1').bind(q.toUpperCase(), q).first() : null;
+  return q ? env.DB.prepare('SELECT * FROM users WHERE sp_code=? OR username=? COLLATE NOCASE ORDER BY (sp_code=?) DESC LIMIT 1').bind(q.toUpperCase(), q, q.toUpperCase()).first() : null;
 };
 const relation = (env, x, y) => env.DB.prepare('SELECT a,b,state FROM sp_friends WHERE (a=? AND b=?) OR (a=? AND b=?) LIMIT 1').bind(x, y, y, x).first();
 // короткие данные игроков по id (без тяжёлого фото из профиля), пачками из-за лимита параметров
@@ -423,11 +424,11 @@ export default {
       /* регистрация и вход */
       if (request.method === 'POST' && (url.pathname === '/api/register' || url.pathname === '/api/login')) {
         const ipH = await ipHash(request, env);
-        const body = await request.json();
+        const body = (await request.json().catch(() => null)) || {};
         const username = String(body.username || '').trim();
         const password = String(body.password || '');
-        if (!/^[\p{L}\p{N}_.-]{3,20}$/u.test(username) || password.length < 8 || password.length > 128) {
-          return reply({ error: 'Ник: 3–20 символов (буквы, цифры, _ . -). Пароль: 8–128 символов.' }, 400);
+        if (!/^[\p{L}\p{N}_.-]{3,20}$/u.test(username) || /^sp-/i.test(username) || password.length < 8 || password.length > 128) {
+          return reply({ error: 'Ник: 3–20 символов (буквы, цифры, _ . -, не может начинаться с SP-). Пароль: 8–128 символов.' }, 400);
         }
 
         let user;
@@ -490,21 +491,26 @@ export default {
         const user = await userFrom(request, env);
         if (!user) return reply({ error: 'Нужно войти в аккаунт.' }, 401);
         if (!await allow(env, 'qra:' + user.id, 20, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
-        const body = await request.json();
+        const body = (await request.json().catch(() => null)) || {};
         const code = String(body.code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
         const pin = String(body.pin || '').replace(/\D/g, '');
         if (pin.length !== 2) return reply({ error: 'Введи число с экрана компьютера (2 цифры).' }, 400);
         const row = code ? await env.DB.prepare('SELECT * FROM qr_login WHERE code=?').bind(code).first() : null;
         if (!row || row.expires < Date.now()) return reply({ error: 'Код не найден или устарел. Обнови QR на экране компьютера.' }, 404);
         if (row.user_id) return reply({ error: 'Этот код уже использован.' }, 409);
+        // счётчик попыток увеличиваем атомарно, иначе параллельные запросы обходят лимит
+        const bump = await env.DB.prepare('UPDATE qr_login SET tries=tries+1 WHERE code=? AND tries<? AND user_id IS NULL').bind(code, QR_MAX_TRIES).run();
+        if (!(bump && bump.meta && bump.meta.changes)) {
+          await env.DB.prepare('DELETE FROM qr_login WHERE code=?').bind(code).run();
+          return reply({ error: 'Число введено неверно слишком много раз. Обнови QR на экране компьютера.' }, 403);
+        }
         if (!safeEq(pin, row.pin)) {
-          const tries = (row.tries || 0) + 1;
-          if (tries >= QR_MAX_TRIES) {
+          const left = QR_MAX_TRIES - (row.tries || 0) - 1;
+          if (left <= 0) {
             await env.DB.prepare('DELETE FROM qr_login WHERE code=?').bind(code).run();
             return reply({ error: 'Число введено неверно слишком много раз. Обнови QR на экране компьютера.' }, 403);
           }
-          await env.DB.prepare('UPDATE qr_login SET tries=? WHERE code=?').bind(tries, code).run();
-          return reply({ error: 'Неверное число. Осталось попыток: ' + (QR_MAX_TRIES - tries) + '.' }, 403);
+          return reply({ error: 'Неверное число. Осталось попыток: ' + left + '.' }, 403);
         }
         const done = await env.DB.prepare('UPDATE qr_login SET user_id=? WHERE code=? AND user_id IS NULL').bind(user.id, code).run();
         if (!(done && done.meta && done.meta.changes)) return reply({ error: 'Этот код уже использован.' }, 409);
@@ -551,8 +557,10 @@ export default {
         const user = await userFrom(request, env);
         if (!user) return reply({ error: 'Нужно войти в аккаунт.' }, 401);
 
-        const body = await request.json();
-        const profile = JSON.stringify(body.profile || {});
+        const body = (await request.json().catch(() => null)) || {};
+        const profObj = body.profile && typeof body.profile === 'object' ? body.profile : {};
+        if (profObj.pf && typeof profObj.pf === 'object') profObj.pf.a = String(profObj.pf.a || '').slice(0, 16);
+        const profile = JSON.stringify(profObj);
         const data = JSON.stringify(body.data || {});
         if (profile.length > 300000) return reply({ error: 'Слишком большой профиль (уменьши фото).' }, 413);
         if (data.length > 100000) return reply({ error: 'Слишком много данных прогресса.' }, 413);
@@ -561,11 +569,11 @@ export default {
         // Защита от накрутки рейтинга: слов не может прибавиться быстрее, чем их реально набрать,
         // а очков не может быть сильно больше, чем слов. Полностью подделку исключить нельзя, но грубые обманы отсекаются.
         const now = Date.now(), last = Date.parse(user.updated_at) || now, oldWords = user.total_words || 0;
-        const allowance = oldWords === 0 ? 50000 : 20 + Math.ceil((now - last) / 60000) * 150;
+        const allowance = oldWords === 0 ? 50000 : 20 + Math.ceil((now - last) / 1000 * 2.5);
         const totalWords = Math.min(num(body.totalWords), oldWords + allowance);
         // Лучшая игра не может содержать больше слов, чем всего набрано, а за слово дают не больше 150 очков (10 × множитель 5 × золотое ×3)
         const bestScore = Math.min(num(body.bestScore), totalWords * MAX_PTS_PER_WORD + MAX_PTS_PER_WORD);
-        const privacy = JSON.stringify(cleanPrivacy(body.privacy || parse(user.privacy_json, {})));
+        const privacy = JSON.stringify(cleanPrivacy({ ...parse(user.privacy_json, {}), ...(body.privacy && typeof body.privacy === 'object' ? body.privacy : {}) }));
 
         await env.DB.prepare(
           'UPDATE users SET profile_json=?, data_json=?, privacy_json=?, best_score=MAX(best_score,?), total_words=MAX(total_words,?), updated_at=? WHERE id=?'
@@ -579,8 +587,9 @@ export default {
       if (url.pathname === '/api/player' && request.method === 'GET') {
         const q = String(url.searchParams.get('q') || '').trim();
         if (!q) return reply({ error: 'Укажи ник или код.' }, 400);
-        const row = await env.DB.prepare('SELECT * FROM users WHERE sp_code=? OR username=? COLLATE NOCASE LIMIT 1')
-          .bind(q.toUpperCase(), q).first();
+        if (!await allow(env, 'pl:' + await ipHash(request, env), 60, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+        const row = await env.DB.prepare('SELECT * FROM users WHERE sp_code=? OR username=? COLLATE NOCASE ORDER BY (sp_code=?) DESC LIMIT 1')
+          .bind(q.toUpperCase(), q, q.toUpperCase()).first();
         if (!row) return reply({ error: 'Игрок не найден.' }, 404);
         const pv = cleanPrivacy(parse(row.privacy_json, {}));
         const pf = (parse(row.profile_json, {}).pf) || {};
@@ -645,7 +654,7 @@ export default {
           }
           if (await count('SELECT COUNT(*) AS n FROM sp_friends WHERE a=? AND state=\'pending\'', user.id) >= FR_OUT_MAX) return reply({ error: 'Слишком много неотвеченных запросов. Подожди ответов.' }, 429);
           if (await count('SELECT COUNT(*) AS n FROM sp_friends WHERE b=? AND state=\'pending\'', other.id) >= FR_IN_MAX) return reply({ error: 'Этому игроку сейчас нельзя отправить запрос. Попробуй позже.' }, 429);
-          await env.DB.prepare('INSERT INTO sp_friends (a,b,state,t) VALUES (?,?,\'pending\',?)').bind(user.id, other.id, now).run();
+          await env.DB.prepare('INSERT OR IGNORE INTO sp_friends (a,b,state,t) VALUES (?,?,\'pending\',?)').bind(user.id, other.id, now).run();
           return reply({ state: 'sent', username: other.username });
         }
 
@@ -705,7 +714,7 @@ export default {
       /* рейтинг */
       if (url.pathname === '/api/leaderboard' && request.method === 'GET') {
         const rows = await env.DB.prepare(
-          'SELECT username,best_score AS bestScore,total_words AS totalWords,privacy_json FROM users WHERE best_score>0 ORDER BY best_score DESC,total_words DESC,username ASC LIMIT 50'
+          'SELECT username,best_score AS bestScore,total_words AS totalWords,privacy_json FROM users WHERE best_score>0 AND COALESCE(json_extract(privacy_json,\'$.records\'),1)<>0 ORDER BY best_score DESC,total_words DESC,username ASC LIMIT 50'
         ).all();
         return reply({ items: (rows.results || []).map(r => {
           const pv = cleanPrivacy(parse(r.privacy_json, {}));
@@ -716,7 +725,7 @@ export default {
       return reply({ error: 'Not found' }, 404);
     } catch (error) {
       console.error('server error', error);
-      return reply({ error: 'Ошибка сервера. Попробуй позже.', detail: String((error && error.message) || error).slice(0, 160) }, 500);
+      return reply({ error: 'Ошибка сервера. Попробуй позже.' }, 500);
     }
   }
 };

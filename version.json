@@ -1,12 +1,21 @@
 {
-  "version": "2.11.12",
+  "version": "2.12.0",
   "notes": [
-    "Исправлена ошибка сервера в разделе «Друзья»"
+    "Telegram: кнопки сверху больше не прячутся под шапкой",
+    "Узкие телефоны: ранг и плашки статистики помещаются",
+    "Фоны работают быстрее, игра меньше греет телефон",
+    "Исправлен офлайн-режим и усилена защита сервера"
   ],
   "notes_en": [
-    "Fixed the server error in the Friends section"
+    "Telegram: the top buttons no longer hide under its header",
+    "Narrow phones: the rank and stat chips fit",
+    "Backgrounds run faster, the game heats the phone less",
+    "Fixed offline mode and strengthened server protection"
   ],
   "notes_uk": [
-    "Виправлено помилку сервера в розділі «Друзі»"
+    "Telegram: кнопки зверху більше не ховаються під шапкою",
+    "Вузькі телефони: ранг і плашки статистики вміщаються",
+    "Фони працюють швидше, гра менше гріє телефон",
+    "Виправлено офлайн-режим і посилено захист сервера"
   ]
 }

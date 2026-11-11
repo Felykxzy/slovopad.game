@@ -110,3 +110,18 @@ test('friends API needs login and is rate limited', async t => {
   for (let i = 0; i < 32; i++) last = await s.raw('/api/friends/request', { q: 'Nobody' + i }, a.token);
   assert.equal(last.status, 429);
 });
+
+test('nick cannot imitate an SP- code', async t => {
+  const s = await setup(); if (!s) return t.skip('нет node:sqlite');
+  const r = await s.raw('/api/register', { username: 'SP-ABC234', password: 'password123' }, null, '10.9.0.1');
+  assert.equal(r.status, 400);
+});
+
+test('hidden records are not shown in the leaderboard at all', async t => {
+  const s = await setup(); if (!s) return t.skip('нет node:sqlite');
+  const a = await s.reg('Alice'), b = await s.reg('Bobby');
+  await s.raw('/api/sync', { profile: {}, data: {}, totalWords: 40, bestScore: 900, privacy: { records: false } }, a.token);
+  await s.raw('/api/sync', { profile: {}, data: {}, totalWords: 30, bestScore: 500 }, b.token);
+  const lb = await s.raw('/api/leaderboard');
+  assert.deepEqual(lb.data.items.map(x => x.username), ['Bobby']);
+});
