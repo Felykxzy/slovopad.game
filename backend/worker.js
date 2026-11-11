@@ -374,7 +374,67 @@ if (token) { $("rem").checked = true; run("status"); }
 `;
 
 /* ---------- Обработчик ---------- */
+/* ---------- Ночная уборка и отчёт в Telegram (запускается по расписанию Cloudflare) ---------- */
+const DAY = 24 * 3600 * 1000;
+async function runCron(env) {
+  await ensureSchema(env);
+  const now = Date.now(), db = env.DB;
+  const n = async (sql, ...a) => ((await db.prepare(sql).bind(...a).first()) || {}).n || 0;
+  const iso = ms => new Date(ms).toISOString();
+  const cleaned = {};
+  const step = async (name, sql, ...a) => { try { const before = await n('SELECT COUNT(*) AS n FROM ' + name); await db.prepare(sql).bind(...a).run(); cleaned[name] = before - await n('SELECT COUNT(*) AS n FROM ' + name); } catch (_) { cleaned[name] = 0; } };
+  await step('rate_limit', 'DELETE FROM rate_limit WHERE t<?', now - DAY);
+  await step('qr_login', 'DELETE FROM qr_login WHERE expires<?', now);
+  await step('sp_reports', 'DELETE FROM sp_reports WHERE t<?', now - 60 * DAY);
+  await step('sp_challenges', 'DELETE FROM sp_challenges WHERE t<?', now - 2 * CH_TTL);
+  await step('sp_friends', "DELETE FROM sp_friends WHERE state='pending' AND t>0 AND t<?", now - 90 * DAY);
+  // аккаунты, в которые не играли ни разу и не заходили 120 дней
+  let removed = 0;
+  try {
+    const dead = ((await db.prepare("SELECT id FROM users WHERE best_score=0 AND total_words=0 AND updated_at<>'' AND updated_at<?").bind(iso(now - 120 * DAY)).all()).results || []).slice(0, 200);
+    for (const u of dead) {
+      for (const [t, c] of [['qr_login', 'user_id'], ['sp_msgs', 'a'], ['sp_msgs', 'b'], ['sp_blocks', 'a'], ['sp_blocks', 'b'], ['sp_friends', 'a'], ['sp_friends', 'b'], ['sp_reports', 'reporter'], ['sp_reports', 'target'], ['sp_challenges', 'from_id'], ['sp_challenges', 'to_id']]) {
+        try { await db.prepare('DELETE FROM ' + t + ' WHERE ' + c + '=?').bind(u.id).run(); } catch (_) {}
+      }
+      await db.prepare('DELETE FROM users WHERE id=?').bind(u.id).run();
+      removed++;
+    }
+  } catch (_) {}
+  const stats = {
+    users: await n('SELECT COUNT(*) AS n FROM users'),
+    day: await n('SELECT COUNT(*) AS n FROM users WHERE updated_at>?', iso(now - DAY)),
+    week: await n('SELECT COUNT(*) AS n FROM users WHERE updated_at>?', iso(now - 7 * DAY)),
+    pairs: await n("SELECT COUNT(*) AS n FROM sp_friends WHERE state='accepted'"),
+    msgs: await n('SELECT COUNT(*) AS n FROM sp_msgs WHERE t>?', now - DAY),
+    reports: await n('SELECT COUNT(*) AS n FROM sp_reports WHERE t>?', now - DAY),
+    open: await n("SELECT COUNT(*) AS n FROM sp_challenges WHERE state='open'")
+  };
+  const top = (await db.prepare('SELECT username,best_score AS s FROM users ORDER BY best_score DESC LIMIT 3').all()).results || [];
+  const text = ['📊 СЛОВОПАД — отчёт за сутки', '',
+    '👥 Игроков всего: ' + stats.users,
+    '🟢 Были за сутки: ' + stats.day + ', за неделю: ' + stats.week,
+    '🤝 Пар друзей: ' + stats.pairs + ', открытых вызовов: ' + stats.open,
+    '💬 Сообщений за сутки: ' + stats.msgs,
+    stats.reports ? '🚩 Жалоб за сутки: ' + stats.reports + ' (посмотри чат)' : '🚩 Жалоб за сутки: 0',
+    top.length ? '🏆 Топ: ' + top.map(t => t.username + ' ' + t.s).join(', ') : '',
+    '', '🧹 Убрано: пустых аккаунтов ' + removed + ', старых записей ' + Object.values(cleaned).reduce((x, y) => x + y, 0)
+  ].filter((l, i, a) => l !== '' || a[i - 1] !== '').join('\n');
+  let sent = false;
+  if (env.TG_BOT_TOKEN && env.TG_CHAT_ID) {
+    try {
+      const r = await fetch('https://api.telegram.org/bot' + env.TG_BOT_TOKEN + '/sendMessage', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ chat_id: env.TG_CHAT_ID, text }) });
+      sent = r.ok;
+    } catch (_) {}
+  }
+  return { stats, removed, cleaned, sent, text };
+}
+
 export default {
+  scheduled(event, env, ctx) {
+    const p = runCron(env).catch(e => console.error('cron', e));
+    if (ctx && ctx.waitUntil) ctx.waitUntil(p);
+    return p;
+  },
   async fetch(request, env) {
     const origin = corsOrigin(request, env);
 

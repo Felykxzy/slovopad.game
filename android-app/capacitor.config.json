@@ -1,0 +1,12 @@
+{
+  "appId": "com.felykxzy.slovopad",
+  "appName": "СЛОВОПАД",
+  "webDir": "www",
+  "server": {
+    "url": "https://felykxzy.github.io/slovopad.game/",
+    "cleartext": false
+  },
+  "android": {
+    "backgroundColor": "#0b0720"
+  }
+}

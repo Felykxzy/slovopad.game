@@ -1,0 +1,27 @@
+name: Проверка
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['.github/tg-message-id']
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Синтаксис скриптов
+        run: |
+          for f in *.js backend/worker.js; do node --check "$f" || exit 1; done
+          jq empty version.json manifest.webmanifest
+      - name: Версия совпадает
+        run: |
+          V=$(jq -r .version version.json)
+          grep -q "const VER=\"$V\"" app.js || { echo "Версия в app.js не совпадает с version.json ($V)"; exit 1; }
+      - name: Файлы кэша на месте
+        run: |
+          for f in $(grep -o '"[A-Za-z0-9_./-]*\.\(js\|css\|html\|png\|webmanifest\|json\)"' sw.js | tr -d '"'); do [ -e "$f" ] || { echo "sw.js ссылается на отсутствующий файл: $f"; exit 1; }; done
+      - name: Тесты
+        run: npm test

@@ -170,3 +170,24 @@ test('chat: block stops messages, report is stored, removing a friend wipes the 
   await makeFriends(s, a, b);
   assert.equal((await s.raw('/api/chat?with=' + b.code, null, a.token)).data.messages.length, 0);
 });
+
+test('ночная уборка: удаляет старое и пустое, шлёт отчёт', async () => {
+  const c = await setup(); if (!c) return;
+  const w = (await import(require('node:url').pathToFileURL(require('node:path').join(__dirname, '../backend/worker.js')).href + '?cron')).default;
+  const a = await c.reg('CronA'), b = await c.reg('CronB');
+  const old = new Date(Date.now() - 200 * 86400000).toISOString();
+  await c.env.DB.prepare('UPDATE users SET updated_at=? WHERE username=?').bind(old, 'CronB').run();
+  await c.env.DB.prepare('UPDATE users SET best_score=50,total_words=5,updated_at=? WHERE username=?').bind(old, 'CronA').run();
+  await c.env.DB.prepare('INSERT INTO rate_limit (k,t) VALUES (?,?)').bind('x', 1).run();
+  const calls = []; const real = globalThis.fetch;
+  globalThis.fetch = async (u, o) => { calls.push([String(u), o && o.body]); return { ok: true }; };
+  try {
+    const r = await w.scheduled({}, { ...c.env, TG_BOT_TOKEN: 'T', TG_CHAT_ID: '1' }, { waitUntil() {} });
+    assert.equal(r.removed, 1);
+    assert.equal(r.sent, true);
+    assert.match(calls[0][0], /botT\/sendMessage/);
+    assert.ok((await c.env.DB.prepare('SELECT COUNT(*) AS n FROM users').first()).n === 1);
+    assert.ok((await c.env.DB.prepare("SELECT COUNT(*) AS n FROM users WHERE username='CronA'").first()).n === 1);
+    assert.equal((await c.env.DB.prepare('SELECT COUNT(*) AS n FROM rate_limit WHERE k=\'x\'').first()).n, 0);
+  } finally { globalThis.fetch = real; }
+});

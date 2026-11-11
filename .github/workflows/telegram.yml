@@ -2,7 +2,7 @@ name: Telegram
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: [Release]
+    workflows: [Release, Android]
     types: [completed]
 permissions:
   contents: write
@@ -30,6 +30,7 @@ jobs:
           has "Slovopad-Installer-$V.exe" && ROW+=("$(jq -nc --arg u "$BASE/Slovopad-Installer-$V.exe" '{text:"🪟 Windows",url:$u}')")
           has "Slovopad-$V.dmg" && ROW+=("$(jq -nc --arg u "$BASE/Slovopad-$V.dmg" '{text:"🍎 Mac",url:$u}')")
           has "Slovopad-$V.AppImage" && ROW+=("$(jq -nc --arg u "$BASE/Slovopad-$V.AppImage" '{text:"🐧 Linux",url:$u}')")
+          has "Slovopad-$V.apk" && ROW+=("$(jq -nc --arg u "$BASE/Slovopad-$V.apk" '{text:"🤖 Android",url:$u}')")
           DL=$(printf '%s\n' "${ROW[@]}" | jq -sc '.')
           PLAY=$(jq -nc --arg u "https://felykxzy.github.io/slovopad.game/" '[{text:"▶ Играть",web_app:{url:$u}}]')
           KB=$(jq -nc --argjson p "$PLAY" --argjson d "$DL" '{inline_keyboard: ([$p] + (if ($d|length)>0 then [$d] else [] end))}')
@@ -42,6 +43,7 @@ jobs:
             R=$(curl -sS "$API/editMessageText" --data-urlencode chat_id="$CHAT" --data-urlencode message_id="$MID" --data-urlencode text="$TXT" --data-urlencode reply_markup="$KB")
             echo "$R" | jq -c '{ok,description}'
             [ "$(echo "$R" | jq -r .ok)" = "true" ] && OK=1
+            echo "$R" | grep -q "not modified" && OK=1
           fi
           if [ "$OK" = 0 ]; then
             R=$(curl -sS "$API/sendMessage" --data-urlencode chat_id="$CHAT" --data-urlencode text="$TXT" --data-urlencode reply_markup="$KB")
