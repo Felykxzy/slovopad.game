@@ -1,14 +1,15 @@
 name: Telegram
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: [version.json]
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
 permissions:
   contents: write
 concurrency: telegram
 jobs:
   post:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,28 +17,34 @@ jobs:
         env:
           TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           CHAT: ${{ secrets.TG_CHAT_ID }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
           [ -n "$TOKEN" ] && [ -n "$CHAT" ] || { echo "Нет секретов TG_BOT_TOKEN / TG_CHAT_ID"; exit 1; }
           V=$(jq -r .version version.json)
-          mkdir -p out
-          ZIP="out/slovopad-$V.zip"
-          zip -q "$ZIP" index.html styles.css manifest.webmanifest sw.js version.json *.js *.png
+          BASE="https://github.com/$GITHUB_REPOSITORY/releases/download/v$V"
+          ASSETS=$(gh release view "v$V" --json assets -q '.assets[].name' 2>/dev/null || true)
+          echo "Файлы релиза: $ASSETS"
+          ROW=()
+          has() { echo "$ASSETS" | grep -qx "$1"; }
+          has "Slovopad-Installer-$V.exe" && ROW+=("$(jq -nc --arg u "$BASE/Slovopad-Installer-$V.exe" '{text:"🪟 Windows",url:$u}')")
+          has "Slovopad-$V.dmg" && ROW+=("$(jq -nc --arg u "$BASE/Slovopad-$V.dmg" '{text:"🍎 Mac",url:$u}')")
+          has "Slovopad-$V.AppImage" && ROW+=("$(jq -nc --arg u "$BASE/Slovopad-$V.AppImage" '{text:"🐧 Linux",url:$u}')")
+          DL=$(printf '%s\n' "${ROW[@]}" | jq -sc '.')
+          PLAY=$(jq -nc --arg u "https://felykxzy.github.io/slovopad.game/" '[{text:"▶ Играть",web_app:{url:$u}}]')
+          KB=$(jq -nc --argjson p "$PLAY" --argjson d "$DL" '{inline_keyboard: ([$p] + (if ($d|length)>0 then [$d] else [] end))}')
           NOTES=$(jq -r '.notes | map("• " + .) | join("\n")' version.json)
-          CAP=$(printf '🎮 СЛОВОПАД — версия %s\n\nЧто нового:\n%s\n\nКнопка «Играть» всегда открывает свежую версию.' "$V" "$NOTES")
-          URL="https://felykxzy.github.io/slovopad.game/"
-          KB=$(jq -nc --arg u "$URL" '{inline_keyboard:[[{text:"▶ Играть",web_app:{url:$u}}]]}')
+          TXT=$(printf '🎮 СЛОВОПАД — версия %s\n\nЧто нового:\n%s\n\n▶ Играть — открывается прямо в Telegram, всегда свежая версия.\nНиже — программа для компьютера.' "$V" "$NOTES")
           API="https://api.telegram.org/bot$TOKEN"
           MID=""; [ -f .github/tg-message-id ] && MID=$(cat .github/tg-message-id)
           OK=0
           if [ -n "$MID" ]; then
-            MEDIA=$(jq -nc --arg c "$CAP" '{type:"document",media:"attach://f",caption:$c}')
-            R=$(curl -sS "$API/editMessageMedia" -F chat_id="$CHAT" -F message_id="$MID" -F media="$MEDIA" -F f=@"$ZIP" -F reply_markup="$KB")
+            R=$(curl -sS "$API/editMessageText" --data-urlencode chat_id="$CHAT" --data-urlencode message_id="$MID" --data-urlencode text="$TXT" --data-urlencode reply_markup="$KB")
             echo "$R" | jq -c '{ok,description}'
             [ "$(echo "$R" | jq -r .ok)" = "true" ] && OK=1
           fi
           if [ "$OK" = 0 ]; then
-            R=$(curl -sS "$API/sendDocument" -F chat_id="$CHAT" -F document=@"$ZIP" -F caption="$CAP" -F reply_markup="$KB")
+            R=$(curl -sS "$API/sendMessage" --data-urlencode chat_id="$CHAT" --data-urlencode text="$TXT" --data-urlencode reply_markup="$KB")
             echo "$R" | jq -c '{ok,description}'
             [ "$(echo "$R" | jq -r .ok)" = "true" ] || exit 1
             echo "$R" | jq -r .result.message_id > .github/tg-message-id
