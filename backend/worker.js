@@ -118,11 +118,11 @@ async function ensureSchema(env) {
   await env.DB.prepare('CREATE INDEX IF NOT EXISTS rate_limit_idx ON rate_limit(k,t)').run();
   // друзья и вызовы: сбой здесь не должен ломать остальную игру
   try {
-    await env.DB.prepare('CREATE TABLE IF NOT EXISTS friends (a TEXT NOT NULL, b TEXT NOT NULL, state TEXT NOT NULL DEFAULT \'pending\', t INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (a,b))').run();
-    await env.DB.prepare('CREATE INDEX IF NOT EXISTS friends_b_idx ON friends(b,state)').run();
-    await env.DB.prepare('CREATE TABLE IF NOT EXISTS challenges (id TEXT PRIMARY KEY, from_id TEXT NOT NULL, to_id TEXT NOT NULL, theme TEXT NOT NULL, lang INTEGER NOT NULL DEFAULT 0, score INTEGER NOT NULL, t INTEGER NOT NULL, state TEXT NOT NULL DEFAULT \'open\', result INTEGER NOT NULL DEFAULT 0)').run();
-    await env.DB.prepare('CREATE INDEX IF NOT EXISTS challenges_to_idx ON challenges(to_id,state)').run();
-    await env.DB.prepare('CREATE INDEX IF NOT EXISTS challenges_from_idx ON challenges(from_id)').run();
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_friends (a TEXT NOT NULL, b TEXT NOT NULL, state TEXT NOT NULL DEFAULT \'pending\', t INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (a,b))').run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_friends_b_idx ON sp_friends(b,state)').run();
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_challenges (id TEXT PRIMARY KEY, from_id TEXT NOT NULL, to_id TEXT NOT NULL, theme TEXT NOT NULL, lang INTEGER NOT NULL DEFAULT 0, score INTEGER NOT NULL, t INTEGER NOT NULL, state TEXT NOT NULL DEFAULT \'open\', result INTEGER NOT NULL DEFAULT 0)').run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_challenges_to_idx ON sp_challenges(to_id,state)').run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_challenges_from_idx ON sp_challenges(from_id)').run();
   } catch (e) { console.error('friends schema', e); }
   schemaReady = true;
 }
@@ -180,7 +180,7 @@ const findUser = (env, q) => {
   q = String(q || '').trim().slice(0, 40);
   return q ? env.DB.prepare('SELECT * FROM users WHERE sp_code=? OR username=? COLLATE NOCASE LIMIT 1').bind(q.toUpperCase(), q).first() : null;
 };
-const relation = (env, x, y) => env.DB.prepare('SELECT a,b,state FROM friends WHERE (a=? AND b=?) OR (a=? AND b=?) LIMIT 1').bind(x, y, y, x).first();
+const relation = (env, x, y) => env.DB.prepare('SELECT a,b,state FROM sp_friends WHERE (a=? AND b=?) OR (a=? AND b=?) LIMIT 1').bind(x, y, y, x).first();
 // короткие данные игроков по id (без тяжёлого фото из профиля), пачками из-за лимита параметров
 async function usersByIds(env, ids) {
   const out = new Map(), list = [...new Set(ids)];
@@ -533,8 +533,8 @@ export default {
         const user = await userFrom(request, env);
         if (!user) return reply({ error: 'Нужно войти в аккаунт.' }, 401);
         await env.DB.prepare('DELETE FROM qr_login WHERE user_id=?').bind(user.id).run();
-        await env.DB.prepare('DELETE FROM friends WHERE a=? OR b=?').bind(user.id, user.id).run();
-        await env.DB.prepare('DELETE FROM challenges WHERE from_id=? OR to_id=?').bind(user.id, user.id).run();
+        await env.DB.prepare('DELETE FROM sp_friends WHERE a=? OR b=?').bind(user.id, user.id).run();
+        await env.DB.prepare('DELETE FROM sp_challenges WHERE from_id=? OR to_id=?').bind(user.id, user.id).run();
         await env.DB.prepare('DELETE FROM users WHERE id=?').bind(user.id).run();
         return reply({ ok: true });
       }
@@ -602,8 +602,8 @@ export default {
         if (url.pathname === '/api/ping' && post) {
           if (!await allow(env, 'pg:' + user.id, 40, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
           try { await env.DB.prepare('UPDATE users SET seen=? WHERE id=?').bind(now, user.id).run(); } catch (_) { /* колонки seen может не быть: не ломаем из-за этого весь запрос */ }
-          const rq = await env.DB.prepare('SELECT COUNT(*) AS n FROM friends WHERE b=? AND state=\'pending\'').bind(user.id).first();
-          const ch = await env.DB.prepare('SELECT COUNT(*) AS n FROM challenges WHERE to_id=? AND state=\'open\' AND t>?').bind(user.id, now - CH_TTL).first();
+          const rq = await env.DB.prepare('SELECT COUNT(*) AS n FROM sp_friends WHERE b=? AND state=\'pending\'').bind(user.id).first();
+          const ch = await env.DB.prepare('SELECT COUNT(*) AS n FROM sp_challenges WHERE to_id=? AND state=\'open\' AND t>?').bind(user.id, now - CH_TTL).first();
           return reply({ ok: true, requests: rq ? rq.n : 0, challenges: ch ? ch.n : 0 });
         }
 
@@ -611,9 +611,9 @@ export default {
         if (url.pathname === '/api/friends' && request.method === 'GET') {
           if (!await allow(env, 'fl:' + user.id, 60, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
           try { await env.DB.prepare('UPDATE users SET seen=? WHERE id=?').bind(now, user.id).run(); } catch (_) { /* колонки seen может не быть: не ломаем из-за этого весь запрос */ }
-          const rel = (await env.DB.prepare('SELECT a,b,state FROM friends WHERE a=? OR b=?').bind(user.id, user.id).all()).results || [];
-          const chIn = (await env.DB.prepare('SELECT * FROM challenges WHERE to_id=? AND state=\'open\' AND t>? ORDER BY t DESC LIMIT 20').bind(user.id, now - CH_TTL).all()).results || [];
-          const chOut = (await env.DB.prepare('SELECT * FROM challenges WHERE from_id=? AND t>? ORDER BY t DESC LIMIT 20').bind(user.id, now - CH_TTL).all()).results || [];
+          const rel = (await env.DB.prepare('SELECT a,b,state FROM sp_friends WHERE a=? OR b=?').bind(user.id, user.id).all()).results || [];
+          const chIn = (await env.DB.prepare('SELECT * FROM sp_challenges WHERE to_id=? AND state=\'open\' AND t>? ORDER BY t DESC LIMIT 20').bind(user.id, now - CH_TTL).all()).results || [];
+          const chOut = (await env.DB.prepare('SELECT * FROM sp_challenges WHERE from_id=? AND t>? ORDER BY t DESC LIMIT 20').bind(user.id, now - CH_TTL).all()).results || [];
           const ids = [...rel.map(r => (r.a === user.id ? r.b : r.a)), ...chIn.map(c => c.from_id), ...chOut.map(c => c.to_id)];
           const people = await usersByIds(env, ids), info = new Map();
           for (const id of new Set(ids)) { const r = people.get(id); if (r) info.set(id, await pubInfo(env, r, now)); }
@@ -637,25 +637,25 @@ export default {
           if (rel && rel.state === 'accepted') return reply({ error: 'Вы уже друзья.' }, 409);
           if (rel && rel.a === user.id) return reply({ error: 'Запрос уже отправлен. Ждём ответа.' }, 409);
           const count = async (sql, id) => ((await env.DB.prepare(sql).bind(id).first()) || {}).n || 0;
-          const mine = ((await env.DB.prepare('SELECT COUNT(*) AS n FROM friends WHERE (a=? OR b=?) AND state=\'accepted\'').bind(user.id, user.id).first()) || {}).n || 0;
+          const mine = ((await env.DB.prepare('SELECT COUNT(*) AS n FROM sp_friends WHERE (a=? OR b=?) AND state=\'accepted\'').bind(user.id, user.id).first()) || {}).n || 0;
           if (mine >= FR_MAX) return reply({ error: 'У тебя уже ' + FR_MAX + ' друзей.' }, 409);
           if (rel && rel.b === user.id) {   // он уже просил нас: сразу дружим
-            await env.DB.prepare('UPDATE friends SET state=\'accepted\', t=? WHERE a=? AND b=?').bind(now, other.id, user.id).run();
+            await env.DB.prepare('UPDATE sp_friends SET state=\'accepted\', t=? WHERE a=? AND b=?').bind(now, other.id, user.id).run();
             return reply({ state: 'accepted', username: other.username });
           }
-          if (await count('SELECT COUNT(*) AS n FROM friends WHERE a=? AND state=\'pending\'', user.id) >= FR_OUT_MAX) return reply({ error: 'Слишком много неотвеченных запросов. Подожди ответов.' }, 429);
-          if (await count('SELECT COUNT(*) AS n FROM friends WHERE b=? AND state=\'pending\'', other.id) >= FR_IN_MAX) return reply({ error: 'Этому игроку сейчас нельзя отправить запрос. Попробуй позже.' }, 429);
-          await env.DB.prepare('INSERT INTO friends (a,b,state,t) VALUES (?,?,\'pending\',?)').bind(user.id, other.id, now).run();
+          if (await count('SELECT COUNT(*) AS n FROM sp_friends WHERE a=? AND state=\'pending\'', user.id) >= FR_OUT_MAX) return reply({ error: 'Слишком много неотвеченных запросов. Подожди ответов.' }, 429);
+          if (await count('SELECT COUNT(*) AS n FROM sp_friends WHERE b=? AND state=\'pending\'', other.id) >= FR_IN_MAX) return reply({ error: 'Этому игроку сейчас нельзя отправить запрос. Попробуй позже.' }, 429);
+          await env.DB.prepare('INSERT INTO sp_friends (a,b,state,t) VALUES (?,?,\'pending\',?)').bind(user.id, other.id, now).run();
           return reply({ state: 'sent', username: other.username });
         }
 
         // ответ на запрос: принять или отклонить
         if (url.pathname === '/api/friends/respond' && post) {
           const other = await findUser(env, body.code);
-          const rel = other && await env.DB.prepare('SELECT a FROM friends WHERE a=? AND b=? AND state=\'pending\'').bind(other.id, user.id).first();
+          const rel = other && await env.DB.prepare('SELECT a FROM sp_friends WHERE a=? AND b=? AND state=\'pending\'').bind(other.id, user.id).first();
           if (!rel) return reply({ error: 'Запрос не найден.' }, 404);
-          if (body.accept === true) await env.DB.prepare('UPDATE friends SET state=\'accepted\', t=? WHERE a=? AND b=?').bind(now, other.id, user.id).run();
-          else await env.DB.prepare('DELETE FROM friends WHERE a=? AND b=?').bind(other.id, user.id).run();
+          if (body.accept === true) await env.DB.prepare('UPDATE sp_friends SET state=\'accepted\', t=? WHERE a=? AND b=?').bind(now, other.id, user.id).run();
+          else await env.DB.prepare('DELETE FROM sp_friends WHERE a=? AND b=?').bind(other.id, user.id).run();
           return reply({ ok: true, accepted: body.accept === true });
         }
 
@@ -663,8 +663,8 @@ export default {
         if (url.pathname === '/api/friends/remove' && post) {
           const other = await findUser(env, body.code);
           if (!other) return reply({ error: 'Игрок не найден.' }, 404);
-          await env.DB.prepare('DELETE FROM friends WHERE (a=? AND b=?) OR (a=? AND b=?)').bind(user.id, other.id, other.id, user.id).run();
-          await env.DB.prepare('DELETE FROM challenges WHERE (from_id=? AND to_id=?) OR (from_id=? AND to_id=?)').bind(user.id, other.id, other.id, user.id).run();
+          await env.DB.prepare('DELETE FROM sp_friends WHERE (a=? AND b=?) OR (a=? AND b=?)').bind(user.id, other.id, other.id, user.id).run();
+          await env.DB.prepare('DELETE FROM sp_challenges WHERE (from_id=? AND to_id=?) OR (from_id=? AND to_id=?)').bind(user.id, other.id, other.id, user.id).run();
           return reply({ ok: true });
         }
 
@@ -676,20 +676,20 @@ export default {
           if (!rel || rel.state !== 'accepted') return reply({ error: 'Вызвать можно только друга.' }, 403);
           const theme = String(body.theme || ''), score = num(body.score), lang = Math.max(0, Math.min(2, Number(body.lang) | 0));
           if (!/^[a-z]{2,12}$/.test(theme) || score < 1) return reply({ error: 'Некорректный вызов.' }, 400);
-          const open = await env.DB.prepare('SELECT COUNT(*) AS n FROM challenges WHERE from_id=? AND to_id=? AND state=\'open\' AND t>?').bind(user.id, other.id, now - CH_TTL).first();
+          const open = await env.DB.prepare('SELECT COUNT(*) AS n FROM sp_challenges WHERE from_id=? AND to_id=? AND state=\'open\' AND t>?').bind(user.id, other.id, now - CH_TTL).first();
           if (open && open.n >= CH_OPEN_PER_FRIEND) return reply({ error: 'Другу уже отправлено много вызовов. Подожди, пока он ответит.' }, 429);
-          await env.DB.prepare('INSERT INTO challenges (id,from_id,to_id,theme,lang,score,t,state) VALUES (?,?,?,?,?,?,?,\'open\')').bind(hex(random(8)), user.id, other.id, theme, lang, score, now).run();
-          if (Math.random() < 0.05) await env.DB.prepare('DELETE FROM challenges WHERE t<?').bind(now - 2 * CH_TTL).run();
+          await env.DB.prepare('INSERT INTO sp_challenges (id,from_id,to_id,theme,lang,score,t,state) VALUES (?,?,?,?,?,?,?,\'open\')').bind(hex(random(8)), user.id, other.id, theme, lang, score, now).run();
+          if (Math.random() < 0.05) await env.DB.prepare('DELETE FROM sp_challenges WHERE t<?').bind(now - 2 * CH_TTL).run();
           return reply({ ok: true, username: other.username });
         }
 
         // результат попытки: побил или нет
         if (url.pathname === '/api/challenge/done' && post) {
-          const row = await env.DB.prepare('SELECT * FROM challenges WHERE id=? AND to_id=? AND state=\'open\' AND t>?').bind(String(body.id || ''), user.id, now - CH_TTL).first();
+          const row = await env.DB.prepare('SELECT * FROM sp_challenges WHERE id=? AND to_id=? AND state=\'open\' AND t>?').bind(String(body.id || ''), user.id, now - CH_TTL).first();
           if (!row) return reply({ error: 'Вызов не найден.' }, 404);
           const score = num(body.score);
           if (score > row.score) {
-            await env.DB.prepare('UPDATE challenges SET state=\'won\', result=? WHERE id=?').bind(score, row.id).run();
+            await env.DB.prepare('UPDATE sp_challenges SET state=\'won\', result=? WHERE id=?').bind(score, row.id).run();
             return reply({ won: true, need: row.score + 1 });
           }
           return reply({ won: false, need: row.score + 1 });
@@ -697,7 +697,7 @@ export default {
 
         // отклонить вызов (получатель) или убрать из списка (отправитель)
         if (url.pathname === '/api/challenge/remove' && post) {
-          await env.DB.prepare('DELETE FROM challenges WHERE id=? AND (to_id=? OR from_id=?)').bind(String(body.id || ''), user.id, user.id).run();
+          await env.DB.prepare('DELETE FROM sp_challenges WHERE id=? AND (to_id=? OR from_id=?)').bind(String(body.id || ''), user.id, user.id).run();
           return reply({ ok: true });
         }
       }

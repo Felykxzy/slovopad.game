@@ -57,8 +57,8 @@ test('удаление аккаунта убирает дружбу и вызо�
   const a = await s.reg('Gone'), b = await s.reg('Stays');
   await s.raw('/api/friends/request', { q: b.name }, a.token);
   await s.raw('/api/friends/respond', { code: a.code, accept: true }, b.token);
-  assert.equal((await s.env.DB.prepare('SELECT COUNT(*) AS n FROM friends').first()).n, 1, 'дружба создана');
+  assert.equal((await s.env.DB.prepare('SELECT COUNT(*) AS n FROM sp_friends').first()).n, 1, 'дружба создана');
   assert.equal((await s.raw('/api/delete', {}, a.token)).status, 200);
-  assert.equal((await s.env.DB.prepare('SELECT COUNT(*) AS n FROM friends').first()).n, 0, 'дружба удалена');
+  assert.equal((await s.env.DB.prepare('SELECT COUNT(*) AS n FROM sp_friends').first()).n, 0, 'дружба удалена');
   assert.equal((await s.env.DB.prepare('SELECT COUNT(*) AS n FROM users WHERE username=?').bind('Gone').first()).n, 0);
 });

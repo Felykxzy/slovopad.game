@@ -1,15 +1,12 @@
 {
-  "version": "2.11.11",
+  "version": "2.11.12",
   "notes": [
-    "Ошибки сервера показываются с причиной, чтобы проще находить сбои",
-    "Сервер: список друзей стал устойчивее"
+    "Исправлена ошибка сервера в разделе «Друзья»"
   ],
   "notes_en": [
-    "Server errors now show their cause, which makes problems easier to find",
-    "Server: the friends list is more robust"
+    "Fixed the server error in the Friends section"
   ],
   "notes_uk": [
-    "Помилки сервера показуються з причиною, щоб легше знаходити збої",
-    "Сервер: список друзів став стійкішим"
+    "Виправлено помилку сервера в розділі «Друзі»"
   ]
 }
