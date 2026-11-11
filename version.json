@@ -1,12 +1,15 @@
 {
-  "version": "2.11.10",
+  "version": "2.11.11",
   "notes": [
-    "Обновление теперь на экране загрузки: игра сразу сообщает о новой версии и обновляется по кнопке"
+    "Ошибки сервера показываются с причиной, чтобы проще находить сбои",
+    "Сервер: список друзей стал устойчивее"
   ],
   "notes_en": [
-    "Updates now appear on the loading screen: the game tells you about a new version right away and updates with one button"
+    "Server errors now show their cause, which makes problems easier to find",
+    "Server: the friends list is more robust"
   ],
   "notes_uk": [
-    "Оновлення тепер на екрані завантаження: гра одразу повідомляє про нову версію й оновлюється за кнопкою"
+    "Помилки сервера показуються з причиною, щоб легше знаходити збої",
+    "Сервер: список друзів став стійкішим"
   ]
 }

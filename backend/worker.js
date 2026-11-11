@@ -601,7 +601,7 @@ export default {
         // «я здесь» + сколько ждёт ответа (для значка на кнопке)
         if (url.pathname === '/api/ping' && post) {
           if (!await allow(env, 'pg:' + user.id, 40, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
-          await env.DB.prepare('UPDATE users SET seen=? WHERE id=?').bind(now, user.id).run();
+          try { await env.DB.prepare('UPDATE users SET seen=? WHERE id=?').bind(now, user.id).run(); } catch (_) { /* колонки seen может не быть: не ломаем из-за этого весь запрос */ }
           const rq = await env.DB.prepare('SELECT COUNT(*) AS n FROM friends WHERE b=? AND state=\'pending\'').bind(user.id).first();
           const ch = await env.DB.prepare('SELECT COUNT(*) AS n FROM challenges WHERE to_id=? AND state=\'open\' AND t>?').bind(user.id, now - CH_TTL).first();
           return reply({ ok: true, requests: rq ? rq.n : 0, challenges: ch ? ch.n : 0 });
@@ -610,7 +610,7 @@ export default {
         // список друзей, запросы и вызовы
         if (url.pathname === '/api/friends' && request.method === 'GET') {
           if (!await allow(env, 'fl:' + user.id, 60, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
-          await env.DB.prepare('UPDATE users SET seen=? WHERE id=?').bind(now, user.id).run();
+          try { await env.DB.prepare('UPDATE users SET seen=? WHERE id=?').bind(now, user.id).run(); } catch (_) { /* колонки seen может не быть: не ломаем из-за этого весь запрос */ }
           const rel = (await env.DB.prepare('SELECT a,b,state FROM friends WHERE a=? OR b=?').bind(user.id, user.id).all()).results || [];
           const chIn = (await env.DB.prepare('SELECT * FROM challenges WHERE to_id=? AND state=\'open\' AND t>? ORDER BY t DESC LIMIT 20').bind(user.id, now - CH_TTL).all()).results || [];
           const chOut = (await env.DB.prepare('SELECT * FROM challenges WHERE from_id=? AND t>? ORDER BY t DESC LIMIT 20').bind(user.id, now - CH_TTL).all()).results || [];

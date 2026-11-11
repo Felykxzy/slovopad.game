@@ -382,7 +382,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");glassSet((e.clientX/innerWidth-.5)/.55,(e.clientY/innerHeight-.5)/.5)},{passive:true});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="2.11.10";let upLater=false;
+const VER="2.11.11";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if($("spl")||state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
@@ -466,7 +466,7 @@ async function cloudRequest(path,options={}){const headers={...(options.headers|
 const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),20000);let response;try{response=await fetch(CLOUD_URL+path,{...options,headers,signal:ctl.signal})}catch(e){throw new Error(tx("Нет связи с сервером. Проверь интернет."))}finally{clearTimeout(tm)}
 let data={};try{data=await response.json()}catch(e){}
 if(response.status===401&&token&&!/\/api\/(login|register)/.test(path)){sidLogoutLocal();sidRender();throw new Error(tx("Сессия истекла. Войди снова."))}
-if(!response.ok)throw new Error(data.error||("Ошибка сервера: "+response.status));return data}
+if(!response.ok)throw new Error((data.error||("Ошибка сервера: "+response.status))+(data.detail?" ["+data.detail+"]":""));return data}
 function cloudSnapshot(){const bestScores={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith("best_"))bestScores[k]=Number(localStorage.getItem(k))||0}
 return {pf:{n:PF.n,a:PF.a,g:PF.g,h:PF.h,m:PF.m,c:PF.c,t:PF.t,w:PF.w},pfp:localStorage.getItem("pfp")||"",tw:tw(),streak:streakGet(),bestScores}}
 function cloudRestore(remote){if(!remote||typeof remote!=="object")return;const local=cloudSnapshot(),incoming=remote;
