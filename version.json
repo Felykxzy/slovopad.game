@@ -1,12 +1,12 @@
 {
-  "version": "2.11.8",
+  "version": "2.11.9",
   "notes": [
-    "Экран загрузки дольше и плавнее"
+    "Фоны в магазине стали детальнее: горы, лес, луна, планета и живые частицы"
   ],
   "notes_en": [
-    "The loading screen is longer and smoother"
+    "Shop backgrounds are more detailed: mountains, forest, moon, planet and lively particles"
   ],
   "notes_uk": [
-    "Екран завантаження триваліший і плавніший"
+    "Фони в магазині стали детальнішими: гори, ліс, місяць, планета й живі частинки"
   ]
 }
