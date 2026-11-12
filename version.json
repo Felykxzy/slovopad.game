@@ -1,18 +1,15 @@
 {
-  "version": "2.14.0",
+  "version": "2.15.0",
   "notes": [
-    "3 новых фона: Океан, Пустыня, Ночной город",
-    "3 новых щита: Молния, Лава, Кометы",
-    "Магазин: подписи больше не налезают на кнопки"
+    "4 новых фона: Горное озеро, Вулкан, Кристаллы, Зимний домик",
+    "Старые фоны стали намного детальнее"
   ],
   "notes_en": [
-    "3 new backgrounds: Ocean, Desert, Night City",
-    "3 new shields: Lightning, Lava, Comets",
-    "Shop: labels no longer overlap the buttons"
+    "4 new backgrounds: Mountain Lake, Volcano, Crystals, Winter Cabin",
+    "Older backgrounds are much more detailed"
   ],
   "notes_uk": [
-    "3 нові фони: Океан, Пустеля, Нічне місто",
-    "3 нові щити: Блискавка, Лава, Комети",
-    "Магазин: підписи більше не налазять на кнопки"
+    "4 нові фони: Гірське озеро, Вулкан, Кристали, Зимовий будиночок",
+    "Старі фони стали значно детальнішими"
   ]
 }
