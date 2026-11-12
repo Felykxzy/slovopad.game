@@ -19,6 +19,8 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+      - name: Установить инструмент для значков
+        run: sudo apt-get update -y && sudo apt-get install -y imagemagick
       - name: Собрать проект Android
         run: |
           V=$(jq -r .version version.json)
