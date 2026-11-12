@@ -5,7 +5,7 @@
   "use strict";
   const T = (a, b, c) => L3(a, b, c);
   const g = id => document.getElementById(id);
-  const E = { tab: 0, rooms: [], friends: [], room: null, last: 0, timer: 0, hub: 0, busy: false, tg: null, sure: 0, panel: "" };
+  const E = { rooms: [], friends: [], room: null, last: 0, timer: 0, hub: 0, busy: false, tg: null, sure: 0, panel: "" };
   function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
   function btn(cls, text, fn) { const b = h("button", cls, text); b.type = "button"; b.onclick = fn; return b; }
   const post = (path, body) => cloudRequest(path, { method: "POST", body: JSON.stringify(body || {}) });
@@ -17,10 +17,9 @@
   function build() {
     if (g("o16")) return;
     const hub = h("div", "ov sc"); hub.id = "o16";
-    hub.innerHTML = '<div class="frh"><button class="ib" id="ecBk" type="button">←</button><div class="frt"><h2>🌀 ЭХО</h2><div class="sub" id="ecSub"></div></div><button class="ib" id="ecSet" type="button" aria-label="settings">🔔</button></div>' +
+    hub.innerHTML = '<div class="ech" id="ecH16"></div>' +
       '<div class="ecset gl" id="ecSetP" hidden></div>' +
-      '<button class="ecai gl" id="ecAi" type="button"></button>' +
-      '<div class="frtabs" id="ecTabs"></div><div class="frlist" id="ecList"></div><div class="hint" id="ecSt"></div>' +
+      '<div class="frlist" id="ecList"></div><div class="hint" id="ecSt"></div>' +
       '<div class="mb" id="ecNew" hidden><button class="btn" id="ecMk" type="button"></button></div>';
     const rm = h("div", "ov"); rm.id = "o17";
     rm.innerHTML = '<div class="frh"><button class="ib" id="rmBk" type="button">←</button><div class="frt"><h2 id="rmT"></h2><div class="sub" id="rmS"></div></div><button class="ib" id="rmMn" type="button">⋯</button></div>' +
@@ -29,9 +28,7 @@
       '<div class="chbar"><input id="rmIn" type="text" maxlength="120" autocomplete="off" enterkeyhint="send"><button class="btn chsn" id="rmSn" type="button">➤</button></div>';
     const after = g("o15") || g("o11");
     after.parentNode.insertBefore(hub, after.nextSibling); hub.parentNode.insertBefore(rm, hub.nextSibling);
-    g("ecBk").onclick = () => { clearInterval(E.hub); E.hub = 0; ov("o1") };
-    g("ecSet").onclick = () => { E.panel = E.panel === "tg" ? "" : "tg"; paintSet(); if (E.panel) loadTg() };
-    g("ecAi").onclick = () => { if (window.EchoAI) window.EchoAI.open(hubOpen) };
+    const o13 = g("o13"); if (o13 && !g("ecH13")) { const d = h("div", "ech"); d.id = "ecH13"; o13.insertBefore(d, o13.firstChild) }
     g("ecMk").onclick = mkRoom;
     g("rmBk").onclick = roomClose;
     g("rmSn").onclick = roomSend;
@@ -44,50 +41,59 @@
   }
 
   /* ---------- главный экран ---------- */
-  function labels() {
-    g("ecSub").textContent = T("ЧАТЫ · КОМНАТЫ · ИИ", "CHATS · ROOMS · AI", "ЧАТИ · КІМНАТИ · ШІ");
-    g("ecAi").innerHTML = '<b>🤖 ' + T("ИИ-ПОМОЩНИК", "AI ASSISTANT", "ШІ-ПОМІЧНИК") + '</b><span>' + T("Свой ключ · выбор модели · подсказки по игре", "Your own key · pick a model · game tips", "Свій ключ · вибір моделі · поради з гри") + '</span>';
-    g("ecMk").textContent = "＋ " + T("НОВАЯ КОМНАТА", "NEW ROOM", "НОВА КІМНАТА");
-    g("ecTabs").innerHTML = "";
-    [[T("ЛИЧНЫЕ", "DIRECT", "ОСОБИСТІ"), E.friends.reduce((s, f) => s + (f.unread || 0), 0)], [T("КОМНАТЫ", "ROOMS", "КІМНАТИ"), E.rooms.reduce((s, r) => s + (r.unread || 0), 0)]].forEach((t, i) => {
-      const b = h("button", "frtab" + (E.tab === i ? " on" : ""), t[0]); b.type = "button";
-      if (t[1]) { const d = h("i", "bdg", t[1] > 9 ? "9+" : String(t[1])); b.appendChild(d) }
-      b.onclick = () => { E.tab = i; labels(); paint() }; g("ecTabs").appendChild(b);
+  function badgeOf() { const F = window.SlovopadFriends, bg = F && F.badges ? F.badges() : { r: 0, c: 0, m: 0, k: 0 }; return { chats: (bg.m || 0) + (bg.k || 0), friends: (bg.r || 0) + (bg.c || 0) } }
+  // общая шапка Эха: на экране чатов и на экране друзей выглядит одинаково
+  function paintHead(box, active) {
+    if (!box) return; box.textContent = "";
+    const top = h("div", "frh");
+    top.appendChild(btn("ib", "←", () => { clearInterval(E.hub); E.hub = 0; ov("o1") }));
+    const t = h("div", "frt"); t.appendChild(h("h2", "", "🌀 " + T("ЭХО", "ECHO", "ЕХО"))); t.appendChild(h("div", "sub", T("ЧАТЫ · ДРУЗЬЯ · ИИ", "CHATS · FRIENDS · AI", "ЧАТИ · ДРУЗІ · ШІ"))); top.appendChild(t);
+    top.appendChild(btn("ib", "🔔", () => { E.panel = active === 0 && E.panel === "tg" ? "" : "tg"; if (active !== 0) hubOpen(); else paintSet(); if (E.panel) loadTg() }));
+    box.appendChild(top);
+    const bd = badgeOf(), tabs = h("div", "frtabs");
+    [["💬 " + T("ЧАТЫ", "CHATS", "ЧАТИ"), bd.chats, () => hubOpen()], ["👥 " + T("ДРУЗЬЯ", "FRIENDS", "ДРУЗІ"), bd.friends, () => { const F = window.SlovopadFriends; if (F) F.open() }]].forEach((x, i) => {
+      const b = h("button", "frtab" + (active === i ? " a" : ""), x[0]); b.type = "button";
+      if (x[1]) b.appendChild(h("i", "bdg", x[1] > 9 ? "9+" : String(x[1])));
+      b.onclick = x[2]; tabs.appendChild(b);
     });
-    g("ecNew").hidden = E.tab !== 1 || !sidTok();
+    box.appendChild(tabs);
+  }
+  function labels() {
+    paintHead(g("ecH16"), 0); paintHead(g("ecH13"), 1);
+    g("ecMk").textContent = "＋ " + T("НОВАЯ КОМНАТА", "NEW ROOM", "НОВА КІМНАТА");
+    g("ecNew").hidden = !sidTok();
   }
   function avatar(txt, on) { const a = h("div", "fav" + (on ? " on" : ""), txt); a.style.width = a.style.height = "44px"; a.style.fontSize = "22px"; return a }
+  function section(l, text) { l.appendChild(h("div", "ecsec", text)) }
+  function badgeEl(n) { return h("i", "bdg ecb", n > 9 ? "9+" : String(n)) }
   function paint() {
     const l = g("ecList"); l.textContent = "";
-    if (!sidTok()) { const b = btn("btn", T("ВОЙТИ В АККАУНТ", "SIGN IN", "УВІЙТИ В АКАУНТ"), () => sidOpen()); l.appendChild(h("div", "chem", T("Чтобы писать друзьям и создавать комнаты, нужен аккаунт. ИИ-помощник работает и без него.", "You need an account to message friends and make rooms. The AI assistant works without one.", "Потрібен акаунт, щоб писати друзям і створювати кімнати. ШІ-помічник працює і без нього."))); l.appendChild(b); return }
-    if (E.tab === 0) {
-      const F = window.SlovopadFriends, bg = F && F.badges ? F.badges() : { r: 0, c: 0 }, fb = bg.r + bg.c;
-      const fr = h("button", "ecrow ecfr"); fr.type = "button";
-      fr.appendChild(avatar("👥", false));
-      const ft = h("div", "ect"); ft.appendChild(h("b", "", T("ДРУЗЬЯ", "FRIENDS", "ДРУЗІ"))); ft.appendChild(h("span", "", T("добавить, запросы, вызовы, топ", "add, requests, challenges, top", "додати, запити, виклики, топ"))); fr.appendChild(ft);
-      if (fb) fr.appendChild(h("i", "bdg ecb", fb > 9 ? "9+" : String(fb)));
-      fr.onclick = () => { if (F && F.openFriends) F.openFriends(hubOpen) };
-      l.appendChild(fr);
-      if (!E.friends.length) l.appendChild(h("div", "chem", T("Пока нет друзей. Нажми «Друзья» выше, добавь их — и сможешь писать здесь.", "No friends yet. Add some on the Friends screen — then you can chat here.", "Ще немає друзів. Додай їх на екрані «Друзі» — і зможеш писати тут.")));
-      E.friends.slice().sort((a, b) => (b.unread || 0) - (a.unread || 0) || (b.online ? 1 : 0) - (a.online ? 1 : 0)).forEach(f => {
-        const r = h("button", "ecrow"); r.type = "button";
-        r.appendChild(avatar(f.avatar || (f.username || "?").charAt(0).toUpperCase(), f.online));
-        const t = h("div", "ect"); t.appendChild(h("b", "", f.username)); t.appendChild(h("span", "", f.online ? T("в сети", "online", "у мережі") : T("не в сети", "offline", "не в мережі"))); r.appendChild(t);
-        if (f.unread) r.appendChild(h("i", "bdg ecb", f.unread > 9 ? "9+" : String(f.unread)));
-        r.onclick = () => { const F = window.SlovopadFriends; if (F && F.chatOpen) { F.setBack(hubOpen); F.chatOpen(f) } };
-        l.appendChild(r);
-      });
-    } else {
-      if (!E.rooms.length) l.appendChild(h("div", "chem", T("Комнат пока нет. Создай свою и позови друзей — в комнате можно болтать вместе.", "No rooms yet. Create one and invite friends to chat together.", "Кімнат поки немає. Створи свою і поклич друзів — у кімнаті можна спілкуватись разом.")));
-      E.rooms.forEach(rm => {
-        const r = h("button", "ecrow"); r.type = "button";
-        r.appendChild(avatar("#", false));
-        const t = h("div", "ect"); t.appendChild(h("b", "", rm.name)); t.appendChild(h("span", "", (rm.last || "👥 " + rm.members))); r.appendChild(t);
-        if (rm.unread) r.appendChild(h("i", "bdg ecb", rm.unread > 9 ? "9+" : String(rm.unread)));
-        r.onclick = () => roomOpen(rm.id, rm.name);
-        l.appendChild(r);
-      });
+    // ИИ-помощник всегда сверху, работает и без аккаунта
+    const ai = h("button", "ecrow ecai2"); ai.type = "button"; ai.appendChild(avatar("🤖", false));
+    const at = h("div", "ect"); at.appendChild(h("b", "", T("ИИ-ПОМОЩНИК", "AI ASSISTANT", "ШІ-ПОМІЧНИК"))); at.appendChild(h("span", "", T("Свой ключ · выбор модели", "Your own key · pick a model", "Свій ключ · вибір моделі"))); ai.appendChild(at);
+    ai.onclick = () => { if (window.EchoAI) window.EchoAI.open(hubOpen) }; l.appendChild(ai);
+    if (!sidTok()) { l.appendChild(h("div", "chem", T("Чтобы писать друзьям и создавать комнаты, нужен аккаунт.", "You need an account to message friends and make rooms.", "Потрібен акаунт, щоб писати друзям і створювати кімнати."))); l.appendChild(btn("btn", T("ВОЙТИ В АККАУНТ", "SIGN IN", "УВІЙТИ В АКАУНТ"), () => sidOpen())); return }
+    section(l, T("КОМНАТЫ", "ROOMS", "КІМНАТИ"));
+    if (!E.rooms.length) l.appendChild(h("div", "ecdim ecnone", T("Комнат пока нет. Создай свою кнопкой внизу и позови друзей.", "No rooms yet. Make one with the button below and invite friends.", "Кімнат поки немає. Створи свою кнопкою внизу й поклич друзів.")));
+    E.rooms.forEach(rm => {
+      const r = h("button", "ecrow"); r.type = "button"; r.appendChild(avatar("#", false));
+      const t = h("div", "ect"); t.appendChild(h("b", "", rm.name)); t.appendChild(h("span", "", rm.last || "👥 " + rm.members)); r.appendChild(t);
+      if (rm.unread) r.appendChild(badgeEl(rm.unread));
+      r.onclick = () => roomOpen(rm.id, rm.name); l.appendChild(r);
+    });
+    section(l, T("ЛИЧНЫЕ", "DIRECT", "ОСОБИСТІ"));
+    if (!E.friends.length) {
+      l.appendChild(h("div", "ecdim ecnone", T("Здесь будут чаты с друзьями. Сначала добавь друга.", "Chats with friends will appear here. Add a friend first.", "Тут будуть чати з друзями. Спершу додай друга.")));
+      l.appendChild(btn("btn a", "👥 " + T("ДОБАВИТЬ ДРУГА", "ADD A FRIEND", "ДОДАТИ ДРУГА"), () => { const F = window.SlovopadFriends; if (F) F.open() }));
     }
+    E.friends.slice().sort((a, b) => (b.unread || 0) - (a.unread || 0) || (b.online ? 1 : 0) - (a.online ? 1 : 0)).forEach(f => {
+      const r = h("button", "ecrow"); r.type = "button";
+      r.appendChild(avatar(f.avatar || (f.username || "?").charAt(0).toUpperCase(), f.online));
+      const t = h("div", "ect"); t.appendChild(h("b", "", f.username)); t.appendChild(h("span", "", f.online ? T("в сети", "online", "у мережі") : T("не в сети", "offline", "не в мережі"))); r.appendChild(t);
+      if (f.unread) r.appendChild(badgeEl(f.unread));
+      r.onclick = () => { const F = window.SlovopadFriends; if (F && F.chatOpen) { F.setBack(hubOpen); F.chatOpen(f) } };
+      l.appendChild(r);
+    });
   }
   async function refresh() {
     if (!sidTok()) { labels(); paint(); return }
@@ -98,7 +104,7 @@
     labels(); paint();
   }
   function hubOpen() {
-    build(); E.panel = ""; paintSet(); labels(); paint(); ov("o16");
+    build(); paintSet(); labels(); paint(); ov("o16");
     refresh(); clearInterval(E.hub);
     E.hub = setInterval(() => { if (!g("o16").classList.contains("s") || document.hidden) return; refresh() }, 20000);
   }
@@ -144,7 +150,7 @@
   function roomClose() {
     clearInterval(E.timer); E.timer = 0; E.room = null;
     const o = g("o17"); o.style.height = ""; o.style.transform = ""; g("rmIn").blur();
-    hubOpen(); E.tab = 1; labels(); paint();
+    hubOpen();
   }
   function roomAdd(m) {
     const box = h("div", "chm" + (m.mine ? " me" : ""));
@@ -219,7 +225,7 @@
     b.onclick = hubOpen;
   }
   build(); wireMenuBtn();
-  window.SlovopadEcho = { open: hubOpen, relabel: wireMenuBtn, badge: () => { if (g("o16") && g("o16").classList.contains("s")) { labels(); paint() } } };
+  window.SlovopadEcho = { open: hubOpen, relabel: wireMenuBtn, badge: () => { labels() } };
   const _menu = window.menu;
   if (typeof _menu === "function") window.menu = function () { const r = _menu.apply(this, arguments); try { wireMenuBtn() } catch (e) { } return r };
 })();

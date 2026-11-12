@@ -1,12 +1,15 @@
 {
-  "version": "3.0.1",
+  "version": "3.1.0",
   "notes": [
-    "Друзья и Эхо теперь в одной кнопке ЭХО: друзья открываются внутри Эха"
+    "Друзья теперь внутри Эха: сверху вкладки «Чаты» и «Друзья»",
+    "В «Чатах» всё вместе: ИИ-помощник, комнаты и личные чаты с друзьями"
   ],
   "notes_en": [
-    "Friends and Echo now share one ECHO button: friends open inside Echo"
+    "Friends now live inside Echo: tabs “Chats” and “Friends” on top",
+    "Chats show everything together: AI assistant, rooms and direct chats"
   ],
   "notes_uk": [
-    "Друзі та Ехо тепер в одній кнопці ЕХО: друзі відкриваються всередині Ехо"
+    "Друзі тепер усередині Ехо: угорі вкладки «Чати» та «Друзі»",
+    "У «Чатах» усе разом: ШІ-помічник, кімнати та особисті чати з друзями"
   ]
 }

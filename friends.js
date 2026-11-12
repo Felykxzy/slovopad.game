@@ -62,7 +62,7 @@
   }
 
   function labels() {
-    const o = g("o13"); o.querySelector("h2").textContent = T("ДРУЗЬЯ", "FRIENDS", "ДРУЗІ");
+    g("frBk").parentNode.querySelector("h2").textContent = T("ДРУЗЬЯ", "FRIENDS", "ДРУЗІ");
     g("frIn").placeholder = T("Код SP-… или ник друга", "Friend's SP-code or nickname", "Код SP-… або нік друга");
     g("fpBk").textContent = T("← НАЗАД", "← BACK", "← НАЗАД");
   }

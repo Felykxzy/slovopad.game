@@ -773,3 +773,13 @@ body.eco #fg .fd.cur .ic,body.eco #fg .fd.cur .fr::after,body.eco #fg .fd.cur .w
 #echoB{position:relative}
 #echoB .bdg{top:50%;right:16px;transform:translateY(-50%)}
 .aiset{max-height:58vh}
+/* ЭХО: общая шапка и единый список */
+.ech{display:flex;flex-direction:column;gap:12px;width:100%;max-width:520px;flex:none}
+.ech .frh{width:100%}
+#o13>.frh{display:none}
+#o13{align-items:center}
+#o13 .ech{margin-bottom:2px}
+.ecsec{align-self:flex-start;margin:6px 4px 0;font-size:11px;letter-spacing:.2em;opacity:.55}
+.ecnone{font-size:12px;padding:4px 6px;line-height:1.4}
+.ecai2{border-color:rgba(94,242,255,.35);background:linear-gradient(135deg,rgba(94,242,255,.16),rgba(255,79,216,.12))}
+#o16 .frlist{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
