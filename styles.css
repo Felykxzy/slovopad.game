@@ -670,3 +670,7 @@ body.hold .btn::after,body.hold .ib::after{display:none}
 .frchat .bdg{top:-5px;right:-5px;min-width:18px;height:18px;line-height:18px;padding:0 5px;font-size:10px}
 .fracts{align-items:center}
 #o15 .hint{flex:none;min-height:0;margin:0}
+/* магазин: название сверху, кнопка снизу — длинные названия не налезают на «Выбрано» */
+.sf{flex-direction:column;align-items:stretch;gap:8px;padding:10px 10px 11px}
+.sf b{min-width:0;text-align:center;font-size:12px;letter-spacing:.12em;line-height:1.25;overflow-wrap:anywhere}
+.sf .pl{flex:none;text-align:center;white-space:nowrap;padding:7px 8px}
