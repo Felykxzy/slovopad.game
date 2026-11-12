@@ -1,12 +1,15 @@
 {
-  "version": "2.16.4",
+  "version": "3.0.0",
   "notes": [
-    "Главное меню больше не двигается и стоит ровно по центру"
+    "Новый мессенджер «Эхо»: личные чаты с друзьями, комнаты на несколько человек и ИИ-помощник со своим ключом",
+    "Красная цифра на кнопке ЭХО и уведомления в Telegram о новых сообщениях"
   ],
   "notes_en": [
-    "The main menu no longer moves and is perfectly centered"
+    "New messenger “Echo”: private chats with friends, group rooms and an AI assistant with your own key",
+    "A red counter on the ECHO button and Telegram alerts for new messages"
   ],
   "notes_uk": [
-    "Головне меню більше не рухається і стоїть рівно по центру"
+    "Новий месенджер «Ехо»: особисті чати з друзями, кімнати на кількох людей і ШІ-помічник зі своїм ключем",
+    "Червона цифра на кнопці ЕХО та сповіщення в Telegram про нові повідомлення"
   ]
 }

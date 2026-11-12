@@ -6,7 +6,8 @@
   const T = (a, b, c) => L3(a, b, c);
   const g = id => document.getElementById(id);
   let data = null, tab = 0, pick = null, cur = null, busy = false, CH = null, lastErr = "";
-  const badge = { r: 0, c: 0, m: 0 };
+  const badge = { r: 0, c: 0, m: 0, k: 0 };
+  let backFn = null;
   const REACTS = ["🔥", "👏", "😂", "😎", "💪", "🎯", "❤️", "👋", "🤯", "🥳"];
   const chat = { p: null, last: 0, timer: 0, blocked: false, busy: false, sure: 0 };
 
@@ -307,6 +308,8 @@
   function chatClose() {
     clearInterval(chat.timer); chat.timer = 0; chat.p = null;
     const o = g("o15"); o.style.height = ""; o.style.transform = "";
+    g("chIn").blur();
+    if (backFn) { const f = backFn; backFn = null; f(); return }
     g("chIn").blur(); load(true).then(() => { render() }); render(); ov("o13");
   }
   function chatAdd(m) {
@@ -367,17 +370,18 @@
     if (sidTok()) { setStatus(""); await load() }
   }
   function paintBadge() {
-    const b = g("frBd"); if (!b) return; const n = badge.r + badge.c + badge.m; b.hidden = !n; b.textContent = n > 9 ? "9+" : String(n);
+    const b = g("frBd"); if (!b) return; const n = badge.r + badge.c; b.hidden = !n; b.textContent = n > 9 ? "9+" : String(n);
+    const e = g("echoBd"); if (e) { const k = badge.m + badge.k; e.hidden = !k; e.textContent = k > 9 ? "9+" : String(k) }
   }
   let lastPing = 0;
   async function ping(force) {
     if (!sidTok() || document.hidden || (force !== true && Date.now() - lastPing < 20000)) return;
     lastPing = Date.now();
-    try { const r = await post("/api/ping"); badge.r = r.requests; badge.c = r.challenges; badge.m = r.messages || 0; paintBadge() } catch (e) { }
+    try { const r = await post("/api/ping"); badge.r = r.requests; badge.c = r.challenges; badge.m = r.messages || 0; badge.k = r.rooms || 0; paintBadge() } catch (e) { }
   }
 
   build();
-  window.SlovopadFriends = { open, load };
+  window.SlovopadFriends = { open, load, chatOpen, setBack: f => { backFn = f } };
   const _over = window.over;
   if (typeof _over === "function") window.over = function (q) { const r = _over.apply(this, arguments); try { if (state === "over") afterOver(q) } catch (e) { } return r };
   const _menu = window.menu;

@@ -128,6 +128,12 @@ async function ensureSchema(env) {
     await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_msgs_b_idx ON sp_msgs(b,rd)').run();
     await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_blocks (a TEXT NOT NULL, b TEXT NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (a,b))').run();
     await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_reports (id INTEGER PRIMARY KEY AUTOINCREMENT, reporter TEXT NOT NULL, target TEXT NOT NULL, body TEXT NOT NULL, t INTEGER NOT NULL)').run();
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_rooms (id TEXT PRIMARY KEY, name TEXT NOT NULL, owner TEXT NOT NULL, t INTEGER NOT NULL)').run();
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_room_members (room TEXT NOT NULL, uid TEXT NOT NULL, t INTEGER NOT NULL, last INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (room,uid))').run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_room_members_u_idx ON sp_room_members(uid)').run();
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_room_msgs (id INTEGER PRIMARY KEY AUTOINCREMENT, room TEXT NOT NULL, uid TEXT NOT NULL, body TEXT NOT NULL, t INTEGER NOT NULL)').run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_room_msgs_r_idx ON sp_room_msgs(room,id)').run();
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_tg (uid TEXT PRIMARY KEY, chat TEXT NOT NULL, t INTEGER NOT NULL)').run();
   } catch (e) { console.error('friends schema', e); }
   schemaReady = true;
 }
@@ -176,6 +182,44 @@ async function ipHash(request, env) {
   return hex(await crypto.subtle.digest('SHA-256', enc.encode(ip + ':' + secretOf(env)))).slice(0, 16);
 }
 const num = v => Math.max(0, Math.min(100000000, Number(v) || 0));
+
+/* ---------- Эхо: комнаты и уведомления в Telegram ---------- */
+const ROOM_MAX_MEMBERS = 20, ROOM_MAX_JOINED = 15, ROOM_KEEP = 100, ROOM_NAME_MAX = 24;
+const cleanText = (v, max) => {
+  const t = String(v || '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
+  return [...t].length > max ? null : t;
+};
+// проверка данных мини-приложения Telegram (initData) подписью токена бота игры
+async function tgCheck(initData, token) {
+  try {
+    const sp = new URLSearchParams(String(initData || ''));
+    const hash = sp.get('hash'); if (!hash || !token) return null;
+    sp.delete('hash');
+    const str = [...sp.entries()].sort((x, y) => (x[0] < y[0] ? -1 : 1)).map(([k, v]) => k + '=' + v).join('\n');
+    const k1 = await crypto.subtle.importKey('raw', enc.encode('WebAppData'), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const secret = await crypto.subtle.sign('HMAC', k1, enc.encode(token));
+    const k2 = await crypto.subtle.importKey('raw', secret, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const sig = hex(await crypto.subtle.sign('HMAC', k2, enc.encode(str)));
+    if (sig !== hash) return null;
+    if (Date.now() / 1000 - Number(sp.get('auth_date') || 0) > 86400) return null;
+    const u = JSON.parse(sp.get('user') || '{}');
+    return u && u.id ? String(u.id) : null;
+  } catch (_) { return null; }
+}
+// уведомление в Telegram без текста сообщений; не чаще 6 за 10 минут на игрока
+async function notify(env, uid, text) {
+  try {
+    if (!env.GAME_BOT_TOKEN) return;
+    const row = await env.DB.prepare('SELECT chat FROM sp_tg WHERE uid=?').bind(uid).first();
+    if (!row) return;
+    if (!await allow(env, 'tn:' + uid, 6, 10 * 60 * 1000)) return;
+    await fetch('https://api.telegram.org/bot' + env.GAME_BOT_TOKEN + '/sendMessage', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ chat_id: row.chat, text, disable_notification: false }),
+    });
+  } catch (_) {}
+}
+const push = (ctx, p) => { try { ctx && ctx.waitUntil ? ctx.waitUntil(p) : p.catch(() => {}); } catch (_) {} };
 
 /* ---------- Друзья и вызовы ---------- */
 const FR_MAX = 100, FR_IN_MAX = 50, FR_OUT_MAX = 30;       // друзей, ожидающих входящих, ожидающих исходящих
@@ -387,6 +431,9 @@ async function runCron(env) {
   await step('qr_login', 'DELETE FROM qr_login WHERE expires<?', now);
   await step('sp_reports', 'DELETE FROM sp_reports WHERE t<?', now - 60 * DAY);
   await step('sp_challenges', 'DELETE FROM sp_challenges WHERE t<?', now - 2 * CH_TTL);
+  await step('sp_rooms', 'DELETE FROM sp_rooms WHERE id NOT IN (SELECT room FROM sp_room_members)');
+  await step('sp_room_msgs', 'DELETE FROM sp_room_msgs WHERE room NOT IN (SELECT id FROM sp_rooms)');
+  await step('sp_room_msgs', 'DELETE FROM sp_room_msgs WHERE t<?', now - 30 * DAY);
   await step('sp_friends', "DELETE FROM sp_friends WHERE state='pending' AND t>0 AND t<?", now - 90 * DAY);
   // аккаунты, в которые не играли ни разу и не заходили 120 дней
   let removed = 0;
@@ -435,7 +482,7 @@ export default {
     if (ctx && ctx.waitUntil) ctx.waitUntil(p);
     return p;
   },
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const origin = corsOrigin(request, env);
 
     if (request.method === 'OPTIONS') {
@@ -611,6 +658,12 @@ export default {
         await env.DB.prepare('DELETE FROM sp_blocks WHERE a=? OR b=?').bind(user.id, user.id).run();
         await env.DB.prepare('DELETE FROM sp_reports WHERE reporter=? OR target=?').bind(user.id, user.id).run();
         await env.DB.prepare('DELETE FROM sp_challenges WHERE from_id=? OR to_id=?').bind(user.id, user.id).run();
+        try {
+          await env.DB.prepare('DELETE FROM sp_room_members WHERE uid=?').bind(user.id).run();
+          await env.DB.prepare('DELETE FROM sp_room_msgs WHERE uid=?').bind(user.id).run();
+          await env.DB.prepare('DELETE FROM sp_tg WHERE uid=?').bind(user.id).run();
+          await env.DB.prepare('DELETE FROM sp_rooms WHERE id NOT IN (SELECT room FROM sp_room_members)').run();
+        } catch (_) {}
         await env.DB.prepare('DELETE FROM users WHERE id=?').bind(user.id).run();
         return reply({ ok: true });
       }
@@ -672,7 +725,7 @@ export default {
       }
 
       /* ---------- друзья ---------- */
-      if (url.pathname.startsWith('/api/friends') || url.pathname.startsWith('/api/challenge') || url.pathname.startsWith('/api/chat') || url.pathname === '/api/ping') {
+      if (url.pathname.startsWith('/api/friends') || url.pathname.startsWith('/api/challenge') || url.pathname.startsWith('/api/chat') || url.pathname.startsWith('/api/echo') || url.pathname.startsWith('/api/tg') || url.pathname === '/api/ping') {
         const user = await userFrom(request, env);
         if (!user) return reply({ error: 'Нужно войти в аккаунт.' }, 401);
         const now = Date.now(), post = request.method === 'POST', body = post ? await request.json().catch(() => ({})) : {};
@@ -684,7 +737,9 @@ export default {
           const rq = await env.DB.prepare('SELECT COUNT(*) AS n FROM sp_friends WHERE b=? AND state=\'pending\'').bind(user.id).first();
           const ch = await env.DB.prepare('SELECT COUNT(*) AS n FROM sp_challenges WHERE to_id=? AND state=\'open\' AND t>?').bind(user.id, now - CH_TTL).first();
           const ms = await env.DB.prepare('SELECT COUNT(*) AS n FROM sp_msgs WHERE b=? AND rd=0').bind(user.id).first();
-          return reply({ ok: true, requests: rq ? rq.n : 0, challenges: ch ? ch.n : 0, messages: ms ? ms.n : 0 });
+          let rooms = 0;
+          try { const rr = await env.DB.prepare('SELECT COUNT(*) AS n FROM sp_room_msgs g JOIN sp_room_members m ON m.room=g.room AND m.uid=? WHERE g.id>m.last AND g.uid<>?').bind(user.id, user.id).first(); rooms = rr ? rr.n : 0; } catch (_) {}
+          return reply({ ok: true, requests: rq ? rq.n : 0, challenges: ch ? ch.n : 0, messages: ms ? ms.n : 0, rooms });
         }
 
         // список друзей, запросы и вызовы
@@ -751,6 +806,119 @@ export default {
         }
 
         /* ---------- чат между друзьями ---------- */
+        // Telegram: привязка уведомлений
+        if (url.pathname === '/api/tg/link' && post) {
+          if (!await allow(env, 'tl:' + user.id, 10, 60 * 60 * 1000)) return reply(TOO_MANY, 429);
+          if (body.off === true) { await env.DB.prepare('DELETE FROM sp_tg WHERE uid=?').bind(user.id).run(); return reply({ ok: true, linked: false }); }
+          const chat = await tgCheck(body.initData, env.GAME_BOT_TOKEN);
+          if (!chat) return reply({ error: 'Не удалось проверить Telegram.' }, 400);
+          await env.DB.prepare('INSERT OR REPLACE INTO sp_tg (uid,chat,t) VALUES (?,?,?)').bind(user.id, chat, now).run();
+          return reply({ ok: true, linked: true });
+        }
+        if (url.pathname === '/api/tg' && request.method === 'GET') {
+          const r = await env.DB.prepare('SELECT 1 AS x FROM sp_tg WHERE uid=?').bind(user.id).first();
+          return reply({ linked: !!r, available: !!env.GAME_BOT_TOKEN });
+        }
+
+        // Эхо: комнаты
+        if (url.pathname.startsWith('/api/echo')) {
+          const mem = room => env.DB.prepare('SELECT room,uid,last FROM sp_room_members WHERE room=? AND uid=?').bind(room, user.id).first();
+          const roomId = String(url.searchParams.get('room') || body.room || '');
+
+          if (url.pathname === '/api/echo/rooms' && request.method === 'GET') {
+            if (!await allow(env, 'er:' + user.id, 80, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+            const rows = (await env.DB.prepare('SELECT r.id,r.name,r.owner,m.last,(SELECT COUNT(*) FROM sp_room_members x WHERE x.room=r.id) AS members,(SELECT COUNT(*) FROM sp_room_msgs g WHERE g.room=r.id AND g.id>m.last AND g.uid<>?) AS unread,(SELECT body FROM sp_room_msgs g WHERE g.room=r.id ORDER BY g.id DESC LIMIT 1) AS lastbody,(SELECT t FROM sp_room_msgs g WHERE g.room=r.id ORDER BY g.id DESC LIMIT 1) AS lastt FROM sp_room_members m JOIN sp_rooms r ON r.id=m.room WHERE m.uid=? ORDER BY COALESCE(lastt,r.t) DESC LIMIT 30')
+              .bind(user.id, user.id).all()).results || [];
+            return reply({ rooms: rows.map(r => ({ id: r.id, name: r.name, mine: r.owner === user.id, members: r.members, unread: r.unread, last: r.lastbody ? String(r.lastbody).slice(0, 60) : '', t: r.lastt || 0 })) });
+          }
+
+          if (url.pathname === '/api/echo/room' && post) {
+            if (!await allow(env, 'ec:' + user.id, 5, 60 * 60 * 1000)) return reply(TOO_MANY, 429);
+            const name = cleanText(body.name, ROOM_NAME_MAX);
+            if (!name) return reply({ error: 'Название комнаты — от 1 до ' + ROOM_NAME_MAX + ' символов.' }, 400);
+            const cnt = await env.DB.prepare('SELECT COUNT(*) AS n FROM sp_room_members WHERE uid=?').bind(user.id).first();
+            if (cnt && cnt.n >= ROOM_MAX_JOINED) return reply({ error: 'Ты уже в ' + ROOM_MAX_JOINED + ' комнатах. Выйди из лишней.' }, 409);
+            const id = hex(random(6));
+            await env.DB.prepare('INSERT INTO sp_rooms (id,name,owner,t) VALUES (?,?,?,?)').bind(id, name, user.id, now).run();
+            await env.DB.prepare('INSERT INTO sp_room_members (room,uid,t,last) VALUES (?,?,?,0)').bind(id, user.id, now).run();
+            return reply({ ok: true, id, name });
+          }
+
+          if (!roomId) return reply({ error: 'Комната не указана.' }, 400);
+          const me = await mem(roomId);
+          if (!me) return reply({ error: 'Ты не состоишь в этой комнате.' }, 403);
+          const room = await env.DB.prepare('SELECT id,name,owner FROM sp_rooms WHERE id=?').bind(roomId).first();
+          if (!room) return reply({ error: 'Комната не найдена.' }, 404);
+
+          if (url.pathname === '/api/echo/room/msgs' && request.method === 'GET') {
+            if (!await allow(env, 'eg:' + user.id, 150, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+            const after = Math.max(0, Math.floor(Number(url.searchParams.get('after')) || 0));
+            const rows = (await env.DB.prepare('SELECT id,uid,body,t FROM sp_room_msgs WHERE room=? AND id>? ORDER BY id ASC LIMIT 50').bind(roomId, after).all()).results || [];
+            if (rows.length) await env.DB.prepare('UPDATE sp_room_members SET last=? WHERE room=? AND uid=?').bind(rows[rows.length - 1].id, roomId, user.id).run();
+            const ms = ((await env.DB.prepare('SELECT uid FROM sp_room_members WHERE room=?').bind(roomId).all()).results || []).map(r => r.uid);
+            const people = await usersByIds(env, ms);
+            const nm = id => (people.get(id) || {}).username || '?';
+            return reply({ room: { id: room.id, name: room.name, mine: room.owner === user.id }, members: ms.map(id => ({ name: nm(id), owner: id === room.owner, me: id === user.id })), messages: rows.map(r => ({ id: r.id, mine: r.uid === user.id, who: nm(r.uid), body: r.body, t: r.t })) });
+          }
+
+          if (url.pathname === '/api/echo/room/send' && post) {
+            if (!await allow(env, 'es:' + user.id, 30, 60 * 1000)) return reply(TOO_MANY, 429);
+            const text = cleanText(body.text, MSG_MAX);
+            if (text === null) return reply({ error: 'Сообщение длиннее ' + MSG_MAX + ' символов.' }, 400);
+            if (!text) return reply({ error: 'Пустое сообщение.' }, 400);
+            const ins = await env.DB.prepare('INSERT INTO sp_room_msgs (room,uid,body,t) VALUES (?,?,?,?)').bind(roomId, user.id, text, now).run();
+            const id = ins && ins.meta ? ins.meta.last_row_id || 0 : 0;
+            await env.DB.prepare('UPDATE sp_room_members SET last=? WHERE room=? AND uid=?').bind(id, roomId, user.id).run();
+            await env.DB.prepare('DELETE FROM sp_room_msgs WHERE id IN (SELECT id FROM sp_room_msgs WHERE room=? ORDER BY id DESC LIMIT -1 OFFSET ?)').bind(roomId, ROOM_KEEP).run();
+            const others = ((await env.DB.prepare('SELECT uid FROM sp_room_members WHERE room=? AND uid<>?').bind(roomId, user.id).all()).results || []).slice(0, ROOM_MAX_MEMBERS);
+            for (const o of others) push(ctx, notify(env, o.uid, '💬 Эхо · ' + room.name + ': новое сообщение'));
+            return reply({ ok: true, id });
+          }
+
+          if (url.pathname === '/api/echo/room/invite' && post) {
+            if (!await allow(env, 'ei:' + user.id, 20, 60 * 60 * 1000)) return reply(TOO_MANY, 429);
+            const other = await findUser(env, body.code);
+            if (!other || other.id === user.id) return reply({ error: 'Игрок не найден.' }, 404);
+            const rl = await relation(env, user.id, other.id);
+            if (!rl || rl.state !== 'accepted') return reply({ error: 'Приглашать можно только друзей.' }, 403);
+            const blocked = await env.DB.prepare('SELECT 1 AS x FROM sp_blocks WHERE a=? AND b=?').bind(other.id, user.id).first();
+            if (blocked) return reply({ error: 'Игрок сейчас не принимает приглашения.' }, 403);
+            const have = await env.DB.prepare('SELECT 1 AS x FROM sp_room_members WHERE room=? AND uid=?').bind(roomId, other.id).first();
+            if (have) return reply({ error: 'Он уже в комнате.' }, 409);
+            const n = await env.DB.prepare('SELECT COUNT(*) AS n FROM sp_room_members WHERE room=?').bind(roomId).first();
+            if (n && n.n >= ROOM_MAX_MEMBERS) return reply({ error: 'В комнате уже ' + ROOM_MAX_MEMBERS + ' человек.' }, 409);
+            const j = await env.DB.prepare('SELECT COUNT(*) AS n FROM sp_room_members WHERE uid=?').bind(other.id).first();
+            if (j && j.n >= ROOM_MAX_JOINED) return reply({ error: 'Друг уже состоит в максимальном числе комнат.' }, 409);
+            await env.DB.prepare('INSERT INTO sp_room_members (room,uid,t,last) VALUES (?,?,?,0)').bind(roomId, other.id, now).run();
+            push(ctx, notify(env, other.id, '🔔 Эхо: ' + user.username + ' позвал тебя в комнату «' + room.name + '»'));
+            return reply({ ok: true, username: other.username });
+          }
+
+          if (url.pathname === '/api/echo/room/leave' && post) {
+            await env.DB.prepare('DELETE FROM sp_room_members WHERE room=? AND uid=?').bind(roomId, user.id).run();
+            const left = await env.DB.prepare('SELECT uid FROM sp_room_members WHERE room=? ORDER BY t ASC LIMIT 1').bind(roomId).first();
+            if (!left) { await env.DB.prepare('DELETE FROM sp_rooms WHERE id=?').bind(roomId).run(); await env.DB.prepare('DELETE FROM sp_room_msgs WHERE room=?').bind(roomId).run(); }
+            else if (room.owner === user.id) await env.DB.prepare('UPDATE sp_rooms SET owner=? WHERE id=?').bind(left.uid, roomId).run();
+            return reply({ ok: true });
+          }
+
+          if (url.pathname === '/api/echo/room/kick' && post) {
+            if (room.owner !== user.id) return reply({ error: 'Исключать может только создатель комнаты.' }, 403);
+            const other = await findUser(env, body.code);
+            if (!other || other.id === user.id) return reply({ error: 'Игрок не найден.' }, 404);
+            await env.DB.prepare('DELETE FROM sp_room_members WHERE room=? AND uid=?').bind(roomId, other.id).run();
+            return reply({ ok: true });
+          }
+
+          if (url.pathname === '/api/echo/room/report' && post) {
+            if (!await allow(env, 'ex:' + user.id, 5, 60 * 60 * 1000)) return reply(TOO_MANY, 429);
+            const rows = (await env.DB.prepare('SELECT body FROM sp_room_msgs WHERE room=? AND uid<>? ORDER BY id DESC LIMIT 5').bind(roomId, user.id).all()).results || [];
+            await env.DB.prepare('INSERT INTO sp_reports (reporter,target,body,t) VALUES (?,?,?,?)').bind(user.id, room.owner, ('[комната ' + room.name + '] ' + rows.map(r => r.body).reverse().join(' | ')).slice(0, 800), now).run();
+            return reply({ ok: true });
+          }
+          return reply({ error: 'Not found' }, 404);
+        }
+
         if (url.pathname.startsWith('/api/chat')) {
           const withCode = (url.searchParams.get('with') || body.to || '');
           const other = await findUser(env, withCode);
@@ -785,6 +953,7 @@ export default {
             const ins = await env.DB.prepare('INSERT INTO sp_msgs (a,b,kind,body,t,rd) VALUES (?,?,?,?,?,0)').bind(user.id, other.id, kind, text, now).run();
             await env.DB.prepare('DELETE FROM sp_msgs WHERE id IN (SELECT id FROM sp_msgs WHERE (a=? AND b=?) OR (a=? AND b=?) ORDER BY id DESC LIMIT -1 OFFSET ?)')
               .bind(user.id, other.id, other.id, user.id, MSG_KEEP).run();
+            if (kind === 'text') push(ctx, notify(env, other.id, '💬 Эхо: новое сообщение от ' + user.username));
             return reply({ ok: true, id: ins && ins.meta ? ins.meta.last_row_id || 0 : 0 });
           }
 

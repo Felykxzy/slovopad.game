@@ -191,3 +191,36 @@ test('ночная уборка: удаляет старое и пустое, ш
     assert.equal((await c.env.DB.prepare('SELECT COUNT(*) AS n FROM rate_limit WHERE k=\'x\'').first()).n, 0);
   } finally { globalThis.fetch = real; }
 });
+
+test('Эхо: комнаты — создание, приглашение только друзей, сообщения, выход, выкидывание', async t => {
+  const s = await setup(); if (!s) return t.skip('нет node:sqlite');
+  const a = await s.reg('Alice'), b = await s.reg('Bobby'), c = await s.reg('Carol');
+  await makeFriends(s, a, b);
+  const r = await s.raw('/api/echo/room', { name: '  Наша   комната ' }, a.token);
+  assert.equal(r.status, 200); const id = r.data.id;
+  assert.equal((await s.raw('/api/echo/room', { name: '' }, a.token)).status, 400);
+  assert.equal((await s.raw('/api/echo/room/invite', { room: id, code: c.code }, a.token)).status, 403);   // не друг
+  assert.equal((await s.raw('/api/echo/room/invite', { room: id, code: b.code }, a.token)).status, 200);
+  assert.equal((await s.raw('/api/echo/room/invite', { room: id, code: b.code }, a.token)).status, 409);   // уже в комнате
+  assert.equal((await s.raw('/api/echo/room/send', { room: id, text: 'всем привет' }, c.token)).status, 403);   // чужой
+  assert.equal((await s.raw('/api/echo/room/send', { room: id, text: 'всем привет' }, a.token)).status, 200);
+  let list = (await s.raw('/api/echo/rooms', null, b.token)).data.rooms;
+  assert.equal(list.length, 1); assert.equal(list[0].unread, 1); assert.equal(list[0].members, 2);
+  const m = (await s.raw('/api/echo/room/msgs?room=' + id, null, b.token)).data;
+  assert.equal(m.messages.length, 1); assert.equal(m.messages[0].who, 'Alice'); assert.equal(m.messages[0].mine, false);
+  assert.equal((await s.raw('/api/echo/rooms', null, b.token)).data.rooms[0].unread, 0);
+  assert.equal((await s.raw('/api/echo/room/kick', { room: id, code: a.code }, b.token)).status, 403);   // не создатель
+  assert.equal((await s.raw('/api/echo/room/report', { room: id }, b.token)).status, 200);
+  assert.equal((await s.raw('/api/echo/room/kick', { room: id, code: b.code }, a.token)).status, 200);
+  assert.equal((await s.raw('/api/echo/rooms', null, b.token)).data.rooms.length, 0);
+  await s.raw('/api/echo/room/leave', { room: id }, a.token);
+  assert.equal((await s.raw('/api/echo/rooms', null, a.token)).data.rooms.length, 0);
+});
+
+test('Эхо: Telegram без токена бота не привязывается, статус отвечает', async t => {
+  const s = await setup(); if (!s) return t.skip('нет node:sqlite');
+  const a = await s.reg('Alice');
+  assert.equal((await s.raw('/api/tg/link', { initData: 'hash=bad' }, a.token)).status, 400);
+  const st = (await s.raw('/api/tg', null, a.token)).data;
+  assert.equal(st.linked, false); assert.equal(st.available, false);
+});
