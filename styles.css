@@ -714,10 +714,11 @@ body.eco #o1::before,body.eco #tbg b,body.eco #fg .fd .fr::after,body.eco #fg .f
 @media (max-height:600px){#fg .fd .w2{display:none}#fg .fd b{font-size:19px}#fg .fd .stz{font-size:18px}}
 @media (max-height:520px) and (orientation:landscape){#o5{gap:4px;padding-top:calc(6px + var(--sat))}#o5 h2{font-size:15px;margin:0}#lgh{display:none}#fg{padding:4px 22vw 6px}#fg .fd{height:clamp(120px,calc(100dvh - 170px),230px);max-width:360px}#fg .fd .wp{display:none}#fg .fd .ic{font-size:40px}#dt button{width:28px;height:28px;font-size:14px}#dt button.on{width:34px;height:34px;font-size:17px}#o5 .mb .btn{padding:9px 8px}}
 /* карусель «Тематики»: плавнее — без 3D-наклона, анимации только у выбранной карточки */
-#fg{perspective:none}
+#fg{perspective:none;overflow-y:hidden;overscroll-behavior:contain;touch-action:pan-x}
+#o5{overflow:hidden;overscroll-behavior:none;touch-action:pan-x}
 #fg .fd,#fg .fd:active{transition:none}
-#fg .fd{transform:scale(var(--s,1));contain:layout style}
-#fg .fd:active{transform:scale(calc(var(--s,1)*.97))}
+#fg .fd{transform:perspective(900px) rotateY(var(--r,0deg)) scale(var(--s,1));transform-origin:50% 50%;backface-visibility:hidden;will-change:transform,opacity;contain:layout style}
+#fg .fd:active{transform:perspective(900px) rotateY(var(--r,0deg)) scale(calc(var(--s,1)*.97))}
 #fg .fd .fr{box-shadow:0 0 0 1px rgba(var(--c),.25),0 10px 22px rgba(0,0,0,.45),0 0 22px rgba(var(--c),.32),inset 0 1px 0 rgba(255,255,255,.3)}
 #fg .fd .ic{animation:none;filter:drop-shadow(0 4px 8px rgba(var(--c),.6))}
 #fg .fd .fr::after{animation:none}

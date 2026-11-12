@@ -82,11 +82,12 @@ let cur=0;
 let fgLast=-1,fgGeo=null,fgBusy=0,fgTb=0;
 function fgMeasure(){const g=$("fg"),c=g.children;fgGeo=[...c].map(x=>x.offsetLeft+x.offsetWidth/2);fgGeo.w=c[0]?c[0].offsetWidth||1:1;fgGeo.vw=g.clientWidth}
 function fgUpd(f){fgBusy=0;const g=$("fg"),ch=g.children;if(f||!fgGeo||fgGeo.length!==ch.length||fgGeo.vw!==g.clientWidth)fgMeasure();const m=g.scrollLeft+fgGeo.vw/2,w=fgGeo.w;let bi=0,bd=1e9;
-for(let i=0;i<ch.length;i++){const d=Math.abs(fgGeo[i]-m);if(d<bd){bd=d;bi=i}const c=ch[i];if(d<w*1.7){const k=Math.min(1,d/(w*1.1));c.style.setProperty("--s",(1-k*.14).toFixed(3));c.style.setProperty("--o",(1-k*.5).toFixed(2));c._v=1}else if(c._v){c._v=0;c.style.setProperty("--s",".86");c.style.setProperty("--o",".5")}}
+for(let i=0;i<ch.length;i++){const dd=fgGeo[i]-m,d=Math.abs(dd);if(d<bd){bd=d;bi=i}const c=ch[i];if(d<w*1.7){const k=Math.min(1,d/(w*1.1));c.style.setProperty("--s",(1-k*.14).toFixed(3));c.style.setProperty("--o",(1-k*.5).toFixed(2));c.style.setProperty("--r",(-Math.sign(dd)*Math.min(1,d/(w*.9))*32).toFixed(1)+"deg");c._v=1}else if(c._v){c._v=0;c.style.setProperty("--s",".86");c.style.setProperty("--o",".5");c.style.setProperty("--r",(dd>0?-32:32)+"deg")}}
 cur=bi;
 if(bi!==fgLast){const dt=$("dt");fgLast=bi;[...dt.children].forEach((x,i)=>x.classList.toggle("on",i===bi));[...ch].forEach((c,i)=>c.classList.toggle("cur",i===bi));const t=THEMES[bi];if(t){$("o5").style.setProperty("--tc",t.c);clearTimeout(fgTb);fgTb=setTimeout(()=>{const tb=$("tbg");if(tb)tb.querySelectorAll("b").forEach(e=>e.textContent=t.i)},160);const a=dt.children[bi];if(a)dt.scrollLeft=a.offsetLeft-(dt.clientWidth-a.offsetWidth)/2}}}
 $("fg").addEventListener("scroll",()=>{if(!fgBusy){fgBusy=1;requestAnimationFrame(()=>fgUpd())}},{passive:true});
 addEventListener("resize",()=>{fgGeo=null});
+(()=>{const o=$("o5");let x0=0,y0=0;o.addEventListener("touchstart",e=>{const t=e.touches[0];x0=t.clientX;y0=t.clientY},{passive:true});o.addEventListener("touchmove",e=>{const t=e.touches[0];if(Math.abs(t.clientY-y0)>Math.abs(t.clientX-x0)&&e.cancelable)e.preventDefault()},{passive:false})})();
 function menu(){if(window.ACH)ACH.check();shUI();app.classList.add("inmenu");pfUI();$("vr").textContent="v"+VER;const g=$("fg");g.innerHTML="";$("dt").innerHTML="";fgGeo=null;fgLast=-1;logo();stats();THEMES.forEach((t,n)=>{const b=gbest(t);
 const ws=lw(t).split(" "),sm=ws.filter(w=>w.length<=8),pk=sm.length>1?sm:ws,pl=[];while(pl.length<3)pl.push(pk[Math.random()*pk.length|0].toUpperCase());const st=b>=600?3:b>=300?2:b>=100?1:0,nxt=[100,300,600,600][st];
 const d=document.createElement("div");d.className="fd";d.style.setProperty("--c",t.c);
@@ -513,7 +514,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");glassSet((e.clientX/innerWidth-.5)/.55,(e.clientY/innerHeight-.5)/.5)},{passive:true});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="2.16.1";let upLater=false;
+const VER="2.16.2";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if($("spl")||state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
