@@ -674,3 +674,42 @@ body.hold .btn::after,body.hold .ib::after{display:none}
 .sf{flex-direction:column;align-items:stretch;gap:8px;padding:10px 10px 11px}
 .sf b{min-width:0;text-align:center;font-size:12px;letter-spacing:.12em;line-height:1.25;overflow-wrap:anywhere}
 .sf .pl{flex:none;text-align:center;white-space:nowrap;padding:7px 8px}
+/* ===== 2.16: красивее меню и «Тематики» ===== */
+#o5{--tc:94,242,255}
+#tbg{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0;background:radial-gradient(75% 46% at 50% 36%,rgba(var(--tc),.2),transparent 72%),radial-gradient(60% 40% at 15% 92%,rgba(var(--tc),.12),transparent 72%),radial-gradient(50% 35% at 90% 8%,rgba(var(--tc),.1),transparent 72%)}
+#tbg b{position:absolute;left:var(--x);top:var(--y);font-size:var(--z);font-weight:400;opacity:0;animation:tfl var(--d) ease-in-out var(--dl) infinite}
+@keyframes tfl{0%{opacity:0;transform:translateY(24px) rotate(-10deg) scale(.8)}30%,70%{opacity:.3}100%{opacity:0;transform:translateY(-70px) rotate(12deg) scale(1.1)}}
+#o5>*:not(#tbg){position:relative;z-index:1}
+#o5 h2{text-shadow:0 0 22px rgba(var(--tc),.65);color:rgb(var(--tc))}
+#fg{perspective:1100px}
+#fg .fd{transform:scale(var(--s,1)) rotateY(var(--r,0deg));will-change:transform}
+#fg .fd:active{transform:scale(calc(var(--s,1)*.97)) rotateY(var(--r,0deg))}
+#fg .fd .fr{overflow:hidden;background-blend-mode:normal;box-shadow:0 0 0 1px rgba(var(--c),.25),0 18px 44px rgba(0,0,0,.5),0 0 40px rgba(var(--c),.4),inset 0 1px 0 rgba(255,255,255,.3)}
+#fg .fd .fr::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.14) 48%,transparent 60%);transform:translateX(-120%);animation:glr 5.5s ease-in-out infinite}
+@keyframes glr{0%,55%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+#fg .fd .ic{font-size:62px;right:16px;top:12px;filter:drop-shadow(0 8px 14px rgba(var(--c),.7));animation:ifl 4.2s ease-in-out infinite}
+@keyframes ifl{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-8px) rotate(5deg)}}
+.nx{display:block;height:6px;border-radius:5px;background:rgba(255,255,255,.14);overflow:hidden;margin-top:-2px}
+.nx i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,rgba(var(--c),.95),#fff);box-shadow:0 0 10px rgba(var(--c),.8)}
+#dt{gap:7px;overflow-x:auto;max-width:100%;padding:6px 16px;justify-content:safe center;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#dt::-webkit-scrollbar{display:none}
+#dt button{flex:none;width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);font-size:17px;line-height:1;padding:0;color:inherit;opacity:.62;transition:all .25s}
+#dt button.on{width:46px;height:46px;font-size:22px;opacity:1;border-color:rgba(var(--tc),.95);background:rgba(var(--tc),.25);box-shadow:0 0 18px rgba(var(--tc),.55)}
+#o5 #pl{border-color:rgba(var(--tc),.8);background:radial-gradient(120% 70% at 25% 0%,rgba(255,255,255,.38),transparent 55%),linear-gradient(135deg,rgba(var(--tc),.7),rgba(var(--tc),.28));box-shadow:0 0 24px rgba(var(--tc),.45),inset 0 1px 1px rgba(255,255,255,.45)}
+/* главное меню */
+#o1::before{content:"";position:absolute;inset:-8%;z-index:-1;pointer-events:none;background:radial-gradient(42% 30% at 18% 18%,rgba(120,70,255,.2),transparent 70%),radial-gradient(42% 30% at 86% 78%,rgba(255,79,216,.15),transparent 70%),radial-gradient(40% 28% at 70% 12%,rgba(94,242,255,.1),transparent 70%);animation:mdr 16s ease-in-out infinite alternate}
+@keyframes mdr{from{transform:translate(-2%,-1%) scale(1)}to{transform:translate(2%,2%) scale(1.06)}}
+.lg{filter:drop-shadow(0 0 16px rgba(94,242,255,.28)) drop-shadow(0 0 30px rgba(255,79,216,.18))}
+#o1.s .mb .btn{animation:rise .6s cubic-bezier(.2,1.1,.4,1) both}
+#o1.s .mb .btn:nth-child(1){animation-delay:.55s}#o1.s .mb .btn:nth-child(2){animation-delay:.65s}#o1.s .mb .btn:nth-child(3){animation-delay:.75s}#o1.s .mb .btn:nth-child(4){animation-delay:.85s}#o1.s .mb .btn:nth-child(5){animation-delay:.95s}
+#tp{background:radial-gradient(120% 70% at 25% 0%,rgba(255,255,255,.4),transparent 55%),linear-gradient(110deg,transparent 38%,rgba(255,255,255,.5) 50%,transparent 62%) 200% 0/260% 100% no-repeat,linear-gradient(135deg,rgba(94,242,255,.6),rgba(255,79,216,.4));animation:rise .6s cubic-bezier(.2,1.1,.4,1) .55s both,tps 4.5s ease-in-out 1.4s infinite,tpg 3s ease-in-out infinite;box-shadow:inset 0 1px 1px rgba(255,255,255,.55),0 0 24px rgba(94,242,255,.35),0 10px 26px rgba(0,0,0,.4)}
+@keyframes tps{0%,50%{background-position:0 0,200% 0,0 0}100%{background-position:0 0,-100% 0,0 0}}
+@keyframes tpg{0%,100%{box-shadow:inset 0 1px 1px rgba(255,255,255,.55),0 0 18px rgba(94,242,255,.28),0 10px 26px rgba(0,0,0,.4)}50%{box-shadow:inset 0 1px 1px rgba(255,255,255,.55),0 0 34px rgba(255,79,216,.45),0 10px 26px rgba(0,0,0,.4)}}
+.rkr i{position:relative;overflow:hidden}.rkr i::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);transform:translateX(-120%);animation:glr 3.8s ease-in-out infinite}
+body.eco #o1::before,body.eco #tbg b,body.eco #fg .fd .fr::after,body.eco #fg .fd .ic{animation:none}
+@media (prefers-reduced-motion:reduce){#o1::before,#tbg b,#fg .fd .fr::after,#fg .fd .ic,#tp,.rkr i::after{animation:none}#o1.s .mb .btn{animation:none}}
+/* «Тематики» на низких экранах: карточка по высоте экрана, слова не лезут на название */
+#fg .fd{height:clamp(190px,calc(100dvh - 340px),430px)}
+@media (max-height:700px){#fg .fd .w3{display:none}#fg .fd .w2{top:44%}#fg .fd .ic{font-size:50px}#fg .fd b{font-size:21px}#fg .fd .fr{padding:16px}}
+@media (max-height:600px){#fg .fd .w2{display:none}#fg .fd b{font-size:19px}#fg .fd .stz{font-size:18px}}
+@media (max-height:520px) and (orientation:landscape){#o5{gap:4px;padding-top:calc(6px + var(--sat))}#o5 h2{font-size:15px;margin:0}#lgh{display:none}#fg{padding:4px 22vw 6px}#fg .fd{height:clamp(120px,calc(100dvh - 170px),230px);max-width:360px}#fg .fd .wp{display:none}#fg .fd .ic{font-size:40px}#dt button{width:28px;height:28px;font-size:14px}#dt button.on{width:34px;height:34px;font-size:17px}#o5 .mb .btn{padding:9px 8px}}
