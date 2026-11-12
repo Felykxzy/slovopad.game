@@ -732,3 +732,7 @@ body.eco #o1::before,body.eco #tbg b,body.eco #fg .fd .fr::after,body.eco #fg .f
 .rkb{transform:translateZ(0);-webkit-backface-visibility:hidden;backface-visibility:hidden;isolation:isolate}
 body.eco #fg .fd.cur .ic,body.eco #fg .fd.cur .fr::after,body.eco #fg .fd.cur .wp{animation:none}
 @media (prefers-reduced-motion:reduce){#fg .fd.cur .ic,#fg .fd.cur .fr::after,#fg .fd.cur .wp{animation:none}}
+/* главное меню: не двигается и стоит ровно по центру */
+#o1{overflow:hidden;touch-action:none;overscroll-behavior:none;justify-content:center;padding:calc(66px + var(--sat)) 16px calc(66px + var(--sab))}
+#o1 .hero{margin-top:0}
+@media (max-height:520px) and (orientation:landscape){#o1{padding:calc(6px + var(--sat)) 16px calc(46px + var(--sab))}}

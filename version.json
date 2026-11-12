@@ -1,12 +1,12 @@
 {
-  "version": "2.16.3",
+  "version": "2.16.4",
   "notes": [
-    "Исправлено пропадание рамки ранга в меню"
+    "Главное меню больше не двигается и стоит ровно по центру"
   ],
   "notes_en": [
-    "Fixed the rank card frame disappearing in the menu"
+    "The main menu no longer moves and is perfectly centered"
   ],
   "notes_uk": [
-    "Виправлено зникнення рамки рангу в меню"
+    "Головне меню більше не рухається і стоїть рівно по центру"
   ]
 }
