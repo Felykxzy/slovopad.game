@@ -705,9 +705,9 @@ body.hold .btn::after,body.hold .ib::after{display:none}
 #tp{background:radial-gradient(120% 70% at 25% 0%,rgba(255,255,255,.4),transparent 55%),linear-gradient(110deg,transparent 38%,rgba(255,255,255,.5) 50%,transparent 62%) 200% 0/260% 100% no-repeat,linear-gradient(135deg,rgba(94,242,255,.6),rgba(255,79,216,.4));animation:rise .6s cubic-bezier(.2,1.1,.4,1) .55s both,tps 4.5s ease-in-out 1.4s infinite,tpg 3s ease-in-out infinite;box-shadow:inset 0 1px 1px rgba(255,255,255,.55),0 0 24px rgba(94,242,255,.35),0 10px 26px rgba(0,0,0,.4)}
 @keyframes tps{0%,50%{background-position:0 0,200% 0,0 0}100%{background-position:0 0,-100% 0,0 0}}
 @keyframes tpg{0%,100%{box-shadow:inset 0 1px 1px rgba(255,255,255,.55),0 0 18px rgba(94,242,255,.28),0 10px 26px rgba(0,0,0,.4)}50%{box-shadow:inset 0 1px 1px rgba(255,255,255,.55),0 0 34px rgba(255,79,216,.45),0 10px 26px rgba(0,0,0,.4)}}
-.rkr i{position:relative;overflow:hidden}.rkr i::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);transform:translateX(-120%);animation:glr 3.8s ease-in-out infinite}
+/* блик на полоске ранга убран: на iPhone он ломал отрисовку рамки ранга */
 body.eco #o1::before,body.eco #tbg b,body.eco #fg .fd .fr::after,body.eco #fg .fd .ic{animation:none}
-@media (prefers-reduced-motion:reduce){#o1::before,#tbg b,#fg .fd .fr::after,#fg .fd .ic,#tp,.rkr i::after{animation:none}#o1.s .mb .btn{animation:none}}
+@media (prefers-reduced-motion:reduce){#o1::before,#tbg b,#fg .fd .fr::after,#fg .fd .ic,#tp{animation:none}#o1.s .mb .btn{animation:none}}
 /* «Тематики» на низких экранах: карточка по высоте экрана, слова не лезут на название */
 #fg .fd{height:clamp(190px,calc(100dvh - 340px),430px)}
 @media (max-height:700px){#fg .fd .w3{display:none}#fg .fd .w2{top:44%}#fg .fd .ic{font-size:50px}#fg .fd b{font-size:21px}#fg .fd .fr{padding:16px}}
@@ -727,6 +727,8 @@ body.eco #o1::before,body.eco #tbg b,body.eco #fg .fd .fr::after,body.eco #fg .f
 #fg .fd.cur .fr::after{animation:glr 5.5s ease-in-out infinite}
 #fg .fd.cur .wp{animation:bob 3.6s ease-in-out infinite}
 #fg .fd.cur .w2{animation-delay:-1.2s}#fg .fd.cur .w3{animation-delay:-2.2s}
-#o1:not(.s)::before,#o1:not(.s) *,#o1:not(.s) *::after,#o5:not(.s) *,#o5:not(.s) *::after{animation-play-state:paused!important}
+#o1:not(.s)::before,#o5:not(.s) #tbg b{animation-play-state:paused}
+/* карточка ранга: своя стабильная графическая подложка, чтобы рамка и текст не пропадали после возврата из «Тематик» */
+.rkb{transform:translateZ(0);-webkit-backface-visibility:hidden;backface-visibility:hidden;isolation:isolate}
 body.eco #fg .fd.cur .ic,body.eco #fg .fd.cur .fr::after,body.eco #fg .fd.cur .wp{animation:none}
 @media (prefers-reduced-motion:reduce){#fg .fd.cur .ic,#fg .fd.cur .fr::after,#fg .fd.cur .wp{animation:none}}
