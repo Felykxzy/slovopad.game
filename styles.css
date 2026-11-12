@@ -770,6 +770,6 @@ body.eco #fg .fd.cur .ic,body.eco #fg .fd.cur .fr::after,body.eco #fg .fd.cur .w
 .chw{font-style:normal;font-size:10px;letter-spacing:.12em;opacity:.6;margin:0 6px 2px;color:var(--cyan,#5ef2ff)}
 .ecmem{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border-radius:14px;background:rgba(255,255,255,.07);font-size:14px}
 .ecx{width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,100,100,.5);background:rgba(255,100,100,.15);color:#ff8c8c;font-size:14px;cursor:pointer}
-#echoB{position:relative;grid-column:1/-1}
+#echoB{position:relative}
 #echoB .bdg{top:50%;right:16px;transform:translateY(-50%)}
 .aiset{max-height:58vh}

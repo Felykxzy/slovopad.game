@@ -61,7 +61,14 @@
     const l = g("ecList"); l.textContent = "";
     if (!sidTok()) { const b = btn("btn", T("ВОЙТИ В АККАУНТ", "SIGN IN", "УВІЙТИ В АКАУНТ"), () => sidOpen()); l.appendChild(h("div", "chem", T("Чтобы писать друзьям и создавать комнаты, нужен аккаунт. ИИ-помощник работает и без него.", "You need an account to message friends and make rooms. The AI assistant works without one.", "Потрібен акаунт, щоб писати друзям і створювати кімнати. ШІ-помічник працює і без нього."))); l.appendChild(b); return }
     if (E.tab === 0) {
-      if (!E.friends.length) l.appendChild(h("div", "chem", T("Пока нет друзей. Добавь их на экране «Друзья» — и сможешь писать здесь.", "No friends yet. Add some on the Friends screen — then you can chat here.", "Ще немає друзів. Додай їх на екрані «Друзі» — і зможеш писати тут.")));
+      const F = window.SlovopadFriends, bg = F && F.badges ? F.badges() : { r: 0, c: 0 }, fb = bg.r + bg.c;
+      const fr = h("button", "ecrow ecfr"); fr.type = "button";
+      fr.appendChild(avatar("👥", false));
+      const ft = h("div", "ect"); ft.appendChild(h("b", "", T("ДРУЗЬЯ", "FRIENDS", "ДРУЗІ"))); ft.appendChild(h("span", "", T("добавить, запросы, вызовы, топ", "add, requests, challenges, top", "додати, запити, виклики, топ"))); fr.appendChild(ft);
+      if (fb) fr.appendChild(h("i", "bdg ecb", fb > 9 ? "9+" : String(fb)));
+      fr.onclick = () => { if (F && F.openFriends) F.openFriends(hubOpen) };
+      l.appendChild(fr);
+      if (!E.friends.length) l.appendChild(h("div", "chem", T("Пока нет друзей. Нажми «Друзья» выше, добавь их — и сможешь писать здесь.", "No friends yet. Add some on the Friends screen — then you can chat here.", "Ще немає друзів. Додай їх на екрані «Друзі» — і зможеш писати тут.")));
       E.friends.slice().sort((a, b) => (b.unread || 0) - (a.unread || 0) || (b.online ? 1 : 0) - (a.online ? 1 : 0)).forEach(f => {
         const r = h("button", "ecrow"); r.type = "button";
         r.appendChild(avatar(f.avatar || (f.username || "?").charAt(0).toUpperCase(), f.online));
@@ -212,7 +219,7 @@
     b.onclick = hubOpen;
   }
   build(); wireMenuBtn();
-  window.SlovopadEcho = { open: hubOpen, relabel: wireMenuBtn };
+  window.SlovopadEcho = { open: hubOpen, relabel: wireMenuBtn, badge: () => { if (g("o16") && g("o16").classList.contains("s")) { labels(); paint() } } };
   const _menu = window.menu;
   if (typeof _menu === "function") window.menu = function () { const r = _menu.apply(this, arguments); try { wireMenuBtn() } catch (e) { } return r };
 })();

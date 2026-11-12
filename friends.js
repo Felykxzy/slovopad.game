@@ -7,7 +7,7 @@
   const g = id => document.getElementById(id);
   let data = null, tab = 0, pick = null, cur = null, busy = false, CH = null, lastErr = "";
   const badge = { r: 0, c: 0, m: 0, k: 0 };
-  let backFn = null;
+  let backFn = null, openFrom = null;
   const REACTS = ["🔥", "👏", "😂", "😎", "💪", "🎯", "❤️", "👋", "🤯", "🥳"];
   const chat = { p: null, last: 0, timer: 0, blocked: false, busy: false, sure: 0 };
 
@@ -54,7 +54,7 @@
     const after = g("o11");
     after.parentNode.insertBefore(o, after.nextSibling); o.parentNode.insertBefore(p, o.nextSibling); p.parentNode.insertBefore(c15, p.nextSibling);
     chatWire();
-    g("frBk").onclick = () => { pick = null; ov("o1"); };
+    g("frBk").onclick = () => { pick = null; if (openFrom) { const f = openFrom; openFrom = null; f(); return } ov("o1"); };
     g("fpBk").onclick = () => { render(); ov("o13"); };
     g("frAdd").onclick = addFriend;
     g("frIn").addEventListener("keydown", e => { if (e.key === "Enter") addFriend(); });
@@ -370,8 +370,9 @@
     if (sidTok()) { setStatus(""); await load() }
   }
   function paintBadge() {
-    const b = g("frBd"); if (!b) return; const n = badge.r + badge.c; b.hidden = !n; b.textContent = n > 9 ? "9+" : String(n);
-    const e = g("echoBd"); if (e) { const k = badge.m + badge.k; e.hidden = !k; e.textContent = k > 9 ? "9+" : String(k) }
+    const b = g("frBd"); if (b) { const n = badge.r + badge.c; b.hidden = !n; b.textContent = n > 9 ? "9+" : String(n) }
+    const e = g("echoBd"); if (e) { const k = badge.r + badge.c + badge.m + badge.k; e.hidden = !k; e.textContent = k > 9 ? "9+" : String(k) }
+    try { if (window.SlovopadEcho) window.SlovopadEcho.badge() } catch (x) { }
   }
   let lastPing = 0;
   async function ping(force) {
@@ -381,7 +382,7 @@
   }
 
   build();
-  window.SlovopadFriends = { open, load, chatOpen, setBack: f => { backFn = f } };
+  window.SlovopadFriends = { open, load, chatOpen, badges: () => badge, openFriends: f => { openFrom = f; open() }, setBack: f => { backFn = f } };
   const _over = window.over;
   if (typeof _over === "function") window.over = function (q) { const r = _over.apply(this, arguments); try { if (state === "over") afterOver(q) } catch (e) { } return r };
   const _menu = window.menu;
