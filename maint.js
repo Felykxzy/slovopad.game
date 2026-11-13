@@ -45,6 +45,7 @@
   }
 
   function apply(d) {
+    try { if (window.SpNews) window.SpNews.show(d.news); } catch (e) {}
     const ep = Number(d.epoch) || 0;
     if (epoch === null) epoch = ep;
     if (d.off) { show(String(d.msg || "").slice(0, 200)); if (ep !== epoch) { epoch = ep; reloadSoon(); } return; }

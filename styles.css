@@ -889,3 +889,13 @@ body.eco #fg .fd.cur .ic,body.eco #fg .fd.cur .fr::after,body.eco #fg .fd.cur .w
 .ecswap .ecpan{animation:panIn .3s cubic-bezier(.2,.8,.3,1) both}
 .ecswap .ecrow,.ecswap .ecsec{animation:rowIn .34s cubic-bezier(.2,.8,.3,1) both;animation-delay:calc(var(--i,0)*30ms)}
 #o13 .frlist>*{animation:none!important}
+
+/* Объявления и подарки от создателя */
+.spbn{position:fixed;left:50%;top:calc(12px + var(--sat));transform:translateX(-50%);z-index:9000;width:min(92%,420px);display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:20px;background:linear-gradient(135deg,rgba(24,28,76,.96),rgba(40,20,70,.96));border:1px solid rgba(94,242,255,.5);box-shadow:0 10px 36px rgba(0,0,0,.55),0 0 24px rgba(94,242,255,.25);color:var(--ink);cursor:pointer;animation:spbIn .45s cubic-bezier(.2,.9,.3,1.2) both}
+.spbn.out{animation:spbOut .35s ease-in both}
+.spbn i{font-style:normal;font-size:26px;flex:none}
+.spbt{display:flex;flex-direction:column;gap:2px;min-width:0}.spbt b{font-size:13px;letter-spacing:.14em}
+.spbt span{font-size:13px;line-height:1.4;opacity:.9;white-space:pre-line;overflow-wrap:anywhere}
+@keyframes spbIn{0%{opacity:0;transform:translate(-50%,-30px) scale(.94)}100%{opacity:1;transform:translateX(-50%)}}
+@keyframes spbOut{to{opacity:0;transform:translate(-50%,-24px) scale(.96)}}
+@media (prefers-reduced-motion:reduce){.spbn,.spbn.out{animation:none}}

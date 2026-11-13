@@ -378,7 +378,7 @@
   async function ping(force) {
     if (!sidTok() || document.hidden || (force !== true && Date.now() - lastPing < 20000)) return;
     lastPing = Date.now();
-    try { const r = await post("/api/ping"); badge.r = r.requests; badge.c = r.challenges; badge.m = r.messages || 0; badge.k = r.rooms || 0; paintBadge() } catch (e) { }
+    try { const r = await post("/api/ping"); badge.r = r.requests || 0; badge.c = r.challenges || 0; badge.m = r.messages || 0; badge.k = r.rooms || 0; paintBadge() } catch (e) { }
   }
 
   build();

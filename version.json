@@ -1,15 +1,15 @@
 {
-  "version": "3.4.0",
+  "version": "3.5.0",
   "notes": [
-    "Новый экран загрузки: туманность, звёзды, светящийся кристалл с орбитами",
-    "Эхо: переключение между чатами и друзьями больше не дёргается"
+    "Подарки от создателя: монеты, фоны и щиты приходят прямо в игру",
+    "Объявления для всех игроков сверху в игре"
   ],
   "notes_en": [
-    "New loading screen: nebula, stars, a glowing crystal with orbits",
-    "Echo: switching between chats and friends no longer jitters"
+    "Gifts from the creator: coins, backgrounds and shields arrive right in the game",
+    "Announcements for all players at the top of the game"
   ],
   "notes_uk": [
-    "Новий екран завантаження: туманність, зорі, світний кристал з орбітами",
-    "Ехо: перемикання між чатами та друзями більше не смикається"
+    "Подарунки від творця: монети, фони та щити приходять прямо в гру",
+    "Оголошення для всіх гравців угорі в грі"
   ]
 }

@@ -134,6 +134,9 @@ async function ensureSchema(env) {
     await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_room_msgs (id INTEGER PRIMARY KEY AUTOINCREMENT, room TEXT NOT NULL, uid TEXT NOT NULL, body TEXT NOT NULL, t INTEGER NOT NULL)').run();
     await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_room_msgs_r_idx ON sp_room_msgs(room,id)').run();
     await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_tg (uid TEXT PRIMARY KEY, chat TEXT NOT NULL, t INTEGER NOT NULL)').run();
+    await env.DB.prepare("CREATE TABLE IF NOT EXISTS sp_bans (uid TEXT PRIMARY KEY, reason TEXT NOT NULL DEFAULT '', t INTEGER NOT NULL)").run();
+    await env.DB.prepare("CREATE TABLE IF NOT EXISTS sp_grants (id INTEGER PRIMARY KEY AUTOINCREMENT, uid TEXT NOT NULL, kind TEXT NOT NULL, val TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', t INTEGER NOT NULL)").run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_grants_u_idx ON sp_grants(uid)').run();
   } catch (e) { console.error('friends schema', e); }
   schemaReady = true;
 }
@@ -279,7 +282,9 @@ async function userFrom(request, env) {
   const token = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
   const data = await verify(token, secretOf(env));
   if (!data) return null;
-  return env.DB.prepare('SELECT * FROM users WHERE id=?').bind(data.sub).first();
+  const u = await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(data.sub).first();
+  if (u) { try { if (await env.DB.prepare('SELECT 1 AS x FROM sp_bans WHERE uid=?').bind(u.id).first()) return null; } catch (_) {} }   // заблокированный игрок считается вышедшим
+  return u;
 }
 
 /* ---------- Режим техработ (включается из админ-панели admin.html) ---------- */
@@ -293,13 +298,13 @@ async function settings(env) {
   await ensureSettings(env);
   const m = {};
   for (const r of ((await env.DB.prepare('SELECT k,v FROM settings').all()).results || [])) m[r.k] = r.v;
-  return { off: m.off === '1', msg: m.msg || '', epoch: Number(m.epoch) || 0, since: Number(m.since) || 0 };
+  return { off: m.off === '1', msg: m.msg || '', epoch: Number(m.epoch) || 0, since: Number(m.since) || 0, news: m.news || '', newsId: Number(m.newsId) || 0 };
 }
 async function setSetting(env, k, v) {
   await ensureSettings(env);
   await env.DB.prepare('INSERT INTO settings (k,v) VALUES (?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v').bind(k, String(v)).run();
 }
-const publicState = s => ({ off: s.off, msg: s.msg, epoch: s.epoch, since: s.since });
+const publicState = s => ({ off: s.off, msg: s.msg, epoch: s.epoch, since: s.since, news: s.news ? { id: s.newsId, text: s.news } : null });
 
 /* ---------- Страница управления: отдаётся только по секретному адресу ADMIN_PATH ---------- */
 const ADMIN_PAGE = String.raw`<!DOCTYPE html>
@@ -310,110 +315,337 @@ const ADMIN_PAGE = String.raw`<!DOCTYPE html>
 <meta name="theme-color" content="#05060f">
 <title>·</title>
 <style>
-:root{--ac:#5ef2ff;--mg:#ff4fd8;--ink:#e8ecff;--ok:#6dffb0;--bad:#ff6b8a}
+:root{--ac:#5ef2ff;--mg:#ff4fd8;--ink:#e8ecff;--dim:rgba(232,236,255,.58);--ok:#6dffb0;--bad:#ff6b8a;--warn:#ffd166;--card:rgba(255,255,255,.055);--line:rgba(255,255,255,.12);--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;min-height:100vh;background:radial-gradient(900px 500px at 50% -10%,#1a1f4a,#05060f 70%);color:var(--ink);font-family:-apple-system,system-ui,"Segoe UI",sans-serif;display:flex;justify-content:center;padding:24px 16px calc(24px + env(safe-area-inset-bottom,0px))}
-main{width:100%;max-width:440px;display:flex;flex-direction:column;gap:14px}
-h1{margin:6px 0 0;font-size:18px;letter-spacing:.22em;font-weight:800;text-align:center}
-.sub{font-size:11px;letter-spacing:.14em;opacity:.55;text-align:center;margin-top:-8px}
-.card{border-radius:20px;padding:16px;background:rgba(255,255,255,.05);border:1px solid rgba(94,242,255,.25);display:flex;flex-direction:column;gap:10px}
-input,textarea{width:100%;border-radius:14px;border:1px solid rgba(94,242,255,.3);background:rgba(0,0,0,.35);color:var(--ink);padding:13px 14px;font-size:16px;font-family:inherit;outline:none}
-textarea{resize:none;height:68px}
-input:focus,textarea:focus{border-color:var(--ac)}
-label.ck{display:flex;gap:8px;align-items:center;font-size:12px;opacity:.7}
-button{border:0;border-radius:16px;padding:16px;font-size:14px;font-weight:800;letter-spacing:.14em;color:var(--ink);background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);cursor:pointer;font-family:inherit}
-button:active{transform:scale(.98)}button:disabled{opacity:.4;cursor:default}
-.off{background:rgba(255,107,138,.18);border-color:var(--bad);color:var(--bad)}
-.on{background:rgba(109,255,176,.16);border-color:var(--ok);color:var(--ok)}
-.rs{background:rgba(94,242,255,.14);border-color:var(--ac);color:var(--ac)}
-.st{display:flex;align-items:center;gap:12px;font-size:15px;font-weight:800;letter-spacing:.12em}
-.dot{width:14px;height:14px;border-radius:50%;background:#555;flex:none}
-.st.run .dot{background:var(--ok);box-shadow:0 0 14px var(--ok)}.st.stop .dot{background:var(--bad);box-shadow:0 0 14px var(--bad)}
-.hint{font-size:12px;line-height:1.55;opacity:.6}
-#msg{min-height:18px;font-size:13px;text-align:center}#msg.er{color:var(--bad)}#msg.ok{color:var(--ok)}
-#panel{display:flex;flex-direction:column;gap:14px}
-#out{width:100%}
+html,body{margin:0}
+body{min-height:100vh;background:radial-gradient(900px 520px at 50% -8%,#1c2152,#070918 62%,#05060f);color:var(--ink);font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;font-size:15px}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(40% 30% at 90% 85%,rgba(255,79,216,.12),transparent 70%),radial-gradient(36% 26% at 8% 40%,rgba(94,242,255,.08),transparent 70%)}
+#app{position:relative;max-width:760px;margin:0 auto;padding:calc(14px + var(--sat)) 14px calc(86px + var(--sab));display:flex;flex-direction:column;gap:14px}
 [hidden]{display:none!important}
-</style></head><body><main>
-<h1>УПРАВЛЕНИЕ</h1><div class="sub">ТОЛЬКО ДЛЯ ВЛАДЕЛЬЦА</div>
+button{font:inherit;color:var(--ink);cursor:pointer}
+input,select,textarea{font:inherit;color:var(--ink);width:100%;border-radius:14px;border:1px solid rgba(94,242,255,.28);background:rgba(0,0,0,.35);padding:12px 14px;outline:none;font-size:16px}
+input:focus,select:focus,textarea:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(94,242,255,.12)}
+select option{color:#111}
+textarea{resize:none;height:88px;font-size:15px}
+/* вход */
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.lg{width:100%;max-width:380px;display:flex;flex-direction:column;gap:14px;align-items:stretch}
+.orb{width:84px;height:84px;margin:0 auto 4px;border-radius:26px;transform:rotate(45deg);background:linear-gradient(135deg,var(--ac),var(--mg));box-shadow:0 0 40px rgba(94,242,255,.45),0 0 80px rgba(255,79,216,.25),inset 0 2px 8px rgba(255,255,255,.5);animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 52px rgba(255,79,216,.5),0 0 90px rgba(94,242,255,.3),inset 0 2px 8px rgba(255,255,255,.5)}}
+h1{margin:6px 0 0;font-size:19px;letter-spacing:.26em;font-weight:800;text-align:center}
+.sub{font-size:11px;letter-spacing:.16em;color:var(--dim);text-align:center;margin-top:-6px}
+.ck{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--dim)}.ck input{width:auto}
+/* кнопки */
+.btn{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.09);border-radius:14px;padding:13px 16px;font-weight:800;font-size:13px;letter-spacing:.1em;transition:transform .12s,background .2s}
+.btn:active{transform:scale(.97)}.btn:disabled{opacity:.4;cursor:default}
+.btn.p{background:linear-gradient(135deg,rgba(94,242,255,.32),rgba(255,79,216,.24));border-color:rgba(94,242,255,.5)}
+.btn.ok{background:rgba(109,255,176,.15);border-color:var(--ok);color:var(--ok)}
+.btn.bad{background:rgba(255,107,138,.16);border-color:var(--bad);color:var(--bad)}
+.btn.warn{background:rgba(255,209,102,.13);border-color:var(--warn);color:var(--warn)}
+.btn.s{padding:9px 12px;font-size:11px;border-radius:12px}
+.row{display:flex;gap:8px;align-items:center}.row>*{flex:1;min-width:0}.row>.btn{flex:none}.row.w{flex-wrap:wrap}.row.w>.btn{flex:1 1 auto}
+/* шапка */
+.top{display:flex;align-items:center;gap:12px}
+.top h2{margin:0;font-size:16px;letter-spacing:.22em;font-weight:800;flex:1}
+.pill{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);font-size:11px;letter-spacing:.12em;font-weight:800}
+.dot{width:10px;height:10px;border-radius:50%;background:#666}.pill.run .dot{background:var(--ok);box-shadow:0 0 10px var(--ok)}.pill.stop .dot{background:var(--bad);box-shadow:0 0 10px var(--bad)}
+/* карточки */
+.card{border-radius:20px;padding:16px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;gap:12px}
+.card h3{margin:0;font-size:12px;letter-spacing:.2em;color:var(--dim);font-weight:800}
+.hint{font-size:12px;line-height:1.55;color:var(--dim)}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:560px){.grid{grid-template-columns:repeat(3,1fr)}}
+.stat{border-radius:18px;padding:14px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;gap:4px;animation:up .4s both}
+.stat b{font-size:26px;letter-spacing:.02em}.stat span{font-size:10px;letter-spacing:.16em;color:var(--dim)}
+.stat.a b{color:var(--ac)}.stat.m b{color:var(--mg)}.stat.g b{color:var(--ok)}.stat.r b{color:var(--bad)}
+@keyframes up{from{opacity:0;transform:translateY(10px)}}
+/* список игроков */
+.list{display:flex;flex-direction:column;gap:8px}
+.item{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:16px;background:var(--card);border:1px solid var(--line);text-align:left;width:100%;animation:up .3s both}
+.item:active{background:rgba(255,255,255,.1)}
+.av{flex:none;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;border:1px solid rgba(255,255,255,.3);text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.mid{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.mid b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mid span{font-size:12px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tag{font-size:10px;letter-spacing:.12em;padding:3px 8px;border-radius:999px;border:1px solid var(--bad);color:var(--bad);font-weight:800;flex:none}
+.sc{flex:none;text-align:right;font-size:12px;color:var(--dim)}.sc b{display:block;font-size:15px;color:var(--ac)}
+.empty{text-align:center;color:var(--dim);padding:24px 10px;font-size:13px}
+/* окно игрока */
+#sheet{position:fixed;inset:0;z-index:20;background:rgba(3,4,12,.72);display:flex;align-items:flex-end;justify-content:center;animation:fade .2s both}
+@keyframes fade{from{opacity:0}}
+.pan{width:100%;max-width:560px;max-height:92vh;overflow-y:auto;background:linear-gradient(180deg,#141842,#0a0c24);border:1px solid rgba(94,242,255,.3);border-bottom:0;border-radius:26px 26px 0 0;padding:18px 16px calc(20px + var(--sab));display:flex;flex-direction:column;gap:14px;animation:slide .28s cubic-bezier(.2,.8,.3,1) both}
+@keyframes slide{from{transform:translateY(40px);opacity:0}}
+.ph{display:flex;align-items:center;gap:14px}.ph .av{width:56px;height:56px;font-size:24px}
+.ph h3{margin:0;font-size:19px;letter-spacing:.06em;color:var(--ink)}.ph .hint{margin-top:2px}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kv div{border-radius:14px;background:rgba(255,255,255,.06);padding:10px;text-align:center}
+.kv b{display:block;font-size:17px}.kv span{font-size:9px;letter-spacing:.14em;color:var(--dim)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{font-size:11px;padding:4px 9px;border-radius:999px;background:rgba(94,242,255,.1);border:1px solid rgba(94,242,255,.25)}
+.sec{display:flex;flex-direction:column;gap:8px;padding-top:6px;border-top:1px solid var(--line)}
+.sec>label{font-size:10px;letter-spacing:.18em;color:var(--dim);font-weight:800}
+/* диалог */
+#dlg{position:fixed;inset:0;z-index:40;background:rgba(3,4,12,.8);display:flex;align-items:center;justify-content:center;padding:20px;animation:fade .15s both}
+.dbox{width:100%;max-width:360px;background:#10143a;border:1px solid rgba(94,242,255,.35);border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:12px;animation:slide .2s both}
+.dbox p{margin:0;line-height:1.5;font-size:14px;white-space:pre-line}
+/* нижняя панель */
+nav{position:fixed;left:0;right:0;bottom:0;z-index:10;display:flex;justify-content:center;padding:8px 10px calc(8px + var(--sab));background:linear-gradient(180deg,transparent,rgba(5,6,15,.92) 30%)}
+.tabs{display:flex;gap:4px;width:100%;max-width:560px;padding:5px;border-radius:22px;background:rgba(18,22,58,.9);border:1px solid var(--line);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.tab{position:relative;flex:1;border:0;border-radius:17px;background:transparent;padding:9px 2px 7px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--dim);font-size:10px;letter-spacing:.06em;font-weight:700;transition:background .2s,color .2s}
+.tab i{font-style:normal;font-size:19px;line-height:1}
+.tab.on{color:var(--ink);background:linear-gradient(135deg,rgba(94,242,255,.28),rgba(255,79,216,.2));box-shadow:inset 0 1px 1px rgba(255,255,255,.25)}
+.tab em{position:absolute;top:2px;right:14%;min-width:17px;height:17px;border-radius:9px;background:var(--mg);color:#fff;font-style:normal;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px}
+#toast{position:fixed;left:50%;bottom:calc(92px + var(--sab));transform:translateX(-50%);z-index:50;max-width:90%;padding:11px 16px;border-radius:14px;font-size:13px;font-weight:700;background:#15193f;border:1px solid var(--ac);box-shadow:0 8px 30px rgba(0,0,0,.5);animation:up .25s both}
+#toast.er{border-color:var(--bad);color:var(--bad)}#toast.ok{border-color:var(--ok);color:var(--ok)}
+.view{display:flex;flex-direction:column;gap:14px;animation:up .3s both}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body>
 
-<div class="card" id="login">
+<div id="login"><div class="lg">
+  <div class="orb"></div>
+  <h1>УПРАВЛЕНИЕ</h1><div class="sub">ТОЛЬКО ДЛЯ ВЛАДЕЛЬЦА</div>
   <input id="tok" type="password" autocomplete="current-password" placeholder="Секретный токен">
-  <label class="ck"><input type="checkbox" id="rem" style="width:auto"> запомнить на этом устройстве</label>
-  <button id="go" class="rs">ВОЙТИ</button>
+  <label class="ck"><input type="checkbox" id="rem"> запомнить на этом устройстве</label>
+  <button id="go" class="btn p">ВОЙТИ</button>
+</div></div>
+
+<div id="app" hidden>
+  <div class="top"><h2 id="ttl">ОБЗОР</h2><div class="pill run" id="pill"><span class="dot"></span><span id="pillT">…</span></div><button class="btn s" id="out">ВЫЙТИ</button></div>
+  <div id="view"></div>
 </div>
 
-<div id="panel" hidden>
-  <div class="card">
-    <div class="st" id="st"><span class="dot"></span><span id="stT">…</span></div>
-    <div class="hint" id="stH"></div>
-  </div>
-  <div class="card">
-    <textarea id="note" maxlength="200" placeholder="Сообщение игрокам (необязательно). Например: «Вернёмся через 15 минут»"></textarea>
-    <button id="bOff" class="off">⏻ ВЫКЛЮЧИТЬ ИГРУ</button>
-    <button id="bOn" class="on">⏻ ВКЛЮЧИТЬ ИГРУ</button>
-    <button id="bRs" class="rs">↻ ПЕРЕЗАПУСТИТЬ</button>
-    <div class="hint">«Выключить» ставит у всех чёрный экран «игра временно не работает» и блокирует запись на сервере. «Включить» возвращает игру, и у всех она обновится сама. «Перезапустить» принудительно перезагружает игру у всех, кто сейчас в ней (после раунда).</div>
-  </div>
-  <button id="out">ВЫЙТИ</button>
-</div>
-<div id="msg"></div>
-</main>
+<nav id="nav" hidden><div class="tabs" id="tabs"></div></nav>
+<div id="sheet" hidden></div><div id="dlg" hidden></div><div id="toast" hidden></div>
+
 <script>
-const API = "/api/admin", KEY = "slovopadAdminToken";
-const $ = id => document.getElementById(id);
-let token = "", timer = 0, busy = false;
+var API = "/api/admin", KEY = "slovopadAdminToken";
+var $ = function (id) { return document.getElementById(id); };
+var token = "", tab = "ov", state = {}, catalog = [], pq = "", poff = 0, busy = false, poll = 0, repN = 0, cache = {};
 try { token = localStorage.getItem(KEY) || ""; } catch (e) {}
 
-function say(t, k) { const m = $("msg"); m.textContent = t || ""; m.className = k || ""; }
-function lock(b) { busy = b; ["go", "bOff", "bOn", "bRs"].forEach(i => { $(i).disabled = b; }); }
+function h(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined && text !== null) e.textContent = text; return e; }
+function btn(cls, text, fn) { var b = h("button", "btn " + cls, text); b.type = "button"; b.onclick = fn; return b; }
+function hue(s) { var x = 0; s = String(s); for (var i = 0; i < s.length; i++) x = (x * 31 + s.charCodeAt(i)) % 360; return x; }
+function av(name, big) { var a = h("div", "av", String(name || "?").charAt(0).toUpperCase()); a.style.background = "linear-gradient(135deg,hsl(" + hue(name) + " 85% 58%),hsl(" + ((hue(name) + 55) % 360) + " 80% 42%))"; return a; }
+function ago(iso) {
+  var t = Date.parse(iso); if (!t) return "—"; var s = Math.max(0, (Date.now() - t) / 1000);
+  if (s < 90) return "только что"; if (s < 3600) return Math.round(s / 60) + " мин назад"; if (s < 86400) return Math.round(s / 3600) + " ч назад";
+  return Math.round(s / 86400) + " дн назад";
+}
+function fmt(n) { return Number(n || 0).toLocaleString("ru-RU"); }
+function nameOf(id) { for (var i = 0; i < catalog.length; i++) if (catalog[i][0] === id) return (id.charAt(0) === "b" ? "фон " : "щит ") + catalog[i][1]; return id; }
 
-function draw(s) {
-  const off = !!s.off;
-  $("st").className = "st " + (off ? "stop" : "run");
-  $("stT").textContent = off ? "ИГРА ВЫКЛЮЧЕНА" : "ИГРА РАБОТАЕТ";
-  const bits = [];
-  if (off && s.since) bits.push("выключена с " + new Date(s.since).toLocaleString("ru-RU"));
-  if (off && s.msg) bits.push("сообщение: «" + s.msg + "»");
-  bits.push("перезапусков: " + (s.epoch || 0));
-  $("stH").textContent = bits.join(" · ");
-  $("bOff").hidden = off; $("bOn").hidden = !off; $("note").hidden = off;
+var toastT = 0;
+function say(t, k) { var e = $("toast"); e.textContent = t; e.className = k || ""; e.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { e.hidden = true; }, 3200); }
+
+// собственный диалог: подтверждение или ввод
+function ask(text, opt) {
+  opt = opt || {};
+  return new Promise(function (res) {
+    var d = $("dlg"), box = h("div", "dbox"), inp = null;
+    d.textContent = ""; box.appendChild(h("p", "", text));
+    if (opt.input !== undefined) { inp = h("input"); inp.type = opt.type || "text"; inp.value = opt.input || ""; inp.placeholder = opt.ph || ""; if (opt.max) inp.maxLength = opt.max; box.appendChild(inp); }
+    var r = h("div", "row");
+    function done(v) { d.hidden = true; d.textContent = ""; res(v); }
+    r.appendChild(btn("", "ОТМЕНА", function () { done(null); }));
+    r.appendChild(btn(opt.danger ? "bad" : "p", opt.ok || "ОК", function () { done(inp ? inp.value : true); }));
+    box.appendChild(r); d.appendChild(box); d.hidden = false;
+    d.onclick = function (e) { if (e.target === d) done(null); };
+    if (inp) { inp.onkeydown = function (e) { if (e.key === "Enter") done(inp.value); }; setTimeout(function () { inp.focus(); }, 50); }
+  });
 }
 
 async function call(action, extra) {
-  const r = await fetch(API, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ token, action, ...(extra || {}) }) });
-  let d = {}; try { d = await r.json(); } catch (e) {}
-  if (!r.ok) { const e = new Error(d.error || ("Ошибка " + r.status)); e.status = r.status; throw e; }
+  var r = await fetch(API, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(Object.assign({ token: token, action: action }, extra || {})) });
+  var d = {}; try { d = await r.json(); } catch (e) {}
+  if (!r.ok) { var er = new Error(d.error || ("Ошибка " + r.status)); er.status = r.status; throw er; }
   return d;
 }
-
-async function run(action, extra, okText) {
-  if (busy) return; lock(true); say("…");
-  try { draw(await call(action, extra)); say(okText || "", "ok"); show(true); }
-  catch (e) {
-    if (e.status === 401 || e.status === 404) { say("Неверный токен.", "er"); show(false); }
-    else say(e instanceof TypeError ? "Нет связи с сервером." : e.message, "er");
-  } finally { lock(false); }
+async function act(action, extra, okText) {
+  if (busy) return null; busy = true;
+  try { var d = await call(action, extra); if (okText) say(okText, "ok"); return d; }
+  catch (e) { if (e.status === 404 && /Неверн|Not found/.test(e.message) || e.status === 429) { say(e.status === 429 ? "Слишком много попыток, подожди." : "Токен не подошёл.", "er"); if (e.status === 404) logout(); } else say(e instanceof TypeError ? "Нет связи с сервером." : e.message, "er"); return null; }
+  finally { busy = false; }
 }
 
+/* ---------- состояние игры ---------- */
+function drawPill() {
+  var off = !!state.off, p = $("pill"); p.className = "pill " + (off ? "stop" : "run"); $("pillT").textContent = off ? "ВЫКЛЮЧЕНА" : "РАБОТАЕТ";
+}
+
+/* ---------- вкладки ---------- */
+var TABS = [["ov", "📊", "Обзор"], ["pl", "👥", "Игроки"], ["gv", "🎁", "Выдача"], ["gm", "🎮", "Игра"], ["rp", "🚩", "Жалобы"]];
+function drawTabs() {
+  var t = $("tabs"); t.textContent = "";
+  TABS.forEach(function (x) {
+    var b = h("button", "tab" + (tab === x[0] ? " on" : "")); b.type = "button"; b.appendChild(h("i", "", x[1])); b.appendChild(document.createTextNode(x[2]));
+    if (x[0] === "rp" && repN) b.appendChild(h("em", "", repN > 9 ? "9+" : String(repN)));
+    b.onclick = function () { go(x[0]); }; t.appendChild(b);
+  });
+  $("ttl").textContent = TABS.filter(function (x) { return x[0] === tab; })[0][2].toUpperCase();
+}
+function go(t) { tab = t; drawTabs(); render(); window.scrollTo(0, 0); }
+function render() {
+  var v = $("view"); v.textContent = ""; var box = h("div", "view"); v.appendChild(box);
+  ({ ov: vOverview, pl: vPlayers, gv: vGive, gm: vGame, rp: vReports })[tab](box);
+}
+
+/* ---------- обзор ---------- */
+async function vOverview(box) {
+  var d = await act("overview"); if (!d) return; state = d.state; drawPill();
+  var g = h("div", "grid"), cards = [
+    ["Игроков", d.users, "a"], ["Сейчас в игре", d.now5, "g"], ["За сутки", d.day, ""], ["За неделю", d.week, ""],
+    ["Пар друзей", d.pairs, "m"], ["Сообщений за сутки", d.msgs, ""], ["Комнат", d.rooms, ""], ["Слов набрано", d.words, "a"],
+    ["Жалоб", d.reports, d.reports ? "r" : ""], ["Заблокировано", d.banned, d.banned ? "r" : ""], ["Подарков в пути", d.pending, ""]
+  ];
+  cards.forEach(function (c, i) { var s = h("div", "stat " + c[2]); s.style.animationDelay = (i * 30) + "ms"; s.appendChild(h("b", "", fmt(c[1]))); s.appendChild(h("span", "", c[0].toUpperCase())); g.appendChild(s); });
+  box.appendChild(g);
+  var top = h("div", "card"); top.appendChild(h("h3", "", "ТОП ИГРОКОВ"));
+  if (!d.top.length) top.appendChild(h("div", "empty", "Пока никого."));
+  d.top.forEach(function (p, i) { var r = h("div", "row"); r.appendChild(h("span", "", (i + 1) + ". " + p.username)); var b = h("b", "", fmt(p.s)); b.style.flex = "none"; b.style.color = "var(--ac)"; r.appendChild(b); top.appendChild(r); });
+  box.appendChild(top);
+  repN = d.reports; drawTabs();
+  box.appendChild(btn("", "↻ ОБНОВИТЬ", function () { render(); }));
+}
+
+/* ---------- игроки ---------- */
+function vPlayers(box) {
+  var s = h("input"); s.type = "search"; s.placeholder = "Поиск по нику или коду SP-…"; s.value = pq; box.appendChild(s);
+  var list = h("div", "list"); box.appendChild(list); var more = btn("", "ПОКАЗАТЬ ЕЩЁ", function () { load(false); }); more.hidden = true; box.appendChild(more);
+  var tm = 0;
+  s.oninput = function () { clearTimeout(tm); tm = setTimeout(function () { pq = s.value.trim(); load(true); }, 350); };
+  async function load(reset) {
+    if (reset) { poff = 0; list.textContent = ""; }
+    var d = await act("players", { q: pq, offset: poff }); if (!d) return;
+    if (reset && !d.players.length) list.appendChild(h("div", "empty", "Никого не найдено."));
+    d.players.forEach(function (p, i) {
+      var it = h("button", "item"); it.type = "button"; it.style.animationDelay = (i * 25) + "ms"; it.appendChild(av(p.username));
+      var mid = h("div", "mid"); mid.appendChild(h("b", "", p.username)); mid.appendChild(h("span", "", (p.code || "") + " · " + ago(p.seen) + " · ✨ " + fmt(p.co))); it.appendChild(mid);
+      if (p.banned) it.appendChild(h("span", "tag", "БАН"));
+      var sc = h("div", "sc"); sc.appendChild(h("b", "", fmt(p.best))); sc.appendChild(document.createTextNode("рекорд")); it.appendChild(sc);
+      it.onclick = function () { openPlayer(p.id); }; list.appendChild(it);
+    });
+    poff += d.players.length; more.hidden = !d.more;
+  }
+  load(true);
+}
+
+async function itemsSelect(withAll) {
+  if (!catalog.length) { var c = await call("catalog"); catalog = c.items; }
+  var sel = h("select");
+  if (withAll) { var o0 = h("option", "", "🎁 Все фоны и щиты"); o0.value = "all"; sel.appendChild(o0); }
+  var g1 = h("optgroup"); g1.label = "Фоны"; var g2 = h("optgroup"); g2.label = "Щиты";
+  catalog.forEach(function (c) { var o = h("option", "", c[1] + " · " + c[2] + " ✨"); o.value = c[0]; (c[0].charAt(0) === "b" ? g1 : g2).appendChild(o); });
+  sel.appendChild(g1); sel.appendChild(g2); return sel;
+}
+
+async function openPlayer(id) {
+  if (!catalog.length) { try { catalog = (await call("catalog")).items; } catch (e) {} }
+  var d = await act("player", { id: id }); if (!d) return;
+  var sh = $("sheet"); sh.textContent = ""; sh.hidden = false; document.body.style.overflow = "hidden";
+  sh.onclick = function (e) { if (e.target === sh) closeSheet(); };
+  var pan = h("div", "pan"); sh.appendChild(pan);
+  var ph = h("div", "ph"); ph.appendChild(av(d.username)); var w = h("div"); w.appendChild(h("h3", "", d.username)); w.appendChild(h("div", "hint", d.code + " · был(а) " + ago(d.seen))); ph.appendChild(w); pan.appendChild(ph);
+  if (d.ban) { var bn = h("div", "card"); bn.style.borderColor = "var(--bad)"; bn.appendChild(h("b", "", "⛔ ЗАБЛОКИРОВАН")); bn.appendChild(h("div", "hint", d.ban.reason || "без причины")); pan.appendChild(bn); }
+  var kv = h("div", "kv"); [["РЕКОРД", d.best], ["СЛОВ", d.words], ["МОНЕТ ✨", d.coins], ["ДРУЗЕЙ", d.friends], ["КОМНАТ", d.rooms], ["ЖАЛОБ", d.reports]].forEach(function (x) { var c = h("div"); c.appendChild(h("b", "", fmt(x[1]))); c.appendChild(h("span", "", x[0])); kv.appendChild(c); }); pan.appendChild(kv);
+  if (d.owned.length) { var s0 = h("div", "sec"); s0.appendChild(h("label", "", "ЕСТЬ В ИНВЕНТАРЕ (" + d.owned.length + ")")); var ch = h("div", "chips"); d.owned.forEach(function (o) { ch.appendChild(h("span", "chip", nameOf(o))); }); s0.appendChild(ch); pan.appendChild(s0); }
+  if (d.pending) pan.appendChild(h("div", "hint", "🎁 Подарков ждёт игрока: " + d.pending));
+
+  var sg = h("div", "sec"); sg.appendChild(h("label", "", "ВЫДАТЬ МОНЕТЫ (минус — забрать)"));
+  var r1 = h("div", "row"), ci = h("input"); ci.type = "number"; ci.placeholder = "например 500"; ci.inputMode = "numeric"; r1.appendChild(ci);
+  r1.appendChild(btn("ok", "ВЫДАТЬ", async function () { var n = parseInt(ci.value, 10); if (!n) { say("Введи число.", "er"); return; } var r = await act("grant", { target: d.id, kind: "coins", val: n }, "Отправлено: " + (n > 0 ? "+" : "") + n + " ✨"); if (r) { ci.value = ""; } }));
+  sg.appendChild(r1); pan.appendChild(sg);
+
+  var si = h("div", "sec"); si.appendChild(h("label", "", "ВЫДАТЬ ФОН ИЛИ ЩИТ"));
+  var r2 = h("div", "row"), sel = await itemsSelect(true); r2.appendChild(sel);
+  r2.appendChild(btn("ok", "ВЫДАТЬ", async function () { await act("grant", { target: d.id, kind: "item", val: sel.value }, "Подарок отправлен"); })); si.appendChild(r2);
+  si.appendChild(h("div", "hint", "Подарок появится в игре, как только игрок её откроет. Если он не в сети — дождётся.")); pan.appendChild(si);
+
+  var sm = h("div", "sec"); sm.appendChild(h("label", "", "УПРАВЛЕНИЕ"));
+  var r3 = h("div", "row w");
+  r3.appendChild(btn("", "✎ СМЕНИТЬ НИК", async function () { var n = await ask("Новый ник для " + d.username + " (3–20 символов):", { input: d.username, max: 20, ok: "СМЕНИТЬ" }); if (n && n.trim()) { var r = await act("rename", { id: d.id, name: n.trim() }, "Ник изменён"); if (r) { closeSheet(); render(); } } }));
+  r3.appendChild(btn("warn", "↺ СБРОСИТЬ РЕКОРДЫ", async function () { if (await ask("Обнулить рекорд и счётчик слов у " + d.username + "?", { ok: "СБРОСИТЬ", danger: true })) { if (await act("resetstats", { id: d.id }, "Рекорды сброшены")) { closeSheet(); render(); } } }));
+  sm.appendChild(r3);
+  var r4 = h("div", "row w");
+  if (d.ban) r4.appendChild(btn("ok", "✔ РАЗБЛОКИРОВАТЬ", async function () { if (await act("unban", { id: d.id }, "Разблокирован")) { closeSheet(); render(); } }));
+  else r4.appendChild(btn("bad", "⛔ ЗАБЛОКИРОВАТЬ", async function () { var why = await ask("Заблокировать " + d.username + "?\nОн не сможет войти, пропадёт из рейтинга. Причина (её увидит игрок):", { input: "", ph: "например: спам", max: 100, ok: "ЗАБЛОКИРОВАТЬ", danger: true }); if (why !== null) { if (await act("ban", { id: d.id, reason: why }, "Заблокирован")) { closeSheet(); render(); } } }));
+  r4.appendChild(btn("bad", "🗑 УДАЛИТЬ", async function () { var t = await ask("Удалить аккаунт навсегда: прогресс, друзей, сообщения. Это нельзя отменить.\nНапиши ник «" + d.username + "» для подтверждения:", { input: "", ok: "УДАЛИТЬ", danger: true }); if (t === null) return; if (t.trim().toLowerCase() !== d.username.toLowerCase()) { say("Ник не совпал, ничего не удалено.", "er"); return; } if (await act("delete", { id: d.id }, "Аккаунт удалён")) { closeSheet(); render(); } }));
+  sm.appendChild(r4); pan.appendChild(sm);
+  pan.appendChild(btn("", "ЗАКРЫТЬ", closeSheet));
+}
+function closeSheet() { var s = $("sheet"); s.hidden = true; s.textContent = ""; document.body.style.overflow = ""; }
+
+/* ---------- выдача всем ---------- */
+async function vGive(box) {
+  var c1 = h("div", "card"); c1.appendChild(h("h3", "", "МОНЕТЫ ВСЕМ ИГРОКАМ"));
+  var ci = h("input"); ci.type = "number"; ci.inputMode = "numeric"; ci.placeholder = "Сколько монет ✨ каждому"; c1.appendChild(ci);
+  var cn = h("input"); cn.placeholder = "Подпись (необязательно): например, «С праздником!»"; cn.maxLength = 60; c1.appendChild(cn);
+  c1.appendChild(btn("ok", "🎁 ВЫДАТЬ ВСЕМ", async function () { var n = parseInt(ci.value, 10); if (!n) { say("Введи число.", "er"); return; } if (!(await ask("Выдать " + n + " ✨ всем игрокам сразу?", { ok: "ВЫДАТЬ" }))) return; var r = await act("grant", { target: "all", kind: "coins", val: n, note: cn.value }, ""); if (r) { say("Готово: получат " + r.count + " игроков", "ok"); ci.value = ""; } }));
+  box.appendChild(c1);
+  var c2 = h("div", "card"); c2.appendChild(h("h3", "", "ФОН ИЛИ ЩИТ ВСЕМ"));
+  var sel = await itemsSelect(true); c2.appendChild(sel);
+  var cn2 = h("input"); cn2.placeholder = "Подпись (необязательно)"; cn2.maxLength = 60; c2.appendChild(cn2);
+  c2.appendChild(btn("ok", "🎁 ВЫДАТЬ ВСЕМ", async function () { if (!(await ask("Выдать «" + sel.options[sel.selectedIndex].text + "» всем игрокам?", { ok: "ВЫДАТЬ" }))) return; var r = await act("grant", { target: "all", kind: "item", val: sel.value, note: cn2.value }, ""); if (r) say("Готово: получат " + r.count + " игроков", "ok"); }));
+  box.appendChild(c2);
+  box.appendChild(h("div", "hint", "Подарки не пропадают: игрок получит их, когда в следующий раз откроет игру и войдёт в аккаунт. Выдать одному человеку можно на вкладке «Игроки»."));
+}
+
+/* ---------- управление игрой ---------- */
+async function vGame(box) {
+  var d = await act("status"); if (!d) return; state = d; drawPill();
+  var c = h("div", "card"); c.appendChild(h("h3", "", "РАБОТА ИГРЫ"));
+  var st = h("div", "hint", state.off ? ("Выключена" + (state.since ? " с " + new Date(state.since).toLocaleString("ru-RU") : "") + (state.msg ? ". Сообщение: «" + state.msg + "»" : "")) : "Работает. Перезапусков: " + (state.epoch || 0)); c.appendChild(st);
+  if (state.off) c.appendChild(btn("ok", "⏻ ВКЛЮЧИТЬ ИГРУ", async function () { if (await act("on", null, "Игра включена")) render(); }));
+  else {
+    var note = h("textarea"); note.maxLength = 200; note.placeholder = "Сообщение игрокам (необязательно): «Вернёмся через 15 минут»"; c.appendChild(note);
+    c.appendChild(btn("bad", "⏻ ВЫКЛЮЧИТЬ ИГРУ", async function () { if (await ask("Выключить игру у всех? Вместо неё появится чёрный экран.", { ok: "ВЫКЛЮЧИТЬ", danger: true })) { if (await act("off", { message: note.value }, "Игра выключена")) render(); } }));
+  }
+  c.appendChild(btn("p", "↻ ПЕРЕЗАПУСТИТЬ У ВСЕХ", async function () { if (await ask("Перезагрузить игру у всех, кто сейчас в ней?", { ok: "ПЕРЕЗАПУСТИТЬ" })) await act("restart", null, "Команда отправлена"); }));
+  c.appendChild(h("div", "hint", "«Выключить» ставит у всех чёрный экран и блокирует запись на сервере (удобно перед обновлением). «Перезапустить» заставляет открытые игры обновиться сами."));
+  box.appendChild(c);
+
+  var n = h("div", "card"); n.appendChild(h("h3", "", "ОБЪЯВЛЕНИЕ ВСЕМ ИГРОКАМ"));
+  var nt = h("textarea"); nt.maxLength = 300; nt.value = state.news || ""; nt.placeholder = "Текст, который появится у игроков сверху в игре: новости, турнир, поздравление"; n.appendChild(nt);
+  var nr = h("div", "row");
+  nr.appendChild(btn("p", "📢 ОПУБЛИКОВАТЬ", async function () { if (!nt.value.trim()) { say("Напиши текст.", "er"); return; } if (await act("news", { text: nt.value }, "Объявление опубликовано")) render(); }));
+  nr.appendChild(btn("", "УБРАТЬ", async function () { if (await act("news", { text: "" }, "Объявление убрано")) render(); }));
+  n.appendChild(nr); n.appendChild(h("div", "hint", state.news ? "Сейчас показывается всем: «" + state.news + "»" : "Сейчас объявления нет. Игроки увидят его в течение минуты и один раз.")); box.appendChild(n);
+
+  var rc = h("div", "card"); rc.appendChild(h("h3", "", "КОМНАТЫ ЭХА")); box.appendChild(rc);
+  var rd = await act("rooms");
+  if (rd) { if (!rd.rooms.length) rc.appendChild(h("div", "empty", "Комнат пока нет.")); rd.rooms.forEach(function (r) { var it = h("div", "item"); var mid = h("div", "mid"); mid.appendChild(h("b", "", "# " + r.name)); mid.appendChild(h("span", "", "создатель " + (r.owner || "?") + " · 👥 " + r.members + " · 💬 " + r.msgs)); it.appendChild(mid); it.appendChild(btn("bad s", "ЗАКРЫТЬ", async function () { if (await ask("Закрыть комнату «" + r.name + "»? Все сообщения удалятся.", { ok: "ЗАКРЫТЬ", danger: true })) { if (await act("closeroom", { id: r.id }, "Комната закрыта")) render(); } })); rc.appendChild(it); }); }
+}
+
+/* ---------- жалобы ---------- */
+async function vReports(box) {
+  var d = await act("reports"); if (!d) return; repN = d.reports.length; drawTabs();
+  if (!d.reports.length) { box.appendChild(h("div", "empty", "Жалоб нет. Всё спокойно ✨")); return; }
+  d.reports.forEach(function (r, i) {
+    var c = h("div", "card"); c.style.animation = "up .3s " + (i * 30) + "ms both";
+    c.appendChild(h("b", "", (r.rn || "?") + "  →  " + (r.tn || "удалён")));
+    c.appendChild(h("div", "hint", new Date(r.t).toLocaleString("ru-RU")));
+    c.appendChild(h("div", "", r.body || "—")).style.whiteSpace = "pre-wrap";
+    var row = h("div", "row");
+    if (r.tn) row.appendChild(btn("", "👤 ИГРОК", function () { openPlayer(r.tid); }));
+    if (r.tn && !r.banned) row.appendChild(btn("bad", "⛔ БАН", async function () { var why = await ask("Заблокировать " + r.tn + "?", { input: "", ph: "причина", max: 100, ok: "ЗАБЛОКИРОВАТЬ", danger: true }); if (why !== null && await act("ban", { id: r.tid, reason: why }, "Заблокирован")) render(); }));
+    row.appendChild(btn("ok", "✔ ЗАКРЫТЬ", async function () { if (await act("dismiss", { id: r.id }, "Жалоба закрыта")) render(); }));
+    c.appendChild(row); box.appendChild(c);
+  });
+}
+
+/* ---------- вход / выход ---------- */
 function show(on) {
-  $("login").hidden = on; $("panel").hidden = !on;
-  clearInterval(timer);
-  if (on) timer = setInterval(async () => { if (document.hidden || busy) return; try { draw(await call("status")); } catch (e) {} }, 10000);
+  $("login").hidden = on; $("app").hidden = !on; $("nav").hidden = !on; clearInterval(poll);
+  if (on) { drawTabs(); render(); poll = setInterval(async function () { if (document.hidden || busy) return; try { state = await call("status"); drawPill(); } catch (e) {} }, 30000); }
 }
-
-$("go").onclick = () => {
+function logout() { token = ""; try { localStorage.removeItem(KEY); } catch (e) {} $("tok").value = ""; show(false); }
+async function login() {
   token = $("tok").value.trim(); if (!token) { say("Введи токен.", "er"); return; }
-  try { if ($("rem").checked) localStorage.setItem(KEY, token); else localStorage.removeItem(KEY); } catch (e) {}
-  run("status");
-};
-$("tok").addEventListener("keydown", e => { if (e.key === "Enter") $("go").click(); });
-$("bOff").onclick = () => { if (confirm("Выключить игру у всех? Вместо неё появится чёрный экран.")) run("off", { message: $("note").value }, "Игра выключена"); };
-$("bOn").onclick = () => run("on", null, "Игра включена, у игроков она обновится сама");
-$("bRs").onclick = () => { if (confirm("Перезагрузить игру у всех, кто сейчас в ней?")) run("restart", null, "Команда отправлена: открытые игры перезагрузятся"); };
-$("out").onclick = () => { token = ""; try { localStorage.removeItem(KEY); } catch (e) {} $("tok").value = ""; say(""); show(false); };
-
-if (token) { $("rem").checked = true; run("status"); }
+  try { var d = await call("status"); state = d; drawPill(); try { if ($("rem").checked) localStorage.setItem(KEY, token); else localStorage.removeItem(KEY); } catch (e) {} show(true); }
+  catch (e) { say(e.status === 404 ? "Токен не подошёл." : e.status === 429 ? "Слишком много попыток, подожди." : (e instanceof TypeError ? "Нет связи с сервером." : e.message), "er"); }
+}
+$("go").onclick = login; $("out").onclick = logout;
+$("tok").addEventListener("keydown", function (e) { if (e.key === "Enter") login(); });
+if (token) { $("rem").checked = true; call("status").then(function (d) { state = d; drawPill(); show(true); }).catch(function () { logout(); }); }
 </script></body></html>
 `;
 
@@ -476,6 +708,132 @@ async function runCron(env) {
   return { stats, removed, cleaned, sent, text };
 }
 
+/* ---------- Удаление игрока целиком (используется и самим игроком, и админ-панелью) ---------- */
+async function wipeUser(env, id) {
+  const db = env.DB;
+  for (const [t, w] of [['qr_login', 'user_id=?'], ['sp_friends', 'a=? OR b=?'], ['sp_msgs', 'a=? OR b=?'], ['sp_blocks', 'a=? OR b=?'], ['sp_reports', 'reporter=? OR target=?'], ['sp_challenges', 'from_id=? OR to_id=?'], ['sp_room_members', 'uid=?'], ['sp_room_msgs', 'uid=?'], ['sp_tg', 'uid=?'], ['sp_grants', 'uid=?'], ['sp_bans', 'uid=?']]) {
+    try { await db.prepare('DELETE FROM ' + t + ' WHERE ' + w).bind(...(w.includes('OR') ? [id, id] : [id])).run(); } catch (_) {}
+  }
+  try { await db.prepare('DELETE FROM sp_rooms WHERE id NOT IN (SELECT room FROM sp_room_members)').run(); } catch (_) {}
+  await db.prepare('DELETE FROM users WHERE id=?').bind(id).run();
+}
+
+/* ---------- Админ-панель: что можно выдавать и что можно делать ---------- */
+const CATALOG = [["s0","НЕОН",0],["s1","ОГОНЬ",120],["s2","ЯД",120],["s3","САКУРА",250],["s4","ЗОЛОТО",400],["s5","РАДУГА",700],["s6","ЛЁД",300],["s7","ПЛАЗМА",500],["s8","МОЛНИЯ",450],["s9","ЛАВА",550],["s10","КОМЕТЫ",800],["b0","КОСМОС",0],["b1","ЗАКАТ",150],["b2","АВРОРА",150],["b3","СНЕГОПАД",300],["b4","САКУРА",450],["b5","ДОЖДЬ КОДА",600],["b6","СИНТВЕЙВ",500],["b7","СВЕТЛЯЧКИ",350],["b8","ОКЕАН",550],["b9","ПУСТЫНЯ",550],["b10","НОЧНОЙ ГОРОД",650],["b11","ГОРНОЕ ОЗЕРО",700],["b12","ВУЛКАН",750],["b13","КРИСТАЛЛЫ",800],["b14","ЗИМНИЙ ДОМИК",750]];   // [id, название, цена] — те же фоны и щиты, что в магазине игры
+const adminState = s => ({ off: s.off, msg: s.msg, epoch: s.epoch, since: s.since, news: s.news, newsId: s.newsId });
+const oneLine = (v, max) => String(v || '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
+
+async function adminDo(env, body) {
+  const db = env.DB, now = Date.now(), act = String(body.action || 'status');
+  const err = (m, st) => ({ __err: m, __st: st || 400 });
+  const cnt = async (sql, ...a) => ((await db.prepare(sql).bind(...a).first()) || {}).n || 0;
+  const player = async () => db.prepare('SELECT * FROM users WHERE id=?').bind(String(body.id || '')).first();
+
+  if (act === 'status') return adminState(await settings(env));
+  if (act === 'off') { await setSetting(env, 'msg', oneLine(body.message, 200)); await setSetting(env, 'since', now); await setSetting(env, 'off', 1); return adminState(await settings(env)); }
+  if (act === 'on') { await setSetting(env, 'off', 0); await setSetting(env, 'msg', ''); return adminState(await settings(env)); }
+  if (act === 'restart') { await setSetting(env, 'epoch', (await settings(env)).epoch + 1); return adminState(await settings(env)); }   // все открытые игры перезагрузятся сами
+  if (act === 'news') {
+    const text = oneLine(body.text, 300);
+    await setSetting(env, 'news', text); await setSetting(env, 'newsId', text ? now : 0);
+    return adminState(await settings(env));
+  }
+  if (act === 'catalog') return { items: CATALOG };
+
+  if (act === 'overview') {
+    const iso = ms => new Date(ms).toISOString();
+    return {
+      users: await cnt('SELECT COUNT(*) AS n FROM users'),
+      now5: await cnt('SELECT COUNT(*) AS n FROM users WHERE updated_at>?', iso(now - 5 * 60 * 1000)),
+      day: await cnt('SELECT COUNT(*) AS n FROM users WHERE updated_at>?', iso(now - DAY)),
+      week: await cnt('SELECT COUNT(*) AS n FROM users WHERE updated_at>?', iso(now - 7 * DAY)),
+      pairs: await cnt("SELECT COUNT(*) AS n FROM sp_friends WHERE state='accepted'"),
+      msgs: await cnt('SELECT COUNT(*) AS n FROM sp_msgs WHERE t>?', now - DAY) + await cnt('SELECT COUNT(*) AS n FROM sp_room_msgs WHERE t>?', now - DAY),
+      rooms: await cnt('SELECT COUNT(*) AS n FROM sp_rooms'),
+      reports: await cnt('SELECT COUNT(*) AS n FROM sp_reports'),
+      banned: await cnt('SELECT COUNT(*) AS n FROM sp_bans'),
+      pending: await cnt('SELECT COUNT(*) AS n FROM sp_grants'),
+      words: await cnt('SELECT COALESCE(SUM(total_words),0) AS n FROM users'),
+      top: (await db.prepare('SELECT username,best_score AS s FROM users WHERE id NOT IN (SELECT uid FROM sp_bans) ORDER BY best_score DESC LIMIT 5').all()).results || [],
+      state: adminState(await settings(env))
+    };
+  }
+
+  if (act === 'players') {
+    const q = String(body.q || '').replace(/[%_\\]/g, '').trim().slice(0, 30), off = Math.max(0, Math.floor(Number(body.offset) || 0));
+    const like = '%' + q + '%';
+    const rows = (await db.prepare("SELECT id,username,sp_code AS code,best_score AS best,total_words AS words,updated_at AS seen,json_extract(data_json,'$.co') AS co,EXISTS(SELECT 1 FROM sp_bans b WHERE b.uid=users.id) AS banned FROM users WHERE (?='' OR username LIKE ? OR sp_code LIKE ?) ORDER BY updated_at DESC LIMIT 26 OFFSET ?").bind(q, like, like, off).all()).results || [];
+    return { players: rows.slice(0, 25), more: rows.length > 25 };
+  }
+
+  if (act === 'player') {
+    const u = await player(); if (!u) return err('Игрок не найден.', 404);
+    const d = parse(u.data_json, {}), ban = await db.prepare('SELECT reason,t FROM sp_bans WHERE uid=?').bind(u.id).first();
+    return {
+      id: u.id, username: u.username, code: u.sp_code || '', best: u.best_score || 0, words: u.total_words || 0, seen: u.updated_at,
+      coins: Number(d.co) || 0, owned: Array.isArray(d.ow) ? d.ow.filter(x => typeof x === 'string').slice(0, 60) : [], eq: d.eq && typeof d.eq === 'object' ? { s: String(d.eq.s || ''), b: String(d.eq.b || '') } : {},
+      friends: await cnt("SELECT COUNT(*) AS n FROM sp_friends WHERE (a=? OR b=?) AND state='accepted'", u.id, u.id),
+      rooms: await cnt('SELECT COUNT(*) AS n FROM sp_room_members WHERE uid=?', u.id),
+      reports: await cnt('SELECT COUNT(*) AS n FROM sp_reports WHERE target=?', u.id),
+      pending: await cnt('SELECT COUNT(*) AS n FROM sp_grants WHERE uid=?', u.id),
+      ban: ban ? { reason: ban.reason, t: ban.t } : null
+    };
+  }
+
+  if (act === 'grant') {
+    const kind = String(body.kind || ''), note = oneLine(body.note, 60);
+    let val;
+    if (kind === 'coins') { val = Math.trunc(Number(body.val)); if (!val || Math.abs(val) > 1000000) return err('Монеты: число от −1 000 000 до 1 000 000, не ноль.'); }
+    else if (kind === 'item') { val = String(body.val || ''); if (val !== 'all' && !CATALOG.some(c => c[0] === val)) return err('Такого предмета нет в магазине.'); }
+    else return err('Неизвестный вид подарка.');
+    if (body.target === 'all') {
+      const r = await db.prepare('INSERT INTO sp_grants (uid,kind,val,note,t) SELECT id,?,?,?,? FROM users WHERE id NOT IN (SELECT uid FROM sp_bans)').bind(kind, String(val), note, now).run();
+      return { ok: true, count: (r && r.meta && r.meta.changes) || 0 };
+    }
+    const u = await db.prepare('SELECT id FROM users WHERE id=?').bind(String(body.target || '')).first(); if (!u) return err('Игрок не найден.', 404);
+    await db.prepare('INSERT INTO sp_grants (uid,kind,val,note,t) VALUES (?,?,?,?,?)').bind(u.id, kind, String(val), note, now).run();
+    return { ok: true, count: 1 };
+  }
+
+  if (act === 'ban') {
+    const u = await player(); if (!u) return err('Игрок не найден.', 404);
+    await db.prepare('INSERT OR REPLACE INTO sp_bans (uid,reason,t) VALUES (?,?,?)').bind(u.id, oneLine(body.reason, 100), now).run();
+    try { await db.prepare('DELETE FROM sp_room_members WHERE uid=?').bind(u.id).run(); await db.prepare('DELETE FROM sp_tg WHERE uid=?').bind(u.id).run(); } catch (_) {}
+    return { ok: true };
+  }
+  if (act === 'unban') { const u = await player(); if (!u) return err('Игрок не найден.', 404); await db.prepare('DELETE FROM sp_bans WHERE uid=?').bind(u.id).run(); return { ok: true }; }
+
+  if (act === 'rename') {
+    const u = await player(); if (!u) return err('Игрок не найден.', 404);
+    const name = String(body.name || '').trim();
+    if (!/^[\p{L}\p{N}_.-]{3,20}$/u.test(name) || /^sp-/i.test(name)) return err('Ник: 3–20 символов (буквы, цифры, _ . -), не может начинаться с SP-.');
+    const key = nickKey(name);
+    const dup = await db.prepare('SELECT 1 AS x FROM users WHERE id<>? AND (username_key=? OR username=? COLLATE NOCASE) LIMIT 1').bind(u.id, key, name).first();
+    if (dup) return err('Этот ник уже занят или слишком похож на другой.', 409);
+    await db.prepare('UPDATE users SET username=?, username_key=? WHERE id=?').bind(name, key, u.id).run();
+    return { ok: true };
+  }
+  if (act === 'resetstats') { const u = await player(); if (!u) return err('Игрок не найден.', 404); await db.prepare('UPDATE users SET best_score=0,total_words=0 WHERE id=?').bind(u.id).run(); return { ok: true }; }
+  if (act === 'delete') { const u = await player(); if (!u) return err('Игрок не найден.', 404); await wipeUser(env, u.id); return { ok: true }; }
+
+  if (act === 'reports') {
+    const rows = (await db.prepare('SELECT r.id,r.t,r.body,r.target AS tid,(SELECT username FROM users WHERE id=r.reporter) AS rn,(SELECT username FROM users WHERE id=r.target) AS tn,EXISTS(SELECT 1 FROM sp_bans b WHERE b.uid=r.target) AS banned FROM sp_reports r ORDER BY r.id DESC LIMIT 30').all()).results || [];
+    return { reports: rows };
+  }
+  if (act === 'dismiss') { await db.prepare('DELETE FROM sp_reports WHERE id=?').bind(Math.floor(Number(body.id) || 0)).run(); return { ok: true }; }
+
+  if (act === 'rooms') {
+    const rows = (await db.prepare('SELECT r.id,r.name,(SELECT username FROM users WHERE id=r.owner) AS owner,(SELECT COUNT(*) FROM sp_room_members m WHERE m.room=r.id) AS members,(SELECT COUNT(*) FROM sp_room_msgs g WHERE g.room=r.id) AS msgs FROM sp_rooms r ORDER BY r.t DESC LIMIT 40').all()).results || [];
+    return { rooms: rows };
+  }
+  if (act === 'closeroom') {
+    const id = String(body.id || '');
+    await db.prepare('DELETE FROM sp_room_msgs WHERE room=?').bind(id).run(); await db.prepare('DELETE FROM sp_room_members WHERE room=?').bind(id).run(); await db.prepare('DELETE FROM sp_rooms WHERE id=?').bind(id).run();
+    return { ok: true };
+  }
+  return err('Неизвестная команда.');
+}
+
 export default {
   scheduled(event, env, ctx) {
     const p = runCron(env).catch(e => console.error('cron', e));
@@ -519,15 +877,13 @@ export default {
         const adminToken = String(env.ADMIN_TOKEN || '');
         if (adminToken.length < 16) return reply({ error: 'Not found' }, 404);   // не настроено: делаем вид, что такого адреса нет
         await ensureSchema(env);   // нужна таблица rate_limit
-        if (!(await allow(env, 'adm:' + await ipHash(request, env), 30, 10 * 60 * 1000))) return reply(TOO_MANY, 429);
+        const aip = await ipHash(request, env);
+        if (!(await allow(env, 'adm:' + aip, 300, 10 * 60 * 1000))) return reply(TOO_MANY, 429);
+        if (await countHits(env, 'admbad:' + aip, 15 * 60 * 1000) >= 8) return reply(TOO_MANY, 429);   // перебор токена
         const body = await request.json().catch(() => ({}));
-        if (!safeEq(String(body.token || ''), adminToken)) return reply({ error: 'Not found' }, 404);
-        const act = String(body.action || 'status');
-        if (act === 'off') { await setSetting(env, 'msg', String(body.message || '').replace(/\s+/g, ' ').trim().slice(0, 200)); await setSetting(env, 'since', Date.now()); await setSetting(env, 'off', 1); }
-        else if (act === 'on') { await setSetting(env, 'off', 0); await setSetting(env, 'msg', ''); }
-        else if (act === 'restart') { await setSetting(env, 'epoch', (await settings(env)).epoch + 1); }   // все открытые игры перезагрузятся сами
-        else if (act !== 'status') return reply({ error: 'Неизвестная команда.' }, 400);
-        return reply(publicState(await settings(env)));
+        if (!safeEq(String(body.token || ''), adminToken)) { await recordHit(env, 'admbad:' + aip); return reply({ error: 'Not found' }, 404); }
+        const res = await adminDo(env, body);
+        return reply(res.__err ? { error: res.__err } : res, res.__err ? (res.__st || 400) : 200);
       }
 
       /* пока игра выключена, остальной сервер молчит (чтобы во время обновления никто ничего не записал) */
@@ -577,6 +933,10 @@ export default {
             return reply({ error: 'Неверный ник или пароль.' }, 401);
           }
         }
+        try {
+          const ban = await env.DB.prepare('SELECT reason FROM sp_bans WHERE uid=?').bind(user.id).first();
+          if (ban) return reply({ error: 'Аккаунт заблокирован' + (ban.reason ? ': ' + ban.reason : '.') }, 403);
+        } catch (_) {}
 
         const token = await sign({ sub: user.id, exp: Date.now() + 30 * 24 * 60 * 60 * 1000 }, secretOf(env));
         return reply({ token, ...(await account(env, user)) });
@@ -652,19 +1012,7 @@ export default {
       if (url.pathname === '/api/delete' && request.method === 'POST') {
         const user = await userFrom(request, env);
         if (!user) return reply({ error: 'Нужно войти в аккаунт.' }, 401);
-        await env.DB.prepare('DELETE FROM qr_login WHERE user_id=?').bind(user.id).run();
-        await env.DB.prepare('DELETE FROM sp_friends WHERE a=? OR b=?').bind(user.id, user.id).run();
-        await env.DB.prepare('DELETE FROM sp_msgs WHERE a=? OR b=?').bind(user.id, user.id).run();
-        await env.DB.prepare('DELETE FROM sp_blocks WHERE a=? OR b=?').bind(user.id, user.id).run();
-        await env.DB.prepare('DELETE FROM sp_reports WHERE reporter=? OR target=?').bind(user.id, user.id).run();
-        await env.DB.prepare('DELETE FROM sp_challenges WHERE from_id=? OR to_id=?').bind(user.id, user.id).run();
-        try {
-          await env.DB.prepare('DELETE FROM sp_room_members WHERE uid=?').bind(user.id).run();
-          await env.DB.prepare('DELETE FROM sp_room_msgs WHERE uid=?').bind(user.id).run();
-          await env.DB.prepare('DELETE FROM sp_tg WHERE uid=?').bind(user.id).run();
-          await env.DB.prepare('DELETE FROM sp_rooms WHERE id NOT IN (SELECT room FROM sp_room_members)').run();
-        } catch (_) {}
-        await env.DB.prepare('DELETE FROM users WHERE id=?').bind(user.id).run();
+        await wipeUser(env, user.id);
         return reply({ ok: true });
       }
 
@@ -704,6 +1052,23 @@ export default {
 
         const updated = await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(user.id).first();
         return reply({ ok: true, ...(await account(env, updated)) });
+      }
+
+      /* подарки от создателя: игра забирает их и начисляет у себя */
+      if (url.pathname === '/api/grants' && request.method === 'GET') {
+        const user = await userFrom(request, env);
+        if (!user) return reply({ error: 'Нужно войти в аккаунт.' }, 401);
+        if (!await allow(env, 'gr:' + user.id, 80, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+        const rows = (await env.DB.prepare('SELECT id,kind,val,note FROM sp_grants WHERE uid=? ORDER BY id ASC LIMIT 30').bind(user.id).all()).results || [];
+        return reply({ grants: rows });
+      }
+      if (url.pathname === '/api/grants/claim' && request.method === 'POST') {
+        const user = await userFrom(request, env);
+        if (!user) return reply({ error: 'Нужно войти в аккаунт.' }, 401);
+        const body = (await request.json().catch(() => null)) || {};
+        const ids = (Array.isArray(body.ids) ? body.ids : []).map(Number).filter(n => Number.isInteger(n) && n > 0).slice(0, 30);
+        for (const id of ids) await env.DB.prepare('DELETE FROM sp_grants WHERE id=? AND uid=?').bind(id, user.id).run();
+        return reply({ ok: true });
       }
 
       /* публичный профиль: /api/player?q=ник или SP-код */
@@ -1011,7 +1376,7 @@ export default {
       /* рейтинг */
       if (url.pathname === '/api/leaderboard' && request.method === 'GET') {
         const rows = await env.DB.prepare(
-          'SELECT username,best_score AS bestScore,total_words AS totalWords,privacy_json FROM users WHERE best_score>0 AND COALESCE(json_extract(privacy_json,\'$.records\'),1)<>0 ORDER BY best_score DESC,total_words DESC,username ASC LIMIT 50'
+          'SELECT username,best_score AS bestScore,total_words AS totalWords,privacy_json FROM users WHERE best_score>0 AND id NOT IN (SELECT uid FROM sp_bans) AND COALESCE(json_extract(privacy_json,\'$.records\'),1)<>0 ORDER BY best_score DESC,total_words DESC,username ASC LIMIT 50'
         ).all();
         return reply({ items: (rows.results || []).map(r => {
           const pv = cleanPrivacy(parse(r.privacy_json, {}));
