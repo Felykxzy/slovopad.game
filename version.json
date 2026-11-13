@@ -1,12 +1,12 @@
 {
-  "version": "3.5.1",
+  "version": "3.5.2",
   "notes": [
-    "Кнопка «на весь экран» в меню: прячет рамки браузера сверху и снизу"
+    "На iPhone кнопка «на весь экран» показывает, как убрать рамки Safari"
   ],
   "notes_en": [
-    "Fullscreen button in the menu: hides the browser bars at the top and bottom"
+    "On iPhone the fullscreen button shows how to remove the Safari bars"
   ],
   "notes_uk": [
-    "Кнопка «на весь екран» у меню: ховає рамки браузера зверху й знизу"
+    "На iPhone кнопка «на весь екран» показує, як прибрати рамки Safari"
   ]
 }
