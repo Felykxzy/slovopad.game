@@ -1,12 +1,12 @@
 {
-  "version": "3.5.4",
+  "version": "3.5.5",
   "notes": [
-    "Исправлено: обновление игры могло зацикливаться в Телеграме"
+    "Установщик для Windows: исправлены кнопки выбора папки и установки"
   ],
   "notes_en": [
-    "Fixed: the game update could loop in Telegram"
+    "Windows installer: fixed the folder and install buttons"
   ],
   "notes_uk": [
-    "Виправлено: оновлення гри могло зациклюватися в Телеграмі"
+    "Установник для Windows: виправлено кнопки вибору теки та встановлення"
   ]
 }

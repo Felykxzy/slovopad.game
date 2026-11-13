@@ -2,7 +2,7 @@
 :root{--ac:#5ef2ff;--pk:#ff4fd8}*{box-sizing:border-box;-webkit-user-select:none;user-select:none}
 html,body{margin:0;width:760px;height:470px;overflow:hidden;background:#05060f;color:#e8ecff;font:600 13px/1.4 Inter,"Segoe UI",system-ui,sans-serif}
 canvas{position:absolute;inset:0}
-#top{position:absolute;inset:0 0 auto 0;height:40px;-webkit-app-region:drag;display:flex;justify-content:flex-end;align-items:center;padding:0 10px;gap:6px}
+#top{z-index:9;position:absolute;inset:0 0 auto 0;height:40px;-webkit-app-region:drag;display:flex;justify-content:flex-end;align-items:center;padding:0 10px;gap:6px}
 #top button{-webkit-app-region:no-drag;width:30px;height:30px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#cfd6ff;font-size:14px;cursor:pointer}
 #top button:hover{background:rgba(255,79,216,.25)}
 .s{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:30px}.s.on{display:flex}
@@ -30,7 +30,8 @@ h2{margin:0;font-size:36px;letter-spacing:.18em;font-weight:900;background:linea
 <div class="s" id="s3"><h2>ГОТОВО!</h2><div class="tg">СЛОВОПАД УСТАНОВЛЕН · ЯРЛЫК НА РАБОЧЕМ СТОЛЕ</div><div class="row"><button class="b big" id="pl">▶ ИГРАТЬ</button></div><button class="b a" id="cl2">ЗАКРЫТЬ</button></div>
 <div class="s" id="s4"><h2 style="background:linear-gradient(90deg,#ff4d6d,#ff8a5c);-webkit-background-clip:text">УПС…</h2><div class="er" id="er"></div><div class="row"><button class="b" id="rt">ПОВТОРИТЬ</button><button class="b a" id="cl3">ЗАКРЫТЬ</button></div></div>
 <div id="ver"></div><script>
-const $=i=>document.getElementById(i),api=window.api;let dir="",VER="";
+const $=i=>document.getElementById(i),api=window.api||{info:async()=>({version:"",dir:""}),pick:async()=>null,install:async()=>({ok:false,msg:"нет связи с программой установки"}),launch:async()=>false,close(){window.close()},min(){}};let dir="",VER="";
+if(!window.api)setTimeout(()=>{$("pt").textContent="Ошибка запуска. Скачай обычный Slovopad-Setup с GitHub"},50);
 function logo(el){const w="СЛОВОПАД",a=[94,242,255],m=[255,79,216];el.innerHTML="";[...w].forEach((ch,i)=>{const t=i/7,c=a.map((v,k)=>Math.round(v+(m[k]-v)*t)).join(","),s=document.createElement("span");s.textContent=ch;s.style.color="rgb("+c+")";s.style.textShadow="0 0 22px rgba("+c+",.7),0 0 3px rgba("+c+",.9)";s.style.setProperty("--d",i*.12+"s");el.appendChild(s)})}
 logo($("lg"));logo($("lg2"));
 function show(n){["s1","s2","s3","s4"].forEach(i=>$(i).classList.toggle("on",i===n))}
