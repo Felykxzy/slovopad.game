@@ -857,3 +857,35 @@ body.eco #fg .fd.cur .ic,body.eco #fg .fd.cur .fr::after,body.eco #fg .fd.cur .w
 #o15,#o17,#o18{transform:translateX(34px)}
 #o15.s,#o17.s,#o18.s{transform:none}
 @media (prefers-reduced-motion:reduce){.ecopen .orb,.ecopen .ecpan,.ecopen .ecrow,.ecopen .ecsec,.ecopen .frlist>*,.orb .bdg,.ecb,.msg,.chmenu,.ecset,.aiset,.fav.on::after,#echoBd,.orb.ping{animation:none!important}#o15,#o17,#o18{transform:none}}
+
+/* Экран загрузки 2: туманность, звёзды, светящийся кристалл с орбитами */
+#spl{background:radial-gradient(55% 38% at 18% 16%,rgba(120,70,255,.30),transparent 70%),radial-gradient(50% 38% at 86% 82%,rgba(255,79,216,.22),transparent 70%),radial-gradient(40% 30% at 70% 14%,rgba(94,242,255,.12),transparent 70%),radial-gradient(120% 80% at 50% 30%,#171a48 0%,#070918 60%,#05060f 100%);gap:14px}
+#spl::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.85;background-image:radial-gradient(1.6px 1.6px at 12% 22%,#fff,transparent),radial-gradient(1.2px 1.2px at 28% 70%,#cfe,transparent),radial-gradient(1.8px 1.8px at 46% 12%,#fff,transparent),radial-gradient(1.2px 1.2px at 63% 84%,#fff,transparent),radial-gradient(1.6px 1.6px at 78% 36%,#bdf,transparent),radial-gradient(1.2px 1.2px at 90% 64%,#fff,transparent),radial-gradient(1.4px 1.4px at 8% 88%,#fdf,transparent),radial-gradient(1.2px 1.2px at 54% 52%,#fff,transparent),radial-gradient(1.6px 1.6px at 35% 40%,#fff,transparent),radial-gradient(1.2px 1.2px at 94% 10%,#fff,transparent);animation:splTw 3.2s ease-in-out infinite alternate}
+@keyframes splTw{0%{opacity:.45}100%{opacity:1}}
+#splW i{color:rgba(94,242,255,.38);text-shadow:0 0 10px rgba(94,242,255,.5)}
+#splW i:nth-child(even){color:rgba(255,120,230,.34);text-shadow:0 0 10px rgba(255,79,216,.45)}
+#splE{position:relative;width:118px;height:118px;margin-bottom:8px;animation:splIn .8s cubic-bezier(.2,.9,.3,1.2) both}
+#splE::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,var(--ac),transparent 35%,var(--mg) 60%,transparent 85%,var(--ac));-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2px));mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2px));animation:splRot 4s linear infinite;filter:drop-shadow(0 0 8px rgba(94,242,255,.6))}
+#splE i{position:absolute;inset:-10px;animation:splRot 3.4s linear infinite}
+#splE i::after{content:"";position:absolute;top:0;left:50%;width:9px;height:9px;margin-left:-4.5px;border-radius:50%;background:#fff;box-shadow:0 0 12px 3px var(--ac)}
+#splE i+i{inset:6px;animation-duration:2.4s;animation-direction:reverse}
+#splE i+i::after{width:6px;height:6px;margin-left:-3px;background:#ffd6f6;box-shadow:0 0 10px 3px var(--mg)}
+#splE b{position:absolute;inset:34px;border-radius:15px;transform:rotate(45deg);background:linear-gradient(135deg,var(--ac),var(--mg));box-shadow:0 0 30px rgba(94,242,255,.55),0 0 60px rgba(255,79,216,.3),inset 0 2px 6px rgba(255,255,255,.5);animation:splGem 2.4s ease-in-out infinite}
+#splE b::after{content:"";position:absolute;inset:7px;border-radius:9px;border:2px solid rgba(255,255,255,.55);border-right-color:transparent;border-bottom-color:transparent}
+@keyframes splRot{to{transform:rotate(360deg)}}
+@keyframes splGem{0%,100%{transform:rotate(45deg) scale(1)}50%{transform:rotate(45deg) scale(1.1)}}
+@keyframes splIn{0%{opacity:0;transform:translateY(16px) scale(.9)}100%{opacity:1;transform:none}}
+@keyframes splSheen{to{background-position:-250% 0}}
+#splL{background:linear-gradient(100deg,var(--ac) 0%,var(--mg) 38%,#fff 50%,var(--ac) 62%,var(--mg) 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;animation:splpulse 2s ease-in-out infinite,splSheen 3.6s linear infinite,splIn .8s .12s cubic-bezier(.2,.9,.3,1.2) both}
+#splS{position:relative;font-size:10px;letter-spacing:.3em;opacity:.6;font-weight:600;text-align:center;padding:0 16px;animation:splIn .8s .25s both}
+#splBar{height:10px;width:min(72%,310px);margin-top:10px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);box-shadow:inset 0 1px 3px rgba(0,0,0,.45),0 0 20px rgba(94,242,255,.12);animation:splIn .8s .35s both}
+#splB{position:relative;overflow:hidden}
+#splB::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.65),transparent);transform:translateX(-100%);animation:splSh 1.3s ease-in-out infinite}
+@keyframes splSh{to{transform:translateX(100%)}}
+#splT{animation:splIn .8s .45s both}
+@media (prefers-reduced-motion:reduce){#spl::before,#splE::before,#splE i,#splE b,#splB::after,#splL,#splE,#splS,#splBar,#splT{animation:none!important}}
+
+/* переход Чаты ⇄ Друзья: рейка стоит на месте, меняется только панель */
+.ecswap .ecpan{animation:panIn .3s cubic-bezier(.2,.8,.3,1) both}
+.ecswap .ecrow,.ecswap .ecsec{animation:rowIn .34s cubic-bezier(.2,.8,.3,1) both;animation-delay:calc(var(--i,0)*30ms)}
+#o13 .frlist>*{animation:none!important}

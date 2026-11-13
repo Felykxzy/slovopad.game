@@ -37,10 +37,19 @@
       while (o13.firstChild) pan.appendChild(o13.firstChild);
       pan.insertBefore(ph, pan.firstChild); wrap.appendChild(rail); wrap.appendChild(pan); o13.appendChild(wrap);
     }
-    ["o16", "o13"].forEach(id => {
-      const e = g(id); if (!e) return; let was = e.classList.contains("s");
-      new MutationObserver(() => { const now = e.classList.contains("s"); if (now && !was) { e.classList.add("ecopen"); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove("ecopen"), 1200) } was = now }).observe(e, { attributes: true, attributeFilter: ["class"] });
+    // анимации входа; переход «Чаты ⇄ Друзья» делаем мгновенным (рейка остаётся на месте), иначе экраны дёргаются
+    const eo = ["o16", "o13"].map(g).filter(Boolean), was = {};
+    eo.forEach(e => { was[e.id] = e.classList.contains("s") });
+    const flag = (e, c) => { e.classList.add(c); clearTimeout(e["_" + c]); e["_" + c] = setTimeout(() => e.classList.remove(c), 1200) };
+    const mo = new MutationObserver(() => {
+      const cur = {}; eo.forEach(e => { cur[e.id] = e.classList.contains("s") });
+      const opened = eo.filter(e => cur[e.id] && !was[e.id]);
+      const swap = opened.length && eo.some(e => was[e.id] && !cur[e.id]);
+      if (swap) { eo.forEach(e => { e.style.transition = "none" }); requestAnimationFrame(() => requestAnimationFrame(() => eo.forEach(e => { e.style.transition = "" }))); opened.forEach(e => flag(e, "ecswap")) }
+      else opened.forEach(e => flag(e, "ecopen"));
+      eo.forEach(e => { was[e.id] = cur[e.id] });
     });
+    eo.forEach(e => mo.observe(e, { attributes: true, attributeFilter: ["class"] }));
     g("rmBk").onclick = roomClose;
     g("rmSn").onclick = roomSend;
     g("rmIn").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); roomSend() } });
@@ -129,6 +138,9 @@
     try {
       const [f, r] = await Promise.all([cloudRequest("/api/friends"), cloudRequest("/api/echo/rooms")]);
       E.friends = f.friends || []; E.rooms = r.rooms || []; setHint("ecSt", "");
+      const sg = JSON.stringify([E.friends.map(x => [x.username, x.online, x.unread, x.avatar]), E.rooms.map(x => [x.id, x.name, x.unread, x.last, x.members])]);
+      if (sg === E.sg) { labels(); return }
+      E.sg = sg;
     } catch (e) { setHint("ecSt", (e && e.message) || T("Нет связи с сервером.", "Can't reach the server.", "Немає зв'язку з сервером."), true) }
     labels(); paint();
   }
