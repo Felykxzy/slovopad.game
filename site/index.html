@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#05060f">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2305060f'/%3E%3Ctext x='32' y='45' font-size='38' font-weight='800' text-anchor='middle' fill='%235ef2ff' font-family='Arial'%3E%D0%A1%3C/text%3E%3C/svg%3E">
+<title>СЛОВОПАД — игра на скорость печати</title>
+<meta name="description" content="СЛОВОПАД — аркадная игра на скорость печати. Слова падают, ты печатаешь их и защищаешь щит. Играй в браузере, в Telegram, на компьютере и телефоне.">
+<meta property="og:title" content="СЛОВОПАД">
+<meta property="og:description" content="Печатай слова, защищай щит. Играй в браузере или в Telegram.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Unbounded:wght@300;500;800&display=swap">
+<style>
+/* Космическая аркада. Один тёмный мир: туманность, неон голубой и розовый, стекло.
+   Главный приём: рабочая мини-игра прямо в первом экране. */
+:root{
+  --bg:#05060f; --bg2:#0b0f33; --ink:#eaeeff; --mute:#9ea7da; --soft:#c9d0ff;
+  --cy:#5ef2ff; --pk:#ff4fd8; --gold:#ffd166; --vi:#8a63ff; --lime:#b8ff5c; --tg:#2aabee; --bad:#ff5d7a;
+  --glass:rgba(255,255,255,.055); --line:rgba(255,255,255,.14);
+  --display:"Unbounded","Segoe UI",system-ui,sans-serif; --body:"Manrope","Segoe UI",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.6 var(--body);overflow-x:hidden;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--bg)}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--cy);outline-offset:3px;border-radius:12px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* фон */
+.sky{position:fixed;inset:0;z-index:0;background:linear-gradient(180deg,#04050d,var(--bg2));overflow:hidden}
+.blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55;will-change:transform}
+.b1{width:60vmax;height:60vmax;left:-20vmax;bottom:-30vmax;background:radial-gradient(circle,#6a3dff,transparent 65%);animation:dr1 26s ease-in-out infinite alternate}
+.b2{width:44vmax;height:44vmax;right:-14vmax;top:-12vmax;background:radial-gradient(circle,rgba(255,79,216,.8),transparent 65%);animation:dr2 32s ease-in-out infinite alternate}
+.b3{width:36vmax;height:36vmax;left:30%;top:35%;background:radial-gradient(circle,rgba(94,242,255,.4),transparent 65%);animation:dr3 38s ease-in-out infinite alternate}
+@keyframes dr1{to{transform:translate(14vmax,-8vmax) scale(1.15)}}
+@keyframes dr2{to{transform:translate(-12vmax,10vmax) scale(.9)}}
+@keyframes dr3{to{transform:translate(-14vmax,-10vmax) scale(1.2)}}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.prog{position:fixed;left:0;top:env(safe-area-inset-top,0px);height:3px;width:100%;z-index:70;background:linear-gradient(90deg,var(--cy),var(--pk));transform-origin:0 50%;transform:scaleX(0);box-shadow:0 0 12px var(--cy)}
+
+/* шапка */
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;margin:0 auto;max-width:1160px;padding-block:12px}
+.bar{display:flex;align-items:center;gap:8px;padding:8px 10px 8px 18px;border-radius:999px;background:rgba(10,12,34,.62);border:1px solid var(--line);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 10px 40px rgba(0,0,0,.35)}
+.mark{font:800 15px var(--display);letter-spacing:.06em;background:linear-gradient(90deg,var(--cy),var(--pk));-webkit-background-clip:text;background-clip:text;color:transparent;margin-right:auto}
+.nav{display:flex;gap:2px}
+.nav a{padding:8px 14px;border-radius:999px;font:600 13px var(--body);color:var(--soft);transition:background .2s,color .2s}
+.nav a:hover{background:rgba(255,255,255,.09);color:#fff}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border-radius:999px;font:800 13px var(--display);letter-spacing:.16em;text-transform:uppercase;white-space:nowrap;transition:transform .2s,box-shadow .2s,background .2s}
+.btn svg{width:16px;height:16px;fill:currentColor;flex:none}
+.btn.p{padding:11px 22px;color:#06101a;background:linear-gradient(100deg,var(--cy),#9a8bff 55%,var(--pk));box-shadow:0 0 26px rgba(94,242,255,.4)}
+.btn.p:hover{transform:translateY(-2px);box-shadow:0 0 42px rgba(94,242,255,.65),0 0 60px rgba(255,79,216,.3)}
+.btn.g{padding:15px 28px;color:var(--ink);background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(10px)}
+.btn.g:hover{transform:translateY(-2px);border-color:var(--cy);box-shadow:0 0 30px rgba(94,242,255,.25)}
+.btn.big{padding:19px 40px;font-size:15px}
+@media (max-width:760px){.nav{display:none}}
+
+main{position:relative;z-index:2;max-width:1160px;margin:0 auto;display:flex;flex-direction:column;gap:clamp(64px,10vw,120px);padding-block:clamp(20px,5vw,50px) 40px}
+
+/* hero */
+.hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:20px}
+.pill{display:inline-flex;align-items:center;gap:10px;padding:7px 16px;border-radius:999px;background:var(--glass);border:1px solid var(--line);font:600 11px var(--body);letter-spacing:.28em;color:var(--soft);text-transform:uppercase}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--lime);box-shadow:0 0 12px var(--lime);animation:pu 1.8s ease-in-out infinite}
+@keyframes pu{50%{opacity:.35;transform:scale(.7)}}
+.logo{margin:0;display:flex;font:300 clamp(34px,11.6vw,118px)/1 var(--display);letter-spacing:.015em}
+.logo span{display:inline-block;animation:fl 3.4s ease-in-out infinite;animation-delay:var(--d)}
+@keyframes fl{50%{transform:translateY(-9px)}}
+.lead{max-width:36em;margin:0;color:var(--soft);font-size:clamp(16px,2.3vw,19px);text-shadow:0 0 14px #05060f}
+.cta{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+
+/* арена */
+.arena{position:relative;width:100%;max-width:880px;margin-top:10px;border-radius:30px;padding:2px;background:linear-gradient(135deg,rgba(94,242,255,.7),rgba(138,99,255,.25) 40%,rgba(255,79,216,.7));box-shadow:0 30px 90px rgba(0,0,0,.55),0 0 80px rgba(94,242,255,.12)}
+.ain{position:relative;border-radius:28px;overflow:hidden;background:linear-gradient(180deg,rgba(5,6,15,.92),rgba(11,15,51,.92))}
+.hud{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line);font:600 12px var(--body);letter-spacing:.18em;text-transform:uppercase;color:var(--mute)}
+.hud b{color:var(--gold);font:800 18px var(--display);letter-spacing:.04em;margin-left:6px}
+.hp{display:flex;gap:6px}.hp i{width:26px;height:6px;border-radius:4px;background:var(--cy);box-shadow:0 0 12px var(--cy);transition:all .3s}
+.hp i.x{background:rgba(255,255,255,.14);box-shadow:none}
+.cv{position:relative;height:clamp(250px,42vw,340px);cursor:text}
+.cv canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.say{position:absolute;left:0;right:0;bottom:12px;text-align:center;font:800 18px var(--display);letter-spacing:.3em;color:var(--cy);text-shadow:0 0 18px var(--cy);min-height:1.4em;pointer-events:none}
+.hint{position:absolute;left:50%;top:14px;transform:translateX(-50%);padding:6px 14px;border-radius:999px;background:rgba(5,6,15,.7);border:1px solid var(--line);font:600 11px var(--body);letter-spacing:.2em;color:var(--soft);text-transform:uppercase;pointer-events:none;white-space:nowrap;transition:opacity .4s}
+.hint.off{opacity:0}
+.over{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(5,6,15,.82);backdrop-filter:blur(6px);text-align:center}
+.over.on{display:flex}
+.over h3{margin:0;font:800 clamp(26px,5vw,40px) var(--display);letter-spacing:.1em;background:linear-gradient(90deg,var(--bad),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+.over p{margin:0;color:var(--soft)}
+#inp{position:absolute;opacity:0;width:1px;height:1px;left:0;bottom:0;font-size:16px}
+.shake{animation:sh .25s}
+@keyframes sh{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+/* бегущая строка */
+.marq{position:relative;z-index:2;margin:0 calc(-1 * max(16px,env(safe-area-inset-left,0px)));overflow:hidden;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+.mr{display:flex;width:max-content;gap:40px;padding-block:6px;font:800 clamp(30px,6vw,64px)/1.1 var(--display);letter-spacing:.04em;color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.28);animation:mq 38s linear infinite}
+.mr.r{animation-direction:reverse;animation-duration:46s;-webkit-text-stroke-color:rgba(94,242,255,.4)}
+.mr span:nth-child(3n){-webkit-text-stroke-color:rgba(255,79,216,.55)}
+@keyframes mq{to{transform:translateX(-50%)}}
+
+/* секции */
+.sec h2{font:500 clamp(24px,4.6vw,44px)/1.15 var(--display);margin:0 0 12px;letter-spacing:.01em;text-wrap:balance}
+.sec h2 em{font-style:normal;font-weight:800;background:linear-gradient(90deg,var(--cy),var(--pk));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sec .sub{margin:0 0 30px;color:var(--mute);max-width:36em}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:16px}
+.card{position:relative;display:flex;flex-direction:column;gap:12px;padding:26px 24px;border-radius:26px;overflow:hidden;min-width:0;background:var(--glass);border:1px solid var(--line);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:inset 0 1px 1px rgba(255,255,255,.2),0 14px 40px rgba(0,0,0,.38);
+  transition:transform .3s,border-color .3s,box-shadow .3s;--c:var(--cy);--mx:50%;--my:0%}
+.card::before{content:"";position:absolute;inset:0;background:radial-gradient(260px circle at var(--mx) var(--my),color-mix(in srgb,var(--c) 28%,transparent),transparent 70%);opacity:0;transition:opacity .3s;pointer-events:none}
+.card:hover{transform:translateY(-6px);border-color:color-mix(in srgb,var(--c) 70%,transparent);box-shadow:inset 0 1px 1px rgba(255,255,255,.3),0 22px 60px rgba(0,0,0,.5),0 0 44px -8px var(--c)}
+.card:hover::before{opacity:1}
+.ic{position:relative;width:50px;height:50px;border-radius:16px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 16%,transparent);border:1px solid color-mix(in srgb,var(--c) 55%,transparent);color:var(--c)}
+.ic svg{width:25px;height:25px;fill:currentColor}
+.card h3{position:relative;margin:4px 0 0;font:500 17px/1.3 var(--display);letter-spacing:.02em}
+.card p{position:relative;margin:0;color:var(--mute);font-size:14px;flex:1}
+.go{position:relative;font:800 12px var(--body);letter-spacing:.2em;color:var(--c);text-transform:uppercase}
+.go::after{content:"→";display:inline-block;margin-left:8px;transition:transform .25s}.card:hover .go::after{transform:translateX(6px)}
+.c1{--c:var(--cy)}.c2{--c:var(--tg)}.c3{--c:var(--pk)}.c4{--c:var(--gold)}
+
+/* бенто */
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}
+.t{grid-column:span 2;min-height:250px}.t.w{grid-column:span 3}
+@media (max-width:900px){.t,.t.w{grid-column:span 3}}
+@media (max-width:620px){.t,.t.w{grid-column:span 6}}
+.vis{position:relative;height:96px;display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.lang{padding:10px 16px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.05);font:800 13px var(--display);letter-spacing:.08em;color:var(--mute);animation:lg 6s infinite}
+.lang:nth-child(2){animation-delay:2s}.lang:nth-child(3){animation-delay:4s}
+@keyframes lg{0%,28%{color:#06101a;background:var(--cy);border-color:var(--cy);box-shadow:0 0 24px var(--cy);transform:translateY(-6px)}34%,100%{color:var(--mute);background:rgba(255,255,255,.05);border-color:var(--line);box-shadow:none;transform:none}}
+.chat{flex-direction:column;align-items:flex-start;justify-content:center;gap:7px}
+.bub{padding:7px 14px;border-radius:16px 16px 16px 4px;background:rgba(255,79,216,.2);border:1px solid rgba(255,79,216,.5);font:600 12px var(--body);opacity:0;animation:bu 7s infinite}
+.bub.me{align-self:flex-end;border-radius:16px 16px 4px 16px;background:rgba(94,242,255,.18);border-color:rgba(94,242,255,.5);animation-delay:1.6s}
+.bub:nth-child(3){animation-delay:3.2s}
+@keyframes bu{0%{opacity:0;transform:translateY(10px)}8%,70%{opacity:1;transform:none}85%,100%{opacity:0}}
+.bars{align-items:flex-end;gap:12px;height:96px}
+.bars i{flex:1;max-width:46px;border-radius:10px 10px 4px 4px;background:linear-gradient(180deg,var(--gold),rgba(255,209,102,.15));transform-origin:50% 100%;animation:gr 4.5s ease-in-out infinite}
+.bars i:nth-child(1){height:58%;animation-delay:.3s}.bars i:nth-child(2){height:100%}.bars i:nth-child(3){height:38%;animation-delay:.6s}
+@keyframes gr{0%{transform:scaleY(.15)}35%,85%{transform:scaleY(1)}100%{transform:scaleY(.15)}}
+.key{padding:9px 14px;border-radius:12px;border:1px dashed rgba(138,99,255,.7);background:rgba(138,99,255,.12);font:600 13px ui-monospace,Consolas,monospace;color:var(--soft);letter-spacing:.06em}
+.lock{width:44px;height:44px;flex:none;color:var(--vi);animation:fl 3s ease-in-out infinite}
+.shield{width:92px;height:92px;margin:auto 0;color:var(--cy);filter:drop-shadow(0 0 16px var(--cy));animation:sp 3.4s ease-in-out infinite}
+@keyframes sp{50%{transform:scale(1.08);filter:drop-shadow(0 0 30px var(--pk))}}
+
+/* установка */
+.dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:14px}
+.os{display:flex;align-items:center;gap:14px;padding:18px 20px;border-radius:20px;background:var(--glass);border:1px solid var(--line);transition:transform .25s,border-color .25s,box-shadow .25s;min-width:0}
+.os:hover{transform:translateY(-4px);border-color:var(--cy);box-shadow:0 0 30px -6px var(--cy)}
+.os svg{width:30px;height:30px;fill:var(--cy);flex:none}
+.os b{display:block;font:500 15px var(--display)}.os small{color:var(--mute);font-size:13px}
+
+/* финал */
+.end{position:relative;text-align:center;padding:clamp(40px,8vw,80px) 20px;border-radius:36px;overflow:hidden;border:1px solid var(--line);background:linear-gradient(135deg,rgba(94,242,255,.12),rgba(138,99,255,.1),rgba(255,79,216,.14));box-shadow:0 30px 80px rgba(0,0,0,.45)}
+.end h2{font:500 clamp(26px,5.4vw,52px)/1.15 var(--display);margin:0 0 14px;text-wrap:balance}
+.end p{margin:0 auto 26px;max-width:30em;color:var(--soft)}
+footer{position:relative;z-index:2;max-width:1160px;margin:0 auto;padding-block:30px;text-align:center;color:var(--mute);font-size:13px}
+footer a{color:var(--cy);border-bottom:1px solid rgba(94,242,255,.4)}
+
+.rv{opacity:1;transform:none}
+.js .rv{opacity:0;transform:translateY(28px);transition:opacity .8s,transform .8s}
+.js .rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}.js .rv{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
+@media (max-width:520px){.bar{padding-left:14px}.btn.big{padding:17px 28px;font-size:13px}.hud{padding:12px 14px;font-size:10px}.hint{font-size:10px;letter-spacing:.12em}}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"СЛОВОПАД","description":"Аркадная игра на скорость печати: слова падают, ты печатаешь их и защищаешь щит.","genre":"Аркада","inLanguage":["ru","en","uk"],"applicationCategory":"Game","gamePlatform":["Web","Windows","Android","macOS","Linux","Telegram"],"author":{"@type":"Person","name":"Felykxzy"}}</script>
+</head>
+<body>
+
+<div class="sky" aria-hidden="true"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<canvas id="bg" aria-hidden="true"></canvas>
+<div class="prog" id="prog"></div>
+
+<header>
+  <div class="bar">
+    <a class="mark" href="#top">СЛОВОПАД</a>
+    <nav class="nav" aria-label="Разделы">
+      <a href="#links">Где играть</a><a href="#inside">Что внутри</a><a href="#install">Установка</a>
+    </nav>
+    <a class="btn p" href="https://felykxzy.github.io/slovopad.game/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg>Играть</a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="pill"><span class="dot"></span>Аркада на скорость печати</div>
+    <h1 class="logo" id="logo" aria-label="СЛОВОПАД"></h1>
+    <p class="lead">Слова падают с неба. Ты печатаешь их раньше, чем они достигнут щита. Попробуй прямо здесь, а потом играй в браузере, в Telegram или на устройстве.</p>
+    <div class="cta">
+      <a class="btn p big" href="https://felykxzy.github.io/slovopad.game/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg>Играть сейчас</a>
+      <a class="btn g big" href="https://t.me/slovopadgame_bot" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M21.4 3.6L2.7 10.8c-1.3.5-1.3 1.2-.2 1.5l4.8 1.5 1.8 5.6c.2.6.1.8.7.8.5 0 .7-.2 1-.5l2.3-2.2 4.8 3.5c.9.5 1.5.2 1.7-.8l3.2-15.1c.3-1.3-.5-1.9-1.4-1.5z"/></svg>Бот в Telegram</a>
+    </div>
+
+    <div class="arena" id="arena">
+      <div class="ain">
+        <div class="hud"><span>Счёт<b id="sc">0</b></span><span class="hp" id="hp" aria-label="Прочность щита"><i></i><i></i><i></i></span><span>Рекорд<b id="best">0</b></span></div>
+        <div class="cv" id="cv">
+          <canvas id="ar"></canvas>
+          <div class="hint" id="hint">Печатай падающие слова</div>
+          <div class="say" id="say"></div>
+          <div class="over" id="over"><h3>Щит пал</h3><p id="ovp"></p><button class="btn p" id="again" type="button">Ещё раз</button></div>
+          <input id="inp" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Поле для печати слов">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="marq" aria-hidden="true">
+    <div class="mr" id="m1"></div>
+    <div class="mr r" id="m2"></div>
+  </div>
+
+  <section class="sec rv" id="links">
+    <h2>Где <em>играть</em> и что смотреть</h2>
+    <p class="sub">Игра одна, входов четыре. Прогресс и друзья едут с тобой, если войти в аккаунт.</p>
+    <div class="grid">
+      <a class="card c1" href="https://felykxzy.github.io/slovopad.game/" target="_blank" rel="noopener">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg></div>
+        <h3>Играть в браузере</h3><p>Открывается сразу, без установки. Работает на компьютере и на телефоне.</p><span class="go">Открыть игру</span></a>
+      <a class="card c2" href="https://t.me/slovopadgame_bot" target="_blank" rel="noopener">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M21.4 3.6L2.7 10.8c-1.3.5-1.3 1.2-.2 1.5l4.8 1.5 1.8 5.6c.2.6.1.8.7.8.5 0 .7-.2 1-.5l2.3-2.2 4.8 3.5c.9.5 1.5.2 1.7-.8l3.2-15.1c.3-1.3-.5-1.9-1.4-1.5zM8.5 13.2l9.9-6.2c.5-.3.9-.1.5.2l-8.1 7.3-.3 3.5z"/></svg></div>
+        <h3>Бот в Telegram</h3><p>Игра на весь экран внутри мессенджера и уведомления о сообщениях друзей.</p><span class="go">Открыть бота</span></a>
+      <a class="card c3" href="https://t.me/kilozexui" target="_blank" rel="noopener">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M3 11v2l13 5V6zM18 8v8c1.7-.4 3-1.9 3-4s-1.3-3.6-3-4zM6 15l1.5 5h2L8 15z"/></svg></div>
+        <h3>Канал разработчика</h3><p>Новости обновлений, планы и закулисье. Здесь пишут первыми.</p><span class="go">Подписаться</span></a>
+      <a class="card c4" href="https://github.com/Felykxzy/slovopad.game" target="_blank" rel="noopener">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 .5a11.5 11.5 0 00-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a10.9 10.9 0 015.78 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.18 1.83 1.18 3.09 0 4.42-2.69 5.4-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0012 .5z"/></svg></div>
+        <h3>Исходный код</h3><p>Репозиторий на GitHub: код игры, история версий и список изменений.</p><span class="go">Смотреть код</span></a>
+    </div>
+  </section>
+
+  <section class="sec rv" id="inside">
+    <h2>Что <em>внутри</em></h2>
+    <p class="sub">Не просто слова на скорость: у игры есть общение, рейтинг и свой магазин.</p>
+    <div class="bento">
+      <div class="card t" style="--c:var(--cy)">
+        <div class="vis"><span class="lang">РУС</span><span class="lang">ENG</span><span class="lang">УКР</span></div>
+        <h3>Три языка</h3><p>Русские, английские и украинские слова. Тематики на любой вкус и быстрая игра одним нажатием.</p></div>
+      <div class="card t" style="--c:var(--pk)">
+        <div class="vis chat"><span class="bub">Го на дуэль?</span><span class="bub me">Давай, я готов</span><span class="bub">Тогда держи щит</span></div>
+        <h3>Эхо</h3><p>Свой мессенджер внутри игры: друзья, комнаты и личные сообщения в одном месте.</p></div>
+      <div class="card t" style="--c:var(--gold)">
+        <div class="vis bars"><i data-n="2"></i><i data-n="1"></i><i data-n="3"></i></div>
+        <h3>Рейтинг игроков</h3><p>Сравнивай скорость печати с друзьями и со всеми игроками. Ранги растут вместе с тобой.</p></div>
+      <div class="card t w" style="--c:var(--vi)">
+        <div class="vis"><svg class="lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 018 0v3"/></svg><span class="key">sk-••••••••••••</span></div>
+        <h3>Чат с ИИ по твоему ключу</h3><p>Подключи своего ИИ-помощника в Эхо. Ключ хранится только на твоём устройстве и никуда не отправляется, кроме выбранного сервиса.</p></div>
+      <div class="card t w" style="--c:var(--lime)">
+        <div class="vis"><svg class="shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 2.5l8 3v6c0 5-3.4 8.700-8 10-4.600-1.300-8-5-8-10v-6z"/><path d="M8.500 12l2.500 2.500 4.500-5" stroke-linecap="round"/></svg></div>
+        <h3>Магазин и щиты</h3><p>Играй, копи награды и открывай новые вещи в магазине.</p></div>
+    </div>
+  </section>
+
+  <section class="sec rv" id="install">
+    <h2>Установи <em>на устройство</em></h2>
+    <p class="sub">Приложения лежат в последнем релизе на GitHub. Выбери свою систему на открывшейся странице.</p>
+    <div class="dl">
+      <a class="os" href="https://github.com/Felykxzy/slovopad.game/releases/latest" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M3 5.500l8-1.100v7.100H3zm9 5.900V4.300L21 3v8.400zM3 12.500h8v7.100l-8-1.100zm9 0h9V21l-9-1.300z"/></svg><span><b>Windows</b><small>Установщик .exe</small></span></a>
+      <a class="os" href="https://github.com/Felykxzy/slovopad.game/releases/latest" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M7 3l1.600 2.600A7 7 0 0112 5c1.200 0 2.400.3 3.400.6L17 3l1 .6-1.600 2.700A6.900 6.900 0 0119 11H5a6.900 6.900 0 012.600-4.700L6 3.600zM9.500 8a.8.8 0 100 1.600.8.8 0 000-1.600zm5 0a.8.8 0 100 1.600.8.8 0 000-1.600zM5 12h14v7a2 2 0 01-2 2H7a2 2 0 01-2-2z"/></svg><span><b>Android</b><small>Файл .apk</small></span></a>
+      <a class="os" href="https://github.com/Felykxzy/slovopad.game/releases/latest" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M16.400 12.700c0-2.400 2-3.500 2.100-3.600-1.100-1.700-2.900-1.900-3.500-1.900-1.500-.2-2.900.9-3.700.9s-1.900-.9-3.200-.8c-1.600 0-3.100 1-4 2.400-1.700 3-.4 7.300 1.200 9.700.8 1.200 1.800 2.500 3 2.400 1.200 0 1.700-.8 3.100-.8s1.900.8 3.200.8 2.100-1.200 2.900-2.400c.9-1.300 1.300-2.600 1.300-2.700-.1 0-2.400-.9-2.400-4zM14 5.600c.7-.8 1.100-1.900 1-3-1 0-2.100.7-2.800 1.500-.6.700-1.200 1.800-1 2.900 1.100.1 2.100-.6 2.800-1.400z"/></svg><span><b>macOS</b><small>Образ .dmg</small></span></a>
+      <a class="os" href="https://github.com/Felykxzy/slovopad.game/releases/latest" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M12 2c-2 0-3 2-3 4.500 0 1.500-.5 2.500-1.500 4C6 12.500 5 14 5 16c0 1 .3 1.800.8 2.300-.3.800-1 1.200-1.800 1.700 1 .5 2.200.5 3.200 0 .7.600 1.700 1 2.800 1 .7 0 1.300-.2 1.800-.4.500.2 1.100.4 1.800.4 1.100 0 2.100-.4 2.800-1 1 .5 2.200.5 3.200 0-.8-.5-1.500-.9-1.800-1.700.5-.5.800-1.300.8-2.300 0-2-1-3.500-2.500-5.500-1-1.500-1.500-2.500-1.500-4C15 4 14 2 12 2z"/></svg><span><b>Linux</b><small>Файл .AppImage</small></span></a>
+    </div>
+  </section>
+
+  <section class="end rv">
+    <h2>Слова уже падают</h2>
+    <p>Заходи в игру, ставь рекорд и зови друзей в Эхо.</p>
+    <div class="cta">
+      <a class="btn p big" href="https://felykxzy.github.io/slovopad.game/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg>Играть сейчас</a>
+      <a class="btn g big" href="https://t.me/kilozexui" target="_blank" rel="noopener">Канал разработчика</a>
+    </div>
+  </section>
+</main>
+<footer>СЛОВОПАД · сделал <a href="https://t.me/kilozexui" target="_blank" rel="noopener">Felykxzy</a> · <a href="https://github.com/Felykxzy/slovopad.game" target="_blank" rel="noopener">GitHub</a></footer>
+
+<script>
+document.documentElement.classList.add("js");
+(function(){
+  var WD="кот щит слово бонус звезда комета ракета город игра очки комбо луна шторм дракон зебра пицца ветер огонь космос орбита планета скорость клавиша удар вихрь свет мир сила".split(" ");
+  var CL=["94,242,255","255,209,102","255,79,216","184,255,92","160,130,255"];
+  var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function $(i){return document.getElementById(i)}
+  function rnd(n){return Math.random()*n}
+
+  /* логотип по буквам */
+  var lg=$("logo"),w="СЛОВОПАД",a=[94,242,255],m=[255,79,216];
+  for(var i=0;i<w.length;i++){var t=i/7,c=a.map(function(v,k){return Math.round(v+(m[k]-v)*t)}).join(","),s=document.createElement("span");
+    s.textContent=w[i];s.style.color="rgb("+c+")";s.style.textShadow="0 0 30px rgba("+c+",.7),0 0 4px rgba("+c+",.9)";s.style.setProperty("--d",(i*.12)+"s");lg.appendChild(s)}
+
+  /* бегущие строки */
+  [["m1",0],["m2",9]].forEach(function(r){var el=$(r[0]),html="";
+    for(var k=0;k<2;k++)for(var j=0;j<14;j++)html+="<span>"+WD[(j*3+r[1]+k*0)%WD.length].toUpperCase()+"</span>";
+    el.innerHTML=html});
+
+  /* появление секций и полоса прокрутки */
+  var rv=[].slice.call(document.querySelectorAll(".rv"));
+  if("IntersectionObserver" in window){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}})},{threshold:.1});rv.forEach(function(el){io.observe(el)})}
+  else rv.forEach(function(el){el.classList.add("in")});
+  setTimeout(function(){rv.forEach(function(el){el.classList.add("in")})},3500);
+  var prog=$("prog");
+  function sp(){var h=document.documentElement.scrollHeight-innerHeight;prog.style.transform="scaleX("+(h>0?Math.min(1,scrollY/h):0)+")"}
+  addEventListener("scroll",sp,{passive:true});sp();
+
+  /* сияние под курсором на карточках */
+  document.querySelectorAll(".card").forEach(function(c){c.addEventListener("pointermove",function(e){var r=c.getBoundingClientRect();c.style.setProperty("--mx",(e.clientX-r.left)+"px");c.style.setProperty("--my",(e.clientY-r.top)+"px")})});
+
+  /* звёздный фон */
+  var bg=$("bg"),bx=bg.getContext("2d"),BW=0,BH=0,dpr=Math.min(2,window.devicePixelRatio||1),stars=[],drift=[];
+  function bsize(){BW=innerWidth;BH=innerHeight;bg.width=BW*dpr;bg.height=BH*dpr;bx.setTransform(dpr,0,0,dpr,0,0);
+    stars=[];for(var i=0;i<Math.round(BW*BH/8000);i++)stars.push({x:rnd(BW),y:rnd(BH),r:rnd(1.1)+.2,a:rnd(.6)+.2,p:rnd(6)});
+    drift=[];for(i=0;i<Math.max(6,Math.min(14,BW/110|0));i++)drift.push({t:WD[i*2%WD.length].toUpperCase(),x:20+rnd(BW-120),y:rnd(BH),v:12+rnd(22),s:13+rnd(8),c:CL[i%5]})}
+  var bl=0;
+  function bloop(t){var dt=Math.min(.05,(t-bl)/1e3||0);bl=t;bx.clearRect(0,0,BW,BH);
+    for(var i=0;i<stars.length;i++){var s=stars[i];bx.fillStyle="rgba(200,220,255,"+(s.a*(.65+.35*Math.sin(t/900+s.p)))+")";bx.beginPath();bx.arc(s.x,s.y,s.r,0,6.3);bx.fill()}
+    bx.textAlign="center";bx.textBaseline="middle";
+    for(var j=0;j<drift.length;j++){var o=drift[j];if(!reduce)o.y+=o.v*dt;if(o.y>BH+30){o.y=-30;o.x=20+rnd(BW-120)}
+      var g=bx.createLinearGradient(0,o.y-60,0,o.y);g.addColorStop(0,"rgba("+o.c+",0)");g.addColorStop(1,"rgba("+o.c+",.18)");bx.fillStyle=g;bx.fillRect(o.x-1,o.y-60,2,60);
+      bx.save();bx.globalAlpha=.22;bx.font="800 "+o.s+"px Manrope,Segoe UI,sans-serif";bx.shadowColor="rgb("+o.c+")";bx.shadowBlur=10;bx.fillStyle="rgb("+o.c+")";bx.fillText(o.t,o.x,o.y);bx.restore()}
+    requestAnimationFrame(bloop)}
+  bsize();addEventListener("resize",bsize);requestAnimationFrame(bloop);
+
+  /* мини-игра */
+  var cv=$("ar"),x=cv.getContext("2d"),W=0,H=0,words=[],parts=[],buf="",score=0,hp=3,run=true,vis=true,spawn=0,
+      best=0,sayEl=$("say"),inp=$("inp"),over=$("over"),hint=$("hint"),started=false;
+  try{best=+localStorage.getItem("spBest")||0}catch(e){}
+  $("best").textContent=best;
+  function asize(){var b=cv.parentNode.getBoundingClientRect();W=b.width;H=b.height;cv.width=W*dpr;cv.height=H*dpr;x.setTransform(dpr,0,0,dpr,0,0)}
+  asize();addEventListener("resize",asize);
+  function drawHp(){var is=$("hp").children;for(var i=0;i<is.length;i++)is[i].className=i<hp?"":"x"}
+  function add(){if(words.length>=7)return;var t=WD[rnd(WD.length)|0].toUpperCase();
+    for(var i=0;i<words.length;i++)if(words[i].t===t)return;
+    x.font="800 19px Manrope,Segoe UI,sans-serif";var ww=x.measureText(t).width;
+    words.push({t:t,x:ww/2+14+rnd(Math.max(10,W-ww-28)),y:-20,v:34+rnd(24)+Math.min(50,score*2.2),c:CL[rnd(5)|0]})}
+  function burst(o,col,n){for(var i=0;i<(n||24);i++){var an=rnd(6.3),v=50+rnd(150);parts.push({x:o.x,y:o.y,vx:Math.cos(an)*v,vy:Math.sin(an)*v-40,l:.75,c:col||o.c})}}
+  function target(){var b=null;if(buf)for(var i=0;i<words.length;i++){var o=words[i];if(o.t.indexOf(buf)===0&&(!b||o.y>b.y))b=o}return b}
+  function say(){sayEl.textContent=buf}
+  function feed(ch){
+    if(!run)return;ch=ch.toUpperCase();if(!/^[A-ZА-ЯЁІЇЄҐ]$/.test(ch))return;
+    if(!started){started=true;hint.classList.add("off")}
+    var nb=buf+ch;
+    if(!words.some(function(o){return o.t.indexOf(nb)===0})){
+      if(words.some(function(o){return o.t.indexOf(ch)===0}))nb=ch;
+      else{var s=$("say");s.classList.remove("shake");void s.offsetWidth;s.classList.add("shake");return}}
+    buf=nb;var tg=target();
+    if(tg&&tg.t===buf){burst(tg,null,28);words.splice(words.indexOf(tg),1);score++;$("sc").textContent=score;buf=""}
+    say()}
+  function end(){run=false;buf="";say();
+    if(score>best){best=score;$("best").textContent=best;try{localStorage.setItem("spBest",best)}catch(e){}}
+    $("ovp").textContent="Поймано слов: "+score+(score&&score>=best?" · новый рекорд":"");over.classList.add("on")}
+  function reset(){words=[];parts=[];buf="";score=0;hp=3;run=true;spawn=0;$("sc").textContent=0;drawHp();say();over.classList.remove("on")}
+  $("again").addEventListener("click",function(){reset();inp.focus({preventScroll:true})});
+  $("cv").addEventListener("pointerdown",function(e){if(e.target.closest("button"))return;inp.focus({preventScroll:true})});
+  inp.addEventListener("input",function(){var v=inp.value;inp.value="";for(var i=0;i<v.length;i++)feed(v[i])});
+  addEventListener("keydown",function(e){
+    if(e.ctrlKey||e.metaKey||e.altKey)return;
+    var ae=document.activeElement;if(ae===inp)return;if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName))return;
+    if(!vis)return;
+    if(e.key==="Enter"&&!run){reset();return}
+    if(e.key==="Escape"||e.key==="Backspace"){buf=buf.slice(0,-1);say();return}
+    if(e.key.length===1)feed(e.key)});
+  if("IntersectionObserver" in window)new IntersectionObserver(function(es){vis=es[0].isIntersecting}).observe($("arena"));
+  drawHp();
+  var last=0;
+  function loop(t){var dt=Math.min(.05,(t-last)/1e3||0);last=t;x.clearRect(0,0,W,H);
+    var floor=H-44;
+    if(run&&vis){spawn-=dt;if(spawn<=0){add();spawn=Math.max(.7,1.7-score*.04)}}
+    /* щит */
+    var sg=x.createLinearGradient(0,0,W,0);sg.addColorStop(0,"rgba(94,242,255,0)");sg.addColorStop(.5,"rgba(94,242,255,"+(.35+.2*hp)+")");sg.addColorStop(1,"rgba(255,79,216,0)");
+    x.save();x.shadowColor="#5ef2ff";x.shadowBlur=22;x.strokeStyle=sg;x.lineWidth=3;x.lineCap="round";x.beginPath();x.moveTo(10,floor+6);x.quadraticCurveTo(W/2,floor-16,W-10,floor+6);x.stroke();x.restore();
+    x.textAlign="center";x.textBaseline="middle";var tg=target();
+    for(var i=words.length-1;i>=0;i--){var o=words[i];if(run&&vis)o.y+=o.v*dt;
+      if(o.y>floor){burst({x:o.x,y:floor},"255,93,122",20);words.splice(i,1);if(o===tg){buf="";say()}hp--;drawHp();if(hp<=0){end()}continue}
+      var g=x.createLinearGradient(0,o.y-60,0,o.y);g.addColorStop(0,"rgba("+o.c+",0)");g.addColorStop(1,"rgba("+o.c+",.35)");x.fillStyle=g;x.fillRect(o.x-1,o.y-60,2,60);
+      x.save();x.font="800 19px Manrope,Segoe UI,sans-serif";x.shadowColor="rgb("+o.c+")";x.shadowBlur=o===tg?22:12;x.globalAlpha=o===tg?1:.85;x.fillStyle="rgb("+o.c+")";x.fillText(o.t,o.x,o.y);
+      if(o===tg){var wd=x.measureText(o.t).width,pw=x.measureText(buf).width;x.save();x.beginPath();x.rect(o.x-wd/2-1,o.y-30,pw+1,60);x.clip();x.fillStyle="#fff";x.shadowBlur=0;x.textAlign="left";x.fillText(o.t,o.x-wd/2,o.y);x.restore()}
+      x.restore()}
+    for(var p=parts.length-1;p>=0;p--){var q=parts[p];q.l-=dt;if(q.l<=0){parts.splice(p,1);continue}q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=240*dt;x.fillStyle="rgba("+q.c+","+Math.min(1,q.l*1.6)+")";x.fillRect(q.x,q.y,3,3)}
+    requestAnimationFrame(loop)}
+  requestAnimationFrame(loop);
+  window.__sw={words:function(){return words},score:function(){return score},hp:function(){return hp}};
+})();
+</script>
+</body>
+</html>
