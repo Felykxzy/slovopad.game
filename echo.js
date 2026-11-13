@@ -37,6 +37,10 @@
       while (o13.firstChild) pan.appendChild(o13.firstChild);
       pan.insertBefore(ph, pan.firstChild); wrap.appendChild(rail); wrap.appendChild(pan); o13.appendChild(wrap);
     }
+    ["o16", "o13"].forEach(id => {
+      const e = g(id); if (!e) return; let was = e.classList.contains("s");
+      new MutationObserver(() => { const now = e.classList.contains("s"); if (now && !was) { e.classList.add("ecopen"); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove("ecopen"), 1200) } was = now }).observe(e, { attributes: true, attributeFilter: ["class"] });
+    });
     g("rmBk").onclick = roomClose;
     g("rmSn").onclick = roomSend;
     g("rmIn").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); roomSend() } });
@@ -50,11 +54,14 @@
   function badgeOf() { const F = window.SlovopadFriends, bg = F && F.badges ? F.badges() : { r: 0, c: 0, m: 0, k: 0 }; return { dm: bg.m || 0, friends: (bg.r || 0) + (bg.c || 0) } }
   const num = n => n > 9 ? "9+" : String(n);
   function paintRail(box, active) {
-    if (!box) return; box.textContent = "";
+    if (!box) return;
     const bd = badgeOf(), F = window.SlovopadFriends;
+    const sig = JSON.stringify([active, !!sidTok(), bd, E.rooms.map(r => [r.id, r.name, r.unread])]);
+    if (box._sig === sig) return; box._sig = sig; box.textContent = "";
+    let idx = 0;
     const add = (key, content, label, fn, badge, bg, cls) => {
       const b = h("button", "orb" + (cls ? " " + cls : "") + (active === key ? " on" : ""), content); b.type = "button"; b.title = label; b.setAttribute("aria-label", label);
-      if (bg) b.style.background = bg; b.onclick = fn;
+      if (bg) b.style.background = bg; b.onclick = fn; b.style.setProperty("--i", Math.min(idx++, 10));
       if (badge) b.appendChild(h("i", "bdg", num(badge)));
       box.appendChild(b); return b;
     };
@@ -85,6 +92,7 @@
   function badgeEl(n) { return h("i", "bdg ecb", num(n)) }
   function paint() {
     const l = g("ecList"); l.textContent = "";
+    const done = () => [...l.children].forEach((c, i) => c.style.setProperty("--i", Math.min(i, 10)));
     const ai = h("button", "ecrow ecai2"); ai.type = "button"; ai.appendChild(avatar("🤖", false));
     const at = h("div", "ect"); at.appendChild(h("b", "", T("ИИ-ПОМОЩНИК", "AI ASSISTANT", "ШІ-ПОМІЧНИК"))); at.appendChild(h("span", "", T("Свой ключ · выбор модели", "Your own key · pick a model", "Свій ключ · вибір моделі"))); ai.appendChild(at);
     ai.onclick = () => { if (window.EchoAI) window.EchoAI.open(hubOpen) }; l.appendChild(ai);
@@ -110,10 +118,11 @@
       section(l, T("ЛИЧНЫЕ", "DIRECT", "ОСОБИСТІ"));
       l.appendChild(h("div", "ecdim ecnone", T("Здесь будут чаты с друзьями. Сначала добавь друга.", "Chats with friends will appear here. Add a friend first.", "Тут будуть чати з друзями. Спершу додай друга.")));
       l.appendChild(btn("btn a", "👥 " + T("ДОБАВИТЬ ДРУГА", "ADD A FRIEND", "ДОДАТИ ДРУГА"), () => { const F = window.SlovopadFriends; if (F) F.open() }));
-      return;
+      done(); return;
     }
     if (onl.length) { section(l, T("В СЕТИ — ", "ONLINE — ", "У МЕРЕЖІ — ") + onl.length); onl.sort((a, b) => (b.unread || 0) - (a.unread || 0)).forEach(row) }
     if (off.length) { section(l, T("НЕ В СЕТИ — ", "OFFLINE — ", "НЕ В МЕРЕЖІ — ") + off.length); off.sort((a, b) => (b.unread || 0) - (a.unread || 0)).forEach(row) }
+    done();
   }
   async function refresh() {
     if (!sidTok()) { labels(); paint(); return }

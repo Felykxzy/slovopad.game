@@ -153,7 +153,7 @@
     inp.value = ""; busy = true; setSt("");
     const l = g("aiL"); if (l.querySelector(".chem")) l.querySelector(".chem").remove();
     hist.push({ role: "user", text }); addMsg("user", text);
-    const wait = addMsg("assistant", "…", "aiw"); l.scrollTop = l.scrollHeight;
+    const wait = addMsg("assistant", "", "aiw"); wait.firstChild.innerHTML = "<i class=\"dot\"></i><i class=\"dot\"></i><i class=\"dot\"></i>"; l.scrollTop = l.scrollHeight;
     ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 60000);
     try {
       const a = await ask(hist.slice(-12), ctl.signal);
