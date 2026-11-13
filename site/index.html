@@ -35,7 +35,7 @@ a{color:inherit;text-decoration:none}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
 /* фон */
-.sky{position:fixed;inset:0;z-index:0;background:linear-gradient(180deg,#04050d,var(--bg2));overflow:hidden}
+.sky{position:fixed;left:0;top:0;width:100%;height:100vh;height:100lvh;z-index:0;background:linear-gradient(180deg,#04050d,var(--bg2));overflow:hidden}
 .blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55;will-change:transform}
 .b1{width:60vmax;height:60vmax;left:-20vmax;bottom:-30vmax;background:radial-gradient(circle,#6a3dff,transparent 65%);animation:dr1 26s ease-in-out infinite alternate}
 .b2{width:44vmax;height:44vmax;right:-14vmax;top:-12vmax;background:radial-gradient(circle,rgba(255,79,216,.8),transparent 65%);animation:dr2 32s ease-in-out infinite alternate}
@@ -43,7 +43,7 @@ a{color:inherit;text-decoration:none}
 @keyframes dr1{to{transform:translate(14vmax,-8vmax) scale(1.15)}}
 @keyframes dr2{to{transform:translate(-12vmax,10vmax) scale(.9)}}
 @keyframes dr3{to{transform:translate(-14vmax,-10vmax) scale(1.2)}}
-#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+#bg{position:fixed;left:0;top:0;width:100%;height:100vh;height:100lvh;z-index:0;pointer-events:none}
 .prog{position:fixed;left:0;top:env(safe-area-inset-top,0px);height:3px;width:100%;z-index:70;background:linear-gradient(90deg,var(--cy),var(--pk));transform-origin:0 50%;transform:scaleX(0);box-shadow:0 0 12px var(--cy)}
 
 /* шапка */
@@ -311,14 +311,20 @@ document.documentElement.classList.add("js");
     stars=[];for(var i=0;i<Math.round(BW*BH/8000);i++)stars.push({x:rnd(BW),y:rnd(BH),r:rnd(1.1)+.2,a:rnd(.6)+.2,p:rnd(6)});
     drift=[];for(i=0;i<Math.max(6,Math.min(14,BW/110|0));i++)drift.push({t:WD[i*2%WD.length].toUpperCase(),x:20+rnd(BW-120),y:rnd(BH),v:12+rnd(22),s:13+rnd(8),c:CL[i%5]})}
   var bl=0;
-  function bloop(t){var dt=Math.min(.05,(t-bl)/1e3||0);bl=t;bx.clearRect(0,0,BW,BH);
+  function bloop(t){var dt=Math.min(.033,(t-bl)/1e3||0);bl=t;bx.clearRect(0,0,BW,BH);
     for(var i=0;i<stars.length;i++){var s=stars[i];bx.fillStyle="rgba(200,220,255,"+(s.a*(.65+.35*Math.sin(t/900+s.p)))+")";bx.beginPath();bx.arc(s.x,s.y,s.r,0,6.3);bx.fill()}
     bx.textAlign="center";bx.textBaseline="middle";
     for(var j=0;j<drift.length;j++){var o=drift[j];if(!reduce)o.y+=o.v*dt;if(o.y>BH+30){o.y=-30;o.x=20+rnd(BW-120)}
       var g=bx.createLinearGradient(0,o.y-60,0,o.y);g.addColorStop(0,"rgba("+o.c+",0)");g.addColorStop(1,"rgba("+o.c+",.18)");bx.fillStyle=g;bx.fillRect(o.x-1,o.y-60,2,60);
       bx.save();bx.globalAlpha=.22;bx.font="800 "+o.s+"px Manrope,Segoe UI,sans-serif";bx.shadowColor="rgb("+o.c+")";bx.shadowBlur=10;bx.fillStyle="rgb("+o.c+")";bx.fillText(o.t,o.x,o.y);bx.restore()}
     requestAnimationFrame(bloop)}
-  bsize();addEventListener("resize",bsize);requestAnimationFrame(bloop);
+  bsize();
+  /* на телефоне при прокрутке меняется высота окна: не пересоздаём слова, только растягиваем холст */
+  var rt=0;addEventListener("resize",function(){clearTimeout(rt);rt=setTimeout(function(){
+    if(innerWidth===BW){if(innerHeight>BH){BH=innerHeight;bg.height=BH*dpr;x2()}return}
+    bsize()},150)});
+  function x2(){bx.setTransform(dpr,0,0,dpr,0,0)}
+  requestAnimationFrame(bloop);
 
   /* мини-игра: нажимай на падающие слова */
   var cv=$("ar"),x=cv.getContext("2d"),W=0,H=0,FS=20,words=[],parts=[],pops=[],score=0,hp=3,combo=0,run=true,vis=true,spawn=0,
