@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://slovopad-game.stasikyarosh2000.workers.dev/sitemap.xml
