@@ -287,7 +287,7 @@ async function userFrom(request, env) {
   return u;
 }
 
-/* ---------- Режим техработ (включается из админ-панели admin.html) ---------- */
+/* ---------- Режим техработ (включается из панели управления страницы управления) ---------- */
 const settingsReady = new WeakSet();
 async function ensureSettings(env) {
   if (settingsReady.has(env.DB)) return;
@@ -306,8 +306,8 @@ async function setSetting(env, k, v) {
 }
 const publicState = s => ({ off: s.off, msg: s.msg, epoch: s.epoch, since: s.since, news: s.news ? { id: s.newsId, text: s.news } : null });
 
-/* ---------- Страница управления: отдаётся только по секретному адресу ADMIN_PATH ---------- */
-const ADMIN_PAGE = String.raw`<!DOCTYPE html>
+/* ---------- Страница управления: отдаётся только по секретному адресу ---------- */
+const CONSOLE_PAGE = String.raw`<!DOCTYPE html>
 <html lang="ru"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -417,7 +417,7 @@ nav{position:fixed;left:0;right:0;bottom:0;z-index:10;display:flex;justify-conte
 <div id="sheet" hidden></div><div id="dlg" hidden></div><div id="toast" hidden></div>
 
 <script>
-var API = "/api/admin", KEY = "slovopadAdminToken";
+var API = "/api/ctl", KEY = "slovopadCtlKey";
 var $ = function (id) { return document.getElementById(id); };
 var token = "", tab = "ov", state = {}, catalog = [], pq = "", poff = 0, busy = false, poll = 0, repN = 0, cache = {};
 try { token = localStorage.getItem(KEY) || ""; } catch (e) {}
@@ -708,7 +708,7 @@ async function runCron(env) {
   return { stats, removed, cleaned, sent, text };
 }
 
-/* ---------- Удаление игрока целиком (используется и самим игроком, и админ-панелью) ---------- */
+/* ---------- Удаление игрока целиком (используется и самим игроком, и панель управленияю) ---------- */
 async function wipeUser(env, id) {
   const db = env.DB;
   for (const [t, w] of [['qr_login', 'user_id=?'], ['sp_friends', 'a=? OR b=?'], ['sp_msgs', 'a=? OR b=?'], ['sp_blocks', 'a=? OR b=?'], ['sp_reports', 'reporter=? OR target=?'], ['sp_challenges', 'from_id=? OR to_id=?'], ['sp_room_members', 'uid=?'], ['sp_room_msgs', 'uid=?'], ['sp_tg', 'uid=?'], ['sp_grants', 'uid=?'], ['sp_bans', 'uid=?']]) {
@@ -718,25 +718,25 @@ async function wipeUser(env, id) {
   await db.prepare('DELETE FROM users WHERE id=?').bind(id).run();
 }
 
-/* ---------- Админ-панель: что можно выдавать и что можно делать ---------- */
+/* ---------- Панель управления: что можно выдавать и что можно делать ---------- */
 const CATALOG = [["s0","НЕОН",0],["s1","ОГОНЬ",120],["s2","ЯД",120],["s3","САКУРА",250],["s4","ЗОЛОТО",400],["s5","РАДУГА",700],["s6","ЛЁД",300],["s7","ПЛАЗМА",500],["s8","МОЛНИЯ",450],["s9","ЛАВА",550],["s10","КОМЕТЫ",800],["b0","КОСМОС",0],["b1","ЗАКАТ",150],["b2","АВРОРА",150],["b3","СНЕГОПАД",300],["b4","САКУРА",450],["b5","ДОЖДЬ КОДА",600],["b6","СИНТВЕЙВ",500],["b7","СВЕТЛЯЧКИ",350],["b8","ОКЕАН",550],["b9","ПУСТЫНЯ",550],["b10","НОЧНОЙ ГОРОД",650],["b11","ГОРНОЕ ОЗЕРО",700],["b12","ВУЛКАН",750],["b13","КРИСТАЛЛЫ",800],["b14","ЗИМНИЙ ДОМИК",750]];   // [id, название, цена] — те же фоны и щиты, что в магазине игры
-const adminState = s => ({ off: s.off, msg: s.msg, epoch: s.epoch, since: s.since, news: s.news, newsId: s.newsId });
+const manageState = s => ({ off: s.off, msg: s.msg, epoch: s.epoch, since: s.since, news: s.news, newsId: s.newsId });
 const oneLine = (v, max) => String(v || '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
 
-async function adminDo(env, body) {
+async function manageDo(env, body) {
   const db = env.DB, now = Date.now(), act = String(body.action || 'status');
   const err = (m, st) => ({ __err: m, __st: st || 400 });
   const cnt = async (sql, ...a) => ((await db.prepare(sql).bind(...a).first()) || {}).n || 0;
   const player = async () => db.prepare('SELECT * FROM users WHERE id=?').bind(String(body.id || '')).first();
 
-  if (act === 'status') return adminState(await settings(env));
-  if (act === 'off') { await setSetting(env, 'msg', oneLine(body.message, 200)); await setSetting(env, 'since', now); await setSetting(env, 'off', 1); return adminState(await settings(env)); }
-  if (act === 'on') { await setSetting(env, 'off', 0); await setSetting(env, 'msg', ''); return adminState(await settings(env)); }
-  if (act === 'restart') { await setSetting(env, 'epoch', (await settings(env)).epoch + 1); return adminState(await settings(env)); }   // все открытые игры перезагрузятся сами
+  if (act === 'status') return manageState(await settings(env));
+  if (act === 'off') { await setSetting(env, 'msg', oneLine(body.message, 200)); await setSetting(env, 'since', now); await setSetting(env, 'off', 1); return manageState(await settings(env)); }
+  if (act === 'on') { await setSetting(env, 'off', 0); await setSetting(env, 'msg', ''); return manageState(await settings(env)); }
+  if (act === 'restart') { await setSetting(env, 'epoch', (await settings(env)).epoch + 1); return manageState(await settings(env)); }   // все открытые игры перезагрузятся сами
   if (act === 'news') {
     const text = oneLine(body.text, 300);
     await setSetting(env, 'news', text); await setSetting(env, 'newsId', text ? now : 0);
-    return adminState(await settings(env));
+    return manageState(await settings(env));
   }
   if (act === 'catalog') return { items: CATALOG };
 
@@ -755,7 +755,7 @@ async function adminDo(env, body) {
       pending: await cnt('SELECT COUNT(*) AS n FROM sp_grants'),
       words: await cnt('SELECT COALESCE(SUM(total_words),0) AS n FROM users'),
       top: (await db.prepare('SELECT username,best_score AS s FROM users WHERE id NOT IN (SELECT uid FROM sp_bans) ORDER BY best_score DESC LIMIT 5').all()).results || [],
-      state: adminState(await settings(env))
+      state: manageState(await settings(env))
     };
   }
 
@@ -859,7 +859,7 @@ export default {
     try {
       const secretPath = String(env.ADMIN_PATH || '');
       if (request.method === 'GET' && /^[A-Za-z0-9_-]{12,}$/.test(secretPath) && safeEq(url.pathname, '/' + secretPath)) {
-        return new Response(ADMIN_PAGE, { headers: {
+        return new Response(CONSOLE_PAGE, { headers: {
           'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow', 'referrer-policy': 'no-referrer',
           'content-security-policy': "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'"
         } });
@@ -873,16 +873,16 @@ export default {
       if (url.pathname === '/api/status' && request.method === 'GET') return reply(publicState(await settings(env)));
 
       /* управление: только с секретным токеном */
-      if (url.pathname === '/api/admin' && request.method === 'POST') {
-        const adminToken = String(env.ADMIN_TOKEN || '');
-        if (adminToken.length < 16) return reply({ error: 'Not found' }, 404);   // не настроено: делаем вид, что такого адреса нет
+      if (url.pathname === '/api/ctl' && request.method === 'POST') {
+        const ctlToken = String(env.ADMIN_TOKEN || '');
+        if (ctlToken.length < 16) return reply({ error: 'Not found' }, 404);   // не настроено: делаем вид, что такого адреса нет
         await ensureSchema(env);   // нужна таблица rate_limit
         const aip = await ipHash(request, env);
         if (!(await allow(env, 'adm:' + aip, 300, 10 * 60 * 1000))) return reply(TOO_MANY, 429);
         if (await countHits(env, 'admbad:' + aip, 15 * 60 * 1000) >= 8) return reply(TOO_MANY, 429);   // перебор токена
         const body = await request.json().catch(() => ({}));
-        if (!safeEq(String(body.token || ''), adminToken)) { await recordHit(env, 'admbad:' + aip); return reply({ error: 'Not found' }, 404); }
-        const res = await adminDo(env, body);
+        if (!safeEq(String(body.token || ''), ctlToken)) { await recordHit(env, 'admbad:' + aip); return reply({ error: 'Not found' }, 404); }
+        const res = await manageDo(env, body);
         return reply(res.__err ? { error: res.__err } : res, res.__err ? (res.__st || 400) : 200);
       }
 

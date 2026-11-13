@@ -32,29 +32,29 @@ test('game is on by default and status is public', async t => {
   assert.equal(r.status, 200); assert.equal(r.data.off, false); assert.equal(r.data.epoch, 0);
 });
 
-test('admin rejects wrong token and a missing or weak secret', async t => {
+test('control rejects wrong token and a missing or weak secret', async t => {
   const s = await setup(); if (!s) return t.skip('нет node:sqlite');
-  assert.equal((await s.call('/api/admin', { token: 'nope', action: 'off' })).status, 404);   // чужому эндпоинт не виден
+  assert.equal((await s.call('/api/ctl', { token: 'nope', action: 'off' })).status, 404);   // чужому эндпоинт не виден
   assert.equal((await s.call('/api/status')).data.off, false);
   const weak = await setup({ ADMIN_TOKEN: 'short' });
-  assert.equal((await weak.call('/api/admin', { token: 'short', action: 'off' })).status, 404);
+  assert.equal((await weak.call('/api/ctl', { token: 'short', action: 'off' })).status, 404);
   const none = await setup({ ADMIN_TOKEN: undefined });
-  assert.equal((await none.call('/api/admin', { token: '', action: 'off' })).status, 404);
+  assert.equal((await none.call('/api/ctl', { token: '', action: 'off' })).status, 404);
 });
 
 test('off blocks the rest of the API, on brings it back, restart bumps the epoch', async t => {
   const s = await setup(); if (!s) return t.skip('нет node:sqlite');
   const tok = 'correct-horse-battery-staple';
-  const off = await s.call('/api/admin', { token: tok, action: 'off', message: '  Обновляем\n игру  ' });
+  const off = await s.call('/api/ctl', { token: tok, action: 'off', message: '  Обновляем\n игру  ' });
   assert.equal(off.data.off, true); assert.equal(off.data.msg, 'Обновляем игру');
   assert.equal((await s.call('/api/status')).data.off, true);
   const blocked = await s.call('/api/leaderboard'); assert.equal(blocked.status, 503); assert.equal(blocked.data.maintenance, true);
-  assert.equal((await s.call('/api/admin', { token: tok, action: 'status' })).status, 200);   // сама админка работает
-  assert.equal((await s.call('/api/admin', { token: tok, action: 'restart' })).data.epoch, 1);
-  const on = await s.call('/api/admin', { token: tok, action: 'on' });
+  assert.equal((await s.call('/api/ctl', { token: tok, action: 'status' })).status, 200);   // сама страница работает
+  assert.equal((await s.call('/api/ctl', { token: tok, action: 'restart' })).data.epoch, 1);
+  const on = await s.call('/api/ctl', { token: tok, action: 'on' });
   assert.equal(on.data.off, false); assert.equal(on.data.msg, '');
   assert.equal((await s.call('/api/leaderboard')).status, 200);
-  assert.equal((await s.call('/api/admin', { token: tok, action: 'boom' })).status, 400);
+  assert.equal((await s.call('/api/ctl', { token: tok, action: 'boom' })).status, 400);
 });
 
 test('control page exists only at the secret path', async t => {
@@ -63,15 +63,15 @@ test('control page exists only at the secret path', async t => {
   const env = { DB: fakeD1(), JWT_SECRET: 'x'.repeat(32), ADMIN_PATH: 'my-secret-path-12345', ADMIN_TOKEN: 'correct-horse-battery-staple' };
   const ok = await get('/my-secret-path-12345', env);
   assert.equal(ok.status, 200); assert.match(ok.headers.get('content-type'), /text\/html/); assert.match(ok.headers.get('x-robots-tag'), /noindex/);
-  assert.match(await ok.text(), /\/api\/admin/);
-  assert.equal((await get('/admin.html', env)).status, 404);
+  assert.match(await ok.text(), /\/api\/ctl/);
+  assert.equal((await get('/страницы управления', env)).status, 404);
   assert.equal((await get('/my-secret-path-1234', env)).status, 404);
   assert.equal((await get('/my-secret-path-12345', { ...env, ADMIN_PATH: undefined })).status, 404);   // не настроено: страницы нет
   assert.equal((await get('/short', { ...env, ADMIN_PATH: 'short' })).status, 404);                   // слишком короткий адрес не принимается
 });
 
-test('admin attempts are rate limited', async t => {
+test('control attempts are rate limited', async t => {
   const s = await setup(); if (!s) return t.skip('нет node:sqlite');
-  let last; for (let i = 0; i < 32; i++) last = await s.call('/api/admin', { token: 'bad', action: 'status' });
+  let last; for (let i = 0; i < 32; i++) last = await s.call('/api/ctl', { token: 'bad', action: 'status' });
   assert.equal(last.status, 429);
 });
