@@ -1,12 +1,12 @@
 {
-  "version": "3.5.2",
+  "version": "3.5.3",
   "notes": [
-    "На iPhone кнопка «на весь экран» показывает, как убрать рамки Safari"
+    "Исправлена иконка кнопки «на весь экран»"
   ],
   "notes_en": [
-    "On iPhone the fullscreen button shows how to remove the Safari bars"
+    "Fixed the fullscreen button icon"
   ],
   "notes_uk": [
-    "На iPhone кнопка «на весь екран» показує, як прибрати рамки Safari"
+    "Виправлено іконку кнопки «на весь екран»"
   ]
 }

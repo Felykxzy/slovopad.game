@@ -906,3 +906,4 @@ body.eco #fg .fd.cur .ic,body.eco #fg .fd.cur .fr::after,body.eco #fg .fd.cur .w
 #fsH{position:fixed;left:16px;right:16px;bottom:calc(120px + var(--sab));z-index:40;padding:16px 18px;border-radius:20px;background:rgba(14,16,40,.96);border:1px solid rgba(94,242,255,.35);box-shadow:0 12px 40px rgba(0,0,0,.55);color:#e9eeff;font-size:14px;line-height:1.45}
 #fsH b{display:block;margin-bottom:6px;color:#5ef2ff}#fsH ol{margin:0 0 12px;padding-left:20px}#fsH li{margin:3px 0}#fsH i{color:#ffd166;font-style:normal}
 #fsH button{width:100%;height:40px;border-radius:14px;border:0;background:linear-gradient(90deg,#5ef2ff,#ff4fd8);color:#05060f;font-weight:700}
+.ib.fsb svg{display:block;margin:auto}

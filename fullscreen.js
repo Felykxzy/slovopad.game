@@ -15,7 +15,8 @@
     if(tgFs)return !!tg.isFullscreen;
     return !!(document.fullscreenElement||document.webkitFullscreenElement);
   }
-  function paint(){b.textContent=on()?"🗗":"⛶";b.title=on()?"Выйти из полного экрана":"На весь экран"}
+  var IN='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',OUT='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
+  function paint(){b.innerHTML=on()?OUT:IN;b.title=on()?"Выйти из полного экрана":"На весь экран"}
   function hint(){
     var o=document.getElementById("fsH");if(o){o.remove();return}
     o=document.createElement("div");o.id="fsH";
