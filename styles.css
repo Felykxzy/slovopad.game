@@ -899,3 +899,7 @@ body.eco #fg .fd.cur .ic,body.eco #fg .fd.cur .fr::after,body.eco #fg .fd.cur .w
 @keyframes spbIn{0%{opacity:0;transform:translate(-50%,-30px) scale(.94)}100%{opacity:1;transform:translateX(-50%)}}
 @keyframes spbOut{to{opacity:0;transform:translate(-50%,-24px) scale(.96)}}
 @media (prefers-reduced-motion:reduce){.spbn,.spbn.out{animation:none}}
+
+/* Кнопка «на весь экран» */
+.ib.fsb{position:absolute;right:16px;bottom:calc(62px + var(--sab));border-radius:50%;background:rgba(255,255,255,.07);backdrop-filter:blur(6px);box-shadow:0 0 14px rgba(94,242,255,.18);font-size:20px;line-height:1;z-index:6}
+.ib.fsb:active{transform:scale(.9)}

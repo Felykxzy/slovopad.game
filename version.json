@@ -1,15 +1,12 @@
 {
-  "version": "3.5.0",
+  "version": "3.5.1",
   "notes": [
-    "Подарки от создателя: монеты, фоны и щиты приходят прямо в игру",
-    "Объявления для всех игроков сверху в игре"
+    "Кнопка «на весь экран» в меню: прячет рамки браузера сверху и снизу"
   ],
   "notes_en": [
-    "Gifts from the creator: coins, backgrounds and shields arrive right in the game",
-    "Announcements for all players at the top of the game"
+    "Fullscreen button in the menu: hides the browser bars at the top and bottom"
   ],
   "notes_uk": [
-    "Подарунки від творця: монети, фони та щити приходять прямо в гру",
-    "Оголошення для всіх гравців угорі в грі"
+    "Кнопка «на весь екран» у меню: ховає рамки браузера зверху й знизу"
   ]
 }
