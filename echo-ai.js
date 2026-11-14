@@ -41,10 +41,20 @@
   const keyOf = () => (cfg.keys[cfg.prov] || "").trim();
   const ready = () => keyOf() && model() && (cfg.prov !== "custom" || cfg.base);
 
+  // что игра знает об игроке: ранг, рекорды по темам, точность и скорость. Уходит провайдеру вместе с вопросом (без имени и контактов)
+  function ctx() {
+    try {
+      const t = tw(), r = rki(t), k = RK[r], nx = RK[r + 1];
+      const th = THEMES.map(x => tx(x.n) + " " + gbest(x)).join(", ");
+      const acc = SlovopadCore.accuracy(PF.h, PF.m), wpm = SlovopadCore.wordsPerMinute(PF.w, PF.t);
+      return "Player: rank " + tx(k.n) + " (" + t + " words" + (nx ? ", next rank at " + nx.w : ", max rank") + "); games " + PF.g + "; accuracy " + (acc === null ? "unknown" : acc + "%") + "; speed " + (wpm === null ? "unknown" : wpm + " wpm") + "; best combo " + PF.c + "; streak " + streakNow() + " days; best score per theme: " + th + ".";
+    } catch (e) { return "" }
+  }
+  const RULES = "Game rules: words fall from the top, the player types them, a finished word explodes and gives points. A word reaching the shield costs 1 of 3 lives. Every 8 words the level rises and the game speeds up, words get longer. Gold words give triple points, the word LIFE restores a life. Combo without mistakes raises the score multiplier. Themes: brands, games, cities, countries, animals, food, sport, nature, mix. Three word languages: Russian, English, Ukrainian. Players earn sparkles for games and spend them in the shop on shield skins and backgrounds. Echo is the in-game messenger: friends, rooms up to 20 people, and race mode where everyone in a room types the same words.";
   const SYSTEM = () => T(
-    "Ты — Эхо, дружелюбный помощник в игре «СЛОВОПАД» (печатаешь падающие слова, защищаешь щит). Помогай советами по скорости печати и игре, отвечай коротко и по делу, на языке игрока. Не проси личных данных.",
-    "You are Echo, a friendly helper in the game SLOVOPAD (type falling words, defend the shield). Give tips on typing speed and the game, answer briefly in the player's language. Never ask for personal data.",
-    "Ти — Ехо, дружній помічник у грі «СЛОВОПАД» (друкуєш слова, що падають, захищаєш щит). Давай поради зі швидкості друку та гри, відповідай коротко мовою гравця. Не питай особистих даних.");
+    "Ты — Эхо, дружелюбный тренер и помощник в игре «СЛОВОПАД». Отвечай коротко и по делу, на языке игрока, простыми словами. Опирайся на данные игрока ниже: хвали за успехи, находи слабое место (точность, скорость, тема) и давай 2–3 конкретных шага. Если просят тренировку, дай 6–8 слов из тем игры и объясни, как их печатать. Не проси личных данных. " + RULES + " " + ctx(),
+    "You are Echo, a friendly coach and helper in the game SLOVOPAD. Answer briefly, in simple words, in the player's language. Use the player data below: praise progress, find the weak spot (accuracy, speed, theme) and give 2-3 concrete steps. If asked for a drill, give 6-8 words from the game's themes and say how to type them. Never ask for personal data. " + RULES + " " + ctx(),
+    "Ти — Ехо, дружній тренер і помічник у грі «СЛОВОПАД». Відповідай коротко, простими словами, мовою гравця. Спирайся на дані гравця нижче: хвали за успіхи, знаходь слабке місце (точність, швидкість, тема) і давай 2–3 конкретні кроки. Якщо просять тренування, дай 6–8 слів із тем гри й поясни, як їх друкувати. Не питай особистих даних. " + RULES + " " + ctx());
 
   /* ---------- запросы к провайдерам ---------- */
   async function ask(messages, signal) {
@@ -53,18 +63,18 @@
     if (cfg.prov === "anthropic") {
       url = "https://api.anthropic.com/v1/messages";
       init = { method: "POST", headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-        body: JSON.stringify({ model: m, max_tokens: 700, system: sys, messages: messages.map(x => ({ role: x.role, content: x.text })) }) };
+        body: JSON.stringify({ model: m, max_tokens: 900, system: sys, messages: messages.map(x => ({ role: x.role, content: x.text })) }) };
       pick = d => (d.content || []).map(c => c.text || "").join("");
     } else if (cfg.prov === "google") {
       url = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(m) + ":generateContent";
       init = { method: "POST", headers: { "content-type": "application/json", "x-goog-api-key": key },
-        body: JSON.stringify({ systemInstruction: { parts: [{ text: sys }] }, contents: messages.map(x => ({ role: x.role === "assistant" ? "model" : "user", parts: [{ text: x.text }] })), generationConfig: { maxOutputTokens: 700 } }) };
+        body: JSON.stringify({ systemInstruction: { parts: [{ text: sys }] }, contents: messages.map(x => ({ role: x.role === "assistant" ? "model" : "user", parts: [{ text: x.text }] })), generationConfig: { maxOutputTokens: 900 } }) };
       pick = d => ((((d.candidates || [])[0] || {}).content || {}).parts || []).map(p => p.text || "").join("");
     } else {
       const base = cfg.prov === "openai" ? "https://api.openai.com/v1" : cfg.prov === "openrouter" ? "https://openrouter.ai/api/v1" : cfg.base.replace(/\/+$/, "");
       url = base + "/chat/completions";
       init = { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer " + key },
-        body: JSON.stringify({ model: m, max_tokens: 700, messages: [{ role: "system", content: sys }].concat(messages.map(x => ({ role: x.role, content: x.text }))) }) };
+        body: JSON.stringify({ model: m, max_tokens: 900, messages: [{ role: "system", content: sys }].concat(messages.map(x => ({ role: x.role, content: x.text }))) }) };
       pick = d => (((d.choices || [])[0] || {}).message || {}).content || "";
     }
     init.signal = signal;
@@ -92,8 +102,8 @@
     o.innerHTML = '<div class="frh"><button class="ib" id="aiBk" type="button">←</button><div class="frt"><h2>🤖 ' + 'ИИ' + '</h2><div class="sub" id="aiSub"></div></div><button class="ib" id="aiSet" type="button" aria-label="settings">⚙</button></div>' +
       '<div class="aiset gl" id="aiSetP" hidden></div>' +
       '<div class="chl" id="aiL"></div><div class="hint" id="aiSt"></div>' +
-      '<div class="aibar"><select id="aiPv" aria-label="provider"></select><select id="aiMd" aria-label="model"></select></div>' +
-      '<div class="chbar"><input id="aiIn" type="text" maxlength="600" autocomplete="off" enterkeyhint="send"><button class="btn chsn" id="aiSn" type="button">➤</button></div>';
+      '<div class="aichips" id="aiCh"></div><div class="aibar"><select id="aiPv" aria-label="provider"></select><select id="aiMd" aria-label="model"></select></div>' +
+      '<div class="chbar"><input id="aiIn" type="text" maxlength="800" autocomplete="off" enterkeyhint="send"><button class="btn chsn" id="aiSn" type="button">➤</button></div>';
     const after = g("o17") || g("o15");
     after.parentNode.insertBefore(o, after.nextSibling);
     g("aiBk").onclick = close;
@@ -106,6 +116,14 @@
       const fit = () => { const e = g("o18"); if (!e || !e.classList.contains("s")) return; const v = window.visualViewport; e.style.height = v.height + "px"; e.style.transform = "translateY(" + v.offsetTop + "px)"; const l = g("aiL"); l.scrollTop = l.scrollHeight };
       window.visualViewport.addEventListener("resize", fit); window.visualViewport.addEventListener("scroll", fit);
     }
+  }
+  function chips() {
+    const b = g("aiCh"); if (!b) return; b.textContent = ""; if (!ready()) { b.hidden = true; return } b.hidden = false;
+    [["📊", T("Разбери мою игру", "Review my play", "Розбери мою гру"), T("Разбери мою статистику и скажи, что подтянуть в первую очередь.", "Review my stats and tell me what to improve first.", "Розбери мою статистику і скажи, що підтягнути в першу чергу.")],
+     ["🎯", T("Тренировка", "Drill", "Тренування"), T("Дай мне короткую тренировку печати на 8 слов из моей слабой темы и скажи, как их набирать без ошибок.", "Give me a short typing drill of 8 words from my weakest theme and tips to type them without mistakes.", "Дай мені коротке тренування друку на 8 слів із моєї слабкої теми й скажи, як їх набирати без помилок.")],
+     ["🔤", T("Слова-цепочка", "Word chain", "Слова-ланцюжок"), T("Давай сыграем в слова: я называю слово, ты отвечаешь словом на его последнюю букву. Начинай ты, одно слово из тем игры.", "Let's play a word chain: I say a word, you answer with a word starting with its last letter. You start with one word from the game's themes.", "Давай зіграємо в слова: я називаю слово, ти відповідаєш словом на його останню літеру. Почни ти, одним словом із тем гри.")],
+     ["🧠", T("Как набрать больше", "Score more", "Як набрати більше"), T("Как мне набирать больше очков? Дай 3 приёма для моего ранга.", "How can I score more? Give me 3 tricks for my rank.", "Як мені набирати більше очок? Дай 3 прийоми для мого рангу.")]
+    ].forEach(c => { const x = h("button", "aich", c[0] + " " + c[1]); x.type = "button"; x.onclick = () => { g("aiIn").value = c[2]; send() }; b.appendChild(x) });
   }
   function head() { g("aiSub").textContent = ready() ? PROV[cfg.prov].name.split(" (")[0] + " · " + model() : T("НУЖЕН КЛЮЧ", "KEY NEEDED", "ПОТРІБЕН КЛЮЧ") }
   function paintBar() {
@@ -123,6 +141,7 @@
     const pr = PROV[cfg.prov];
     p.appendChild(h("b", "", T("Подключение ИИ", "Connect AI", "Підключення ШІ")));
     p.appendChild(h("span", "", T("Тебе нужен свой ключ у выбранного провайдера. Он хранится только на этом устройстве и отправляется прямо провайдеру — игра и наш сервер его не видят. Расходы идут с твоего счёта у провайдера.", "You need your own key from the chosen provider. It stays on this device and goes straight to the provider — the game and our server never see it. Costs are billed to your account with the provider.", "Тобі потрібен свій ключ у обраного провайдера. Він зберігається лише на цьому пристрої й іде прямо до провайдера — гра і наш сервер його не бачать. Витрати йдуть із твого рахунку у провайдера.")));
+    p.appendChild(h("span", "ecdim", T("Чтобы советы были точнее, помощник видит твой ранг, рекорды и статистику. Имя, ник и контакты не отправляются.", "To give better tips, the helper sees your rank, records and stats. Your name, nickname and contacts are not sent.", "Щоб поради були точнішими, помічник бачить твій ранг, рекорди й статистику. Ім'я, нік і контакти не надсилаються.")));
     const ol = h("ol", "aist"); T(pr.steps, pr.en, pr.uk).forEach(s => ol.appendChild(h("li", "", s))); p.appendChild(ol);
     if (pr.url) { const a = h("a", "ailink", "🔗 " + pr.url.replace("https://", "")); a.href = pr.url; a.target = "_blank"; a.rel = "noopener noreferrer"; p.appendChild(a) }
     if (cfg.prov === "custom") {
@@ -133,7 +152,7 @@
     const k = h("input", "aifld"); k.type = "password"; k.placeholder = T("Вставь ключ сюда", "Paste the key here", "Встав ключ сюди"); k.autocomplete = "off"; k.spellcheck = false; k.value = keyOf();
     p.appendChild(k);
     const row = h("div", "airow");
-    row.appendChild(btn("btn", T("СОХРАНИТЬ", "SAVE", "ЗБЕРЕГТИ"), () => { cfg.keys[cfg.prov] = k.value.trim(); save(); paintBar(); head(); setSt(ready() ? T("Ключ сохранён. Можно писать!", "Key saved. You can chat now!", "Ключ збережено. Можна писати!") : T("Заполни все поля.", "Fill in all fields.", "Заповни всі поля.")); if (ready()) { panel = false; paintPanel() } }));
+    row.appendChild(btn("btn", T("СОХРАНИТЬ", "SAVE", "ЗБЕРЕГТИ"), () => { cfg.keys[cfg.prov] = k.value.trim(); save(); paintBar(); head(); chips(); setSt(ready() ? T("Ключ сохранён. Можно писать!", "Key saved. You can chat now!", "Ключ збережено. Можна писати!") : T("Заполни все поля.", "Fill in all fields.", "Заповни всі поля.")); if (ready()) { panel = false; paintPanel() } }));
     row.appendChild(btn("btn a", sure ? T("ТОЧНО?", "SURE?", "ТОЧНО?") : T("СТЕРЕТЬ КЛЮЧ", "REMOVE KEY", "СТЕРТИ КЛЮЧ"), () => { if (!sure) { sure = true; paintPanel(); return } delete cfg.keys[cfg.prov]; sure = false; save(); paintBar(); head(); paintPanel() }));
     p.appendChild(row);
     p.appendChild(btn("btn a", T("ОЧИСТИТЬ ПЕРЕПИСКУ", "CLEAR CHAT", "ОЧИСТИТИ ЛИСТУВАННЯ"), () => { hist = []; ls.set(HIST, hist); paintChat(); panel = false; paintPanel() }));
@@ -169,7 +188,7 @@
   }
   function open(from) {
     build(); back = from || null; panel = !ready(); sure = false; setSt("");
-    paintBar(); head(); paintPanel(); paintChat(); ov("o18");
+    paintBar(); head(); paintPanel(); paintChat(); chips(); ov("o18");
     const o = g("o18"), v = window.visualViewport; if (v) { o.style.height = v.height + "px"; o.style.transform = "translateY(" + v.offsetTop + "px)" }
   }
   window.EchoAI = { open };

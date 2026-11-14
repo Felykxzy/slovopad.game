@@ -1236,7 +1236,7 @@ export default {
             await env.DB.prepare('UPDATE sp_room_members SET last=? WHERE room=? AND uid=?').bind(id, roomId, user.id).run();
             await env.DB.prepare('DELETE FROM sp_room_msgs WHERE id IN (SELECT id FROM sp_room_msgs WHERE room=? ORDER BY id DESC LIMIT -1 OFFSET ?)').bind(roomId, ROOM_KEEP).run();
             const others = ((await env.DB.prepare('SELECT uid FROM sp_room_members WHERE room=? AND uid<>?').bind(roomId, user.id).all()).results || []).slice(0, ROOM_MAX_MEMBERS);
-            for (const o of others) push(ctx, notify(env, o.uid, '💬 Эхо · ' + room.name + ': новое сообщение'));
+            if (!/^§[RS]\|/.test(text)) for (const o of others) push(ctx, notify(env, o.uid, '💬 Эхо · ' + room.name + ': новое сообщение'));
             return reply({ ok: true, id });
           }
 

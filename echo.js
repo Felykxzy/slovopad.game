@@ -5,13 +5,39 @@
   "use strict";
   const T = (a, b, c) => L3(a, b, c);
   const g = id => document.getElementById(id);
-  const E = { rooms: [], friends: [], room: null, last: 0, timer: 0, hub: 0, busy: false, tg: null, sure: 0, panel: "" };
+  const E = { els: {}, msgs: {}, races: {}, react: {}, sel: null, reply: null, day: "", lastRoom: null, rooms: [], friends: [], room: null, last: 0, timer: 0, hub: 0, busy: false, tg: null, sure: 0, panel: "" };
   function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
   function btn(cls, text, fn) { const b = h("button", cls, text); b.type = "button"; b.onclick = fn; return b; }
   const post = (path, body) => cloudRequest(path, { method: "POST", body: JSON.stringify(body || {}) });
   const clock = ms => { const d = new Date(ms); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") };
   const tgData = () => { try { return (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) || "" } catch (e) { return "" } };
   const setHint = (id, msg, bad) => { const e = g(id); if (e) { e.textContent = msg || ""; e.classList.toggle("bad", !!bad) } };
+
+  /* ---------- протокол: служебные сообщения в комнате (сервер хранит их как обычный текст) ---------- */
+  const PX = "§", EMO = ["👍", "❤️", "😂", "🔥", "😮"];
+  function parse(body) {
+    body = String(body || "");
+    if (body[0] !== PX) return { t: "m", text: body };
+    const p = body.slice(1).split("|"), k = p[0];
+    if (k === "K" && p.length >= 5) return { t: "K", id: p[1], theme: p[2], lang: p[3], seed: +p[4] | 0 };
+    if (k === "S" && p.length >= 3) return { t: "S", id: p[1], v: +p[2] | 0 };
+    if (k === "R" && p.length >= 3) return { t: "R", mid: p[1], emo: p.slice(2).join("|") };
+    if (k === "Q" && p.length >= 3) return { t: "Q", mid: p[1], text: p.slice(2).join("|") };
+    return { t: "m", text: body };
+  }
+  function pretty(body) {
+    const p = parse(body);
+    if (p.t === "K") return "🏁 " + T("Заезд", "Race", "Заїзд");
+    if (p.t === "S") return "🏁 " + T("результат заезда", "race result", "результат заїзду");
+    if (p.t === "R") return p.emo;
+    if (p.t === "Q") return "↩ " + p.text;
+    return p.text;
+  }
+  const dayName = ms => {
+    const d = new Date(ms), n = new Date(), k = x => x.getFullYear() * 400 + x.getMonth() * 32 + x.getDate(), y = new Date(n); y.setDate(n.getDate() - 1);
+    if (k(d) === k(n)) return T("Сегодня", "Today", "Сьогодні"); if (k(d) === k(y)) return T("Вчера", "Yesterday", "Вчора");
+    try { return d.toLocaleDateString(L3("ru", "en", "uk"), { day: "numeric", month: "long" }) } catch (e) { return d.toDateString() }
+  };
 
   /* ---------- каркас: слева «орбиты» (рейка), справа панель ---------- */
   const hue = s => { let x = 0; for (const c of String(s)) x = (x * 31 + c.charCodeAt(0)) % 360; return x };
@@ -26,6 +52,7 @@
     rm.innerHTML = '<div class="frh ecrh"><button class="ib" id="rmBk" type="button">←</button><div class="frt"><h2 id="rmT"></h2><div class="sub" id="rmS"></div></div><button class="ib" id="rmMn" type="button">⋯</button></div>' +
       '<div class="chmenu" id="rmMenu" hidden></div>' +
       '<div class="chl ecfeed" id="rmL"></div><div class="hint" id="rmSt"></div>' +
+      '<div class="rmbar" id="rmBar" hidden></div><div class="rmrp" id="rmRp" hidden></div>' +
       '<div class="chbar"><input id="rmIn" type="text" maxlength="120" autocomplete="off" enterkeyhint="send"><button class="btn chsn" id="rmSn" type="button">➤</button></div>';
     const after = g("o15") || g("o11");
     after.parentNode.insertBefore(hub, after.nextSibling); hub.parentNode.insertBefore(rm, hub.nextSibling);
@@ -110,7 +137,7 @@
     if (!E.rooms.length) l.appendChild(h("div", "ecdim ecnone", T("Комнат пока нет. Нажми ＋ слева и позови друзей.", "No rooms yet. Tap ＋ on the left and invite friends.", "Кімнат поки немає. Натисни ＋ ліворуч і поклич друзів.")));
     E.rooms.forEach(rm => {
       const r = h("button", "ecrow"); r.type = "button"; r.appendChild(avatar("#", false, tint(rm.id)));
-      const t = h("div", "ect"); t.appendChild(h("b", "", rm.name)); t.appendChild(h("span", "", rm.last || "👥 " + rm.members)); r.appendChild(t);
+      const t = h("div", "ect"); t.appendChild(h("b", "", rm.name)); t.appendChild(h("span", "", rm.last ? pretty(rm.last) : "👥 " + rm.members)); r.appendChild(t);
       if (rm.unread) r.appendChild(badgeEl(rm.unread));
       r.onclick = () => roomOpen(rm.id, rm.name); l.appendChild(r);
     });
@@ -187,7 +214,7 @@
 
   /* ---------- комната ---------- */
   function roomOpen(id, name) {
-    build(); E.room = { id, name: name || "", mine: false, members: [] }; E.last = 0; E.sure = 0; lastMsg = null;
+    build(); E.room = { id, name: name || "", mine: false, members: [] }; E.lastRoom = { id, name: name || "" }; E.last = 0; E.sure = 0; lastMsg = null; E.els = {}; E.msgs = {}; E.races = {}; E.react = {}; E.sel = null; E.reply = null; E.day = ""; barPaint(); replyPaint();
     g("rmL").textContent = ""; g("rmSt").textContent = ""; g("rmMenu").hidden = true; g("rmIn").value = "";
     g("rmIn").placeholder = T("Написать в # ", "Message # ", "Написати в # ") + (name || "");
     g("rmT").textContent = "# " + E.room.name; g("rmS").textContent = " ";
@@ -201,13 +228,108 @@
   }
   let lastMsg = null;
   function roomAdd(m) {
-    const l = g("rmL"), same = lastMsg && lastMsg.who === m.who && m.t - lastMsg.t < 300000;
-    const row = h("div", "msg" + (same ? " cont" : "") + (m.mine ? " mine" : ""));
+    const l = g("rmL"), p = parse(m.body);
+    if (p.t === "S") { const rc = E.races[p.id]; if (rc) { if (p.v > (rc.sc[m.who] || 0)) rc.sc[m.who] = p.v; raceDraw(rc) } return }
+    if (p.t === "R") { reactAdd(m, p); return }
+    const dn = dayName(m.t); if (dn !== E.day) { E.day = dn; l.appendChild(h("div", "dday", dn)); lastMsg = null }
+    if (p.t === "K") { raceAdd(m, p); lastMsg = null; return }
+    const same = lastMsg && lastMsg.who === m.who && m.t - lastMsg.t < 300000;
+    const row = h("div", "msg" + (same ? " cont" : "") + (m.mine ? " mine" : "")); row.dataset.id = m.id; E.els[m.id] = row;
     const av = h("div", "mav", same ? "" : first(m.who)); if (!same) av.style.background = tint(m.who); row.appendChild(av);
     const body = h("div", "mbody");
     if (!same) { const hd = h("div", "mhead"); const nm = h("b", "mnm", m.mine ? m.who + " · " + T("ты", "you", "ти") : m.who); nm.style.color = "hsl(" + hue(m.who) + " 90% 74%)"; hd.appendChild(nm); hd.appendChild(h("i", "mtm", clock(m.t))); body.appendChild(hd) }
-    body.appendChild(h("div", "mtx", m.body)); row.appendChild(body); l.appendChild(row); lastMsg = { who: m.who, t: m.t };
+    const text = p.t === "Q" ? p.text : m.body;
+    if (p.t === "Q") {
+      const q = E.msgs[p.mid], bq = h("div", "mq"); bq.appendChild(h("b", "", q ? q.who : "…")); bq.appendChild(h("span", "", q ? q.text.slice(0, 60) : T("сообщение удалено", "message gone", "повідомлення видалено")));
+      bq.onclick = e => { e.stopPropagation(); const t = E.els[p.mid]; if (t) { t.scrollIntoView({ block: "center", behavior: "smooth" }); t.classList.add("flash"); setTimeout(() => t.classList.remove("flash"), 1200) } };
+      body.appendChild(bq);
+    }
+    body.appendChild(h("div", "mtx", text)); body.appendChild(h("div", "rxs")); row.appendChild(body);
+    E.msgs[m.id] = { who: m.who, text, mine: m.mine };
+    row.onclick = () => select(m.id);
+    l.appendChild(row); lastMsg = { who: m.who, t: m.t };
+    if (E.react[m.id]) reactDraw(m.id);
   }
+
+  /* ---------- реакции, ответы ---------- */
+  function reactAdd(m, p) {
+    const r = E.react[p.mid] || (E.react[p.mid] = {}), s = r[p.emo] || (r[p.emo] = new Set());
+    if (s.has(m.who)) s.delete(m.who); else s.add(m.who);
+    if (m.mine) E.me = m.who;
+    reactDraw(p.mid);
+  }
+  function reactDraw(mid) {
+    const el = E.els[mid]; if (!el) return; const box = el.querySelector(".rxs"); if (!box) return; box.textContent = "";
+    const r = E.react[mid] || {};
+    Object.keys(r).forEach(emo => {
+      const s = r[emo]; if (!s.size) return;
+      const c = h("button", "rx" + (E.me && s.has(E.me) ? " me" : ""), emo + " " + s.size); c.type = "button"; c.title = [...s].join(", ");
+      c.onclick = e => { e.stopPropagation(); sendRaw(PX + "R|" + mid + "|" + emo) }; box.appendChild(c);
+    });
+  }
+  function select(id) {
+    if (E.sel === id) { E.sel = null } else E.sel = id;
+    Object.keys(E.els).forEach(k => E.els[k].classList.toggle("sel", String(k) === String(E.sel)));
+    barPaint();
+  }
+  function barPaint() {
+    const b = g("rmBar"); if (!b) return; b.textContent = ""; b.hidden = !E.sel; if (!E.sel) return;
+    EMO.forEach(e => b.appendChild(btn("rxb", e, () => { sendRaw(PX + "R|" + E.sel + "|" + e); select(E.sel) })));
+    b.appendChild(btn("rxb rxr", "↩ " + T("Ответить", "Reply", "Відповісти"), () => { E.reply = E.sel; select(E.sel); replyPaint(); const i = g("rmIn"); try { i.focus() } catch (e) { } }));
+  }
+  function replyPaint() {
+    const r = g("rmRp"), inp = g("rmIn"); if (!r) return; r.textContent = "";
+    const q = E.reply && E.msgs[E.reply]; r.hidden = !q; if (!q) { E.reply = null; inp.maxLength = 120; return }
+    inp.maxLength = 120 - (PX + "Q|" + E.reply + "|").length;
+    r.appendChild(h("span", "", "↩ " + q.who + ": " + q.text.slice(0, 50)));
+    r.appendChild(btn("ecx", "✕", () => { E.reply = null; replyPaint() }));
+  }
+  async function sendRaw(text) {
+    const rm = E.room; if (!rm) return;
+    try { await post("/api/echo/room/send", { room: rm.id, text }); E.busy = false; roomPoll(false) } catch (e) { setHint("rmSt", e.message, true) }
+  }
+
+  /* ---------- заезд: все играют одни и те же слова ---------- */
+  function raceAdd(m, p) {
+    const th = typeof THEMES !== "undefined" ? THEMES.find(x => x.id === p.theme) : null;
+    const rc = { id: p.id, theme: p.theme, lang: p.lang, seed: p.seed, by: m.who, sc: {}, th };
+    E.races[p.id] = rc;
+    const card = h("div", "race"); rc.el = card; g("rmL").appendChild(card); raceDraw(rc);
+  }
+  function raceDraw(rc) {
+    const c = rc.el; if (!c) return; c.textContent = "";
+    const lang = String(rc.lang || "").toUpperCase();
+    c.appendChild(h("div", "rach", "🏁 " + T("ЗАЕЗД", "RACE", "ЗАЇЗД") + " · " + (rc.th ? rc.th.i + " " + tx(rc.th.n) : rc.theme) + " · " + lang));
+    c.appendChild(h("div", "rasub", T("Запустил ", "Started by ", "Запустив ") + rc.by + T(". Все печатают одни и те же слова.", ". Everyone types the same words.", ". Усі друкують одні й ті самі слова.")));
+    const rows = Object.keys(rc.sc).map(n => [n, rc.sc[n]]).sort((a, b) => b[1] - a[1]);
+    if (!rows.length) c.appendChild(h("div", "ecdim", T("Пока никто не сыграл. Будь первым!", "Nobody played yet. Be the first!", "Поки ніхто не грав. Будь першим!")));
+    rows.forEach((r, i) => { const row = h("div", "rarow" + (E.me && r[0] === E.me ? " me" : "")); row.appendChild(h("i", "", ["🥇", "🥈", "🥉"][i] || String(i + 1))); row.appendChild(h("span", "", r[0])); row.appendChild(h("b", "", String(r[1]))); c.appendChild(row) });
+    if (rc.th && E.me !== undefined) c.appendChild(btn("btn" + (E.me && rc.sc[E.me] ? " a" : ""), "▶ " + (E.me && rc.sc[E.me] ? T("ЕЩЁ РАЗ", "AGAIN", "ЩЕ РАЗ") : T("ИГРАТЬ", "PLAY", "ГРАТИ")), () => raceGo(rc)));
+    else if (rc.th) c.appendChild(btn("btn", "▶ " + T("ИГРАТЬ", "PLAY", "ГРАТИ"), () => raceGo(rc)));
+    else c.appendChild(h("div", "ecdim", T("Эта тема есть только в новой версии игры.", "This theme needs a newer version.", "Ця тема є лише в новій версії гри.")));
+  }
+  function raceGo(rc) {
+    const rm = E.room; if (!rm || typeof raceBegin !== "function") return;
+    clearInterval(E.timer); E.timer = 0;
+    raceBegin({ id: rc.id, seed: rc.seed, room: rm.id, theme: rc.theme, lang: rc.lang });
+  }
+  function raceNew(themeId) {
+    const id = Math.random().toString(36).slice(2, 6), seed = Math.floor(Math.random() * 2147483647), lang = (typeof CFG !== "undefined" && CFG.wl) || "ru";
+    E.panel = ""; const m = g("rmMenu"); m.hidden = true;
+    sendRaw(PX + "K|" + id + "|" + themeId + "|" + lang + "|" + seed);
+  }
+  // конец раунда: отправляем результат в комнату и показываем кнопку «В комнату»
+  function raceDone(rc, q) {
+    if (q || !(score > 0)) return;
+    const sc = score, room = rc.room, name = (E.lastRoom && E.lastRoom.id === room ? E.lastRoom.name : "");
+    post("/api/echo/room/send", { room, text: PX + "S|" + rc.id + "|" + sc }).catch(() => { });
+    let res = g("raceRes");
+    if (!res) { res = h("div", "chres w"); res.id = "raceRes"; const a = g("bA"); a.parentNode.insertBefore(res, a) }
+    res.textContent = ""; res.className = "chres w";
+    res.appendChild(h("div", "", "🏁 " + T("Результат заезда отправлен: ", "Race result sent: ", "Результат заїзду надіслано: ") + sc));
+    res.appendChild(btn("btn a", "↩ " + T("В КОМНАТУ", "BACK TO ROOM", "ДО КІМНАТИ"), () => roomOpen(room, name)));
+  }
+
   async function roomPoll(first) {
     const rm = E.room; if (!rm) return;
     if (!g("o17").classList.contains("s")) { clearInterval(E.timer); E.timer = 0; E.room = null; return }
@@ -216,7 +338,7 @@
     try {
       const r = await cloudRequest("/api/echo/room/msgs?room=" + encodeURIComponent(rm.id) + "&after=" + E.last);
       if (E.room !== rm) return;
-      rm.name = r.room.name; rm.mine = r.room.mine; rm.members = r.members;
+      rm.name = r.room.name; rm.mine = r.room.mine; rm.members = r.members; { const me = r.members.find(x => x.me); if (me) E.me = me.name }
       g("rmT").textContent = "# " + rm.name; g("rmS").textContent = "👥 " + r.members.map(x => x.name).slice(0, 4).join(", ") + (r.members.length > 4 ? " +" + (r.members.length - 4) : "");
       const l = g("rmL"), stick = first || l.scrollHeight - l.scrollTop - l.clientHeight < 80;
       r.messages.forEach(m => { E.last = Math.max(E.last, m.id); roomAdd(m) });
@@ -231,8 +353,9 @@
   }
   async function roomSend() {
     const rm = E.room, inp = g("rmIn"), text = inp.value.trim(); if (!rm || !text) return;
+    const wire = E.reply && E.msgs[E.reply] ? PX + "Q|" + E.reply + "|" + text : text;
     inp.value = ""; inp.focus();
-    try { await post("/api/echo/room/send", { room: rm.id, text }); E.busy = false; roomPoll(false) } catch (e) { inp.value = text; setHint("rmSt", e.message, true) }
+    try { await post("/api/echo/room/send", { room: rm.id, text: wire }); E.reply = null; replyPaint(); E.busy = false; roomPoll(false) } catch (e) { inp.value = text; setHint("rmSt", e.message, true) }
   }
 
   /* меню комнаты */
@@ -255,6 +378,11 @@
       });
       m.appendChild(btn("btn a", "←", () => { E.panel = ""; menuPaint() })); return;
     }
+    if (E.panel === "race") {
+      (typeof THEMES !== "undefined" ? THEMES : []).forEach(t => m.appendChild(btn("btn a", t.i + " " + tx(t.n), () => raceNew(t.id))));
+      m.appendChild(btn("btn a", "←", () => { E.panel = ""; menuPaint() })); return;
+    }
+    m.appendChild(btn("btn", "🏁 " + T("НАЧАТЬ ЗАЕЗД", "START A RACE", "ПОЧАТИ ЗАЇЗД"), () => { E.panel = "race"; menuPaint() }));
     m.appendChild(btn("btn a", "＋ " + T("ПРИГЛАСИТЬ ДРУГА", "INVITE A FRIEND", "ЗАПРОСИТИ ДРУГА"), () => { E.panel = "inv"; menuPaint() }));
     m.appendChild(btn("btn a", "👥 " + T("УЧАСТНИКИ", "MEMBERS", "УЧАСНИКИ"), () => { E.panel = "mem"; menuPaint() }));
     m.appendChild(btn("btn a", E.sure === 1 ? T("ТОЧНО ПОЖАЛОВАТЬСЯ?", "REALLY REPORT?", "ТОЧНО СКАРЖИТИСЬ?") : T("ПОЖАЛОВАТЬСЯ", "REPORT", "СКАРЖИТИСЬ"), async () => {
@@ -274,6 +402,8 @@
     b.firstChild.nodeType === 3 && (b.firstChild.textContent = "🌀 " + T("ЭХО", "ECHO", "ЕХО"));
     b.onclick = hubOpen;
   }
+  const _over = window.over;
+  if (typeof _over === "function") window.over = function (q) { const rc = typeof RACE !== "undefined" ? RACE : null; const r = _over.apply(this, arguments); try { if (state === "over") { const old = g("raceRes"); if (old) old.remove(); if (rc) { RACE = null; raceDone(rc, q) } } } catch (e) { } return r };
   build(); wireMenuBtn();
   window.SlovopadEcho = { open: hubOpen, relabel: wireMenuBtn, badge: () => { labels() } };
   const _menu = window.menu;
