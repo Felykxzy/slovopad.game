@@ -55,8 +55,16 @@
     P.pc.getTransceivers().forEach(tr => {
       const kind = tr.receiver && tr.receiver.track ? tr.receiver.track.kind : "";
       const track = kind === "audio" ? C.mic : kind === "video" ? C.cam : null;
-      try { tr.direction = "sendrecv"; tr.sender.replaceTrack(track || null) } catch (e) { }
+      try { tr.direction = "sendrecv"; tr.sender.replaceTrack(track || null); if (kind === "video") tune(tr.sender) } catch (e) { }
     });
+  }
+  // плавность важнее чёткости: держим частоту кадров, битрейт делим между собеседниками
+  function tune(sender) {
+    try {
+      const n = Math.max(1, Object.keys(C.peers).length), p = sender.getParameters(); p.encodings = p.encodings && p.encodings.length ? p.encodings : [{}];
+      p.encodings[0].maxBitrate = n <= 1 ? 2500000 : n === 2 ? 1800000 : 1200000; p.encodings[0].maxFramerate = 60; p.degradationPreference = "maintain-framerate";
+      sender.setParameters(p).catch(() => { });
+    } catch (e) { }
   }
   function sendState(P) { try { if (P.dc && P.dc.readyState === "open") P.dc.send(JSON.stringify({ cam: C.camOn, mic: C.micOn })) } catch (e) { } }
   function wireDc(P, dc) {
@@ -143,8 +151,8 @@
   /* ---------- управление ---------- */
   function toggleMic() { C.micOn = !C.micOn; if (C.mic) C.mic.enabled = C.micOn; paintSelf(); Object.values(C.peers).forEach(sendState) }
   async function camStart() {
-    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: C.facing, width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 24, max: 30 } }, audio: false });
-    C.cam = s.getVideoTracks()[0]; C.tile._v.srcObject = new MediaStream([C.cam]); try { C.tile._v.play().catch(() => { }) } catch (e) { }
+    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: C.facing, width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: 60 } }, audio: false });
+    C.cam = s.getVideoTracks()[0]; try { C.cam.contentHint = "motion" } catch (e) { } C.tile._v.srcObject = new MediaStream([C.cam]); try { C.tile._v.play().catch(() => { }) } catch (e) { }
     Object.values(C.peers).forEach(attachLocal);
   }
   function camStop() {
