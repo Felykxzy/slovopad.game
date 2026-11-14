@@ -1,15 +1,12 @@
 {
-  "version": "3.6.0",
+  "version": "3.6.1",
   "notes": [
-    "Слова в тематиках стали известнее и проще: убраны малоизвестные слова и российские компании",
-    "В брендах остались только мировые марки"
+    "В «Брендах» добавлены украинские бренды: Монобанк, Розетка, Рошен, Сильпо, Киевстар и другие"
   ],
   "notes_en": [
-    "Theme words are now more familiar and easier to type: obscure words and Russian companies removed",
-    "Brands now only has world-famous names"
+    "Brands now include Ukrainian brands: Monobank, Rozetka, Roshen, Silpo, Kyivstar and more"
   ],
   "notes_uk": [
-    "Слова в тематиках стали відомішими й простішими: прибрано маловідомі слова та російські компанії",
-    "У брендах лишилися тільки світові марки"
+    "У «Брендах» додано українські бренди: Монобанк, Розетка, Рошен, Сільпо, Київстар та інші"
   ]
 }
