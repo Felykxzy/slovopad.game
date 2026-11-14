@@ -71,7 +71,7 @@ card.appendChild(r)})}
 function openSet(f){from=f;sets();ov("o4")}
 function logo(){const L=$("lg"),w=tx("СЛОВОПАД");if(L.dataset.n===w)return;L.dataset.n=w;L.innerHTML="";const a=[94,242,255],m=[255,79,216];
 for(let i=0;i<w.length;i++){const t=i/(w.length-1),c=a.map((v,k)=>Math.round(v+(m[k]-v)*t)).join(","),e=document.createElement("span");
-e.textContent=w[i];e.style.color="rgb("+c+")";e.style.setProperty("--c",c);e.style.setProperty("--d",i*.07+"s");L.appendChild(e)}}
+e.textContent=w[i];e.style.setProperty("--c",c);e.style.setProperty("--d",i*.07+"s");L.appendChild(e)}}
 function dstr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 function ystr(){const y=new Date();y.setDate(y.getDate()-1);return dstr(y)}
 function streakGet(){let r={n:0,last:"",max:0};try{Object.assign(r,JSON.parse(localStorage.getItem("streak")||"{}"))}catch(e){}return r}
@@ -516,7 +516,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");glassSet((e.clientX/innerWidth-.5)/.55,(e.clientY/innerHeight-.5)/.5)},{passive:true});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="3.6.3";let upLater=false;
+const VER="3.6.4";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if($("spl")||state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
