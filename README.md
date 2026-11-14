@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/banner.jpg" alt="СЛОВОПАД — печатай слова, защищай щит" width="100%"></p>
+
 # СЛОВОПАД
 
 Аркадная игра на скорость печати. Сверху падают слова, ты набираешь их, пока они не долетели до щита. Чем дольше держишься, тем быстрее и длиннее слова.
@@ -7,6 +9,17 @@
 Работает в браузере на телефоне и компьютере, без регистрации. Можно установить как приложение, тогда игра открывается с иконки на весь экран и работает без интернета.
 
 **Текущая версия: 3.6.4** (14 ноября 2026) · [Что нового](#что-нового-в-364) · [История версий](CHANGELOG.md)
+
+## Как это выглядит
+
+<table>
+<tr>
+<td align="center"><img src="assets/screens/menu.jpg" width="200" alt="Меню"><br><sub>Меню</sub></td>
+<td align="center"><img src="assets/screens/themes.jpg" width="200" alt="Темы"><br><sub>Тематики</sub></td>
+<td align="center"><img src="assets/screens/game.jpg" width="200" alt="Игра"><br><sub>Игра</sub></td>
+<td align="center"><img src="assets/screens/shop.jpg" width="200" alt="Магазин"><br><sub>Магазин</sub></td>
+</tr>
+</table>
 
 ---
 
