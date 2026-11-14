@@ -1,12 +1,15 @@
 {
-  "version": "3.5.5",
+  "version": "3.6.0",
   "notes": [
-    "Установщик для Windows: исправлены кнопки выбора папки и установки"
+    "Слова в тематиках стали известнее и проще: убраны малоизвестные слова и российские компании",
+    "В брендах остались только мировые марки"
   ],
   "notes_en": [
-    "Windows installer: fixed the folder and install buttons"
+    "Theme words are now more familiar and easier to type: obscure words and Russian companies removed",
+    "Brands now only has world-famous names"
   ],
   "notes_uk": [
-    "Установник для Windows: виправлено кнопки вибору теки та встановлення"
+    "Слова в тематиках стали відомішими й простішими: прибрано маловідомі слова та російські компанії",
+    "У брендах лишилися тільки світові марки"
   ]
 }
