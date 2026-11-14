@@ -953,7 +953,24 @@ body.eco #fg .fd.cur .ic,body.eco #fg .fd.cur .fr::after,body.eco #fg .fd.cur .w
 .cb.off{background:rgba(255,80,110,.3);border-color:rgba(255,80,110,.7)}.cb.on{background:rgba(94,242,255,.25);border-color:var(--ac)}
 .cb.end{background:#e5354f;border-color:#ff7a8d;transform:rotate(135deg)}
 .cb[hidden]{display:none}
-.rmcall{display:flex;align-items:center;gap:8px;padding:8px 12px;margin:0 8px;border-radius:14px;background:rgba(94,242,255,.12);border:1px solid rgba(94,242,255,.45);font-size:12px;flex:none}
+.rmcall{width:calc(100% - 16px);display:flex;align-items:center;gap:8px;padding:8px 12px;margin:0 8px;border-radius:14px;background:rgba(94,242,255,.12);border:1px solid rgba(94,242,255,.45);font-size:12px;flex:none}
 .rmcall[hidden]{display:none}.rmcall.on{background:rgba(70,220,130,.14);border-color:rgba(70,220,130,.55)}
 .rmcall span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
 .rcb{border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:var(--ink);border-radius:99px;padding:6px 12px;font-size:11px;letter-spacing:.12em;cursor:pointer}.rcb.end{border-color:#ff7a8d;color:#ffb3be}
+
+/* Эхо на планшете и компьютере: слева список, справа открытый чат */
+@media (min-width:760px) and (min-height:520px){
+ #o16.s{padding:calc(14px + var(--sat)) 10px calc(14px + var(--sab))}
+ body.pane2 #o16.s{right:auto;width:min(400px,40vw);background:rgba(8,10,28,.9);border-right:1px solid rgba(255,255,255,.1)}
+ #o16>.ecw{max-width:min(400px,40vw);margin:0}
+ #o16 .frh,#o16 .frtabs,#o16 .frlist,#o16 .ecai,#o16 .ecset,#o16 .mb{max-width:none}
+ body.pane2 #o15,body.pane2 #o17,body.pane2 #o18{left:min(400px,40vw)}
+ body.pane2 #o15.s,body.pane2 #o17.s,body.pane2 #o18.s{transform:none}
+ body.pane2 #o17,body.pane2 #o18{padding:calc(14px + var(--sat)) 28px calc(16px + var(--sab))}
+ body.pane2 #o17 .ecfeed{width:100%;max-width:820px;margin:0 auto}
+ body.pane2 #o17 .chbar,body.pane2 #o17 .rmbar,body.pane2 #o17 .rmrp,body.pane2 #o17 .rmcall,body.pane2 #o17 #rmMenu{width:100%;max-width:820px;margin-left:auto;margin-right:auto}
+ body.pane2 #rmBk,body.pane2 #o15 .frh>.ib:first-child{display:none}
+ .msg{max-width:720px}
+ .race{width:min(92%,460px);align-self:flex-start;margin-left:48px}
+ body:not(.pane2) #o16.s::after{content:"💬  Выбери чат слева";position:absolute;left:min(400px,40vw);right:0;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:15px;letter-spacing:.2em;text-transform:uppercase;color:rgba(232,236,255,.4);pointer-events:none}
+}
