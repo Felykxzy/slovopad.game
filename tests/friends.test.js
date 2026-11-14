@@ -254,3 +254,21 @@ test('Эхо: звонок в комнате — вход, сигналы тол
   assert.equal((await s.raw('/api/echo/call/leave', { room: id }, d.token)).status, 200);
   assert.equal((await s.raw('/api/echo/call/join', { room: id }, e.token)).status, 200);
 });
+
+test('Свой тег: виден друзьям и в комнате, только если куплен; грубое и «служебное» отсекается', async t => {
+  const s = await setup(); if (!s) return t.skip('нет node:sqlite');
+  const a = await s.reg('Alice'), b = await s.reg('Bobby');
+  await s.raw('/api/friends/request', { q: b.name }, a.token); await s.raw('/api/friends/respond', { code: a.code, accept: true }, b.token);
+  const sync = (tg, ow, tok) => s.raw('/api/sync', { profile: { pf: { tg } }, data: { ow }, totalWords: 5, bestScore: 10 }, tok);
+  const seen = async () => (await s.raw('/api/friends', null, b.token)).data.friends[0].tag;
+  await sync({ t: 'КОТ', c: '255,0,0', a: 1 }, ['s0', 'b0'], a.token);
+  assert.equal(await seen(), null, 'не куплен — не показываем');
+  await sync({ t: 'КОТ', c: '255,0,0', a: 1 }, ['s0', 'b0', 'tg0'], a.token);
+  assert.deepEqual(await seen(), { t: 'КОТ', c: '255,0,0', a: 0 }, 'без покупки анимации — обычный');
+  await sync({ t: 'КОТ', c: '255,0,0', a: 1 }, ['tg0', 'tg1'], a.token);
+  assert.equal((await seen()).a, 1);
+  await sync({ t: 'пизда', c: '1,2,3', a: 0 }, ['tg0', 'tg1'], a.token); assert.equal(await seen(), null);
+  await sync({ t: 'M0DER', c: '1,2,3', a: 0 }, ['tg0', 'tg1'], a.token); assert.equal(await seen(), null);
+  await sync({ t: '<b>x</b>', c: '1,2,3', a: 0 }, ['tg0', 'tg1'], a.token); assert.equal(await seen(), null);
+  await sync({ t: 'Ок', c: 'red', a: 9 }, ['tg0', 'tg1'], a.token); assert.deepEqual(await seen(), { t: 'Ок', c: '94,242,255', a: 0 });
+});

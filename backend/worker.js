@@ -260,7 +260,7 @@ async function usersByIds(env, ids) {
   const out = new Map(), list = [...new Set(ids)];
   for (let i = 0; i < list.length; i += 80) {
     const part = list.slice(i, i + 80);
-    const rows = await env.DB.prepare('SELECT id,username,sp_code,privacy_json,best_score,total_words,seen,json_extract(profile_json,\'$.pf.a\') AS av FROM users WHERE id IN (' + part.map(() => '?').join(',') + ')').bind(...part).all();
+    const rows = await env.DB.prepare('SELECT id,username,sp_code,privacy_json,best_score,total_words,seen,json_extract(profile_json,\'$.pf.a\') AS av,json_extract(profile_json,\'$.pf.tg\') AS tg FROM users WHERE id IN (' + part.map(() => '?').join(',') + ')').bind(...part).all();
     for (const r of (rows.results || [])) out.set(r.id, r);
   }
   return out;
@@ -270,9 +270,27 @@ async function pubInfo(env, r, now) {
   const pv = cleanPrivacy(parse(r.privacy_json, {}));
   const code = r.sp_code || await ensureCode(env, { id: r.id, sp_code: r.sp_code });
   const seen = pv.online ? (r.seen || 0) : 0;
-  return { username: r.username, spCode: code, avatar: typeof r.av === 'string' ? r.av : '',
+  return { username: r.username, spCode: code, avatar: typeof r.av === 'string' ? r.av : '', tag: cleanTag(r.tg),
     online: !!seen && seen > now - ONLINE_MS, seen,
     bestScore: pv.records ? r.best_score || 0 : null, totalWords: pv.rank ? r.total_words || 0 : null };
+}
+
+/* ---------- Свой тег у ника ---------- */
+const TAG_LOOK = { a: 'а', e: 'е', o: 'о', p: 'р', c: 'с', x: 'х', y: 'у', k: 'к', b: 'в', m: 'м', t: 'т', h: 'н', '0': 'о', '3': 'з', '6': 'б', '@': 'а', '$': 'с' };
+const TAG_LAT = { '0': 'o', '1': 'i', '3': 'e', '4': 'a', '5': 's', '@': 'a', '$': 's' };
+const TAG_BAD = /хуй|хуе|хуё|хуя|пизд|пізд|ебл|ёбл|ебан|ёбан|ебат|їб|еба[нтл]|блят|бляд|сука|суки|мудак|мудил|пидор|пидар|підор|гандон|залуп|шлюх|курв|чмо|ниггер|нигер|нацист|гитлер|fuck|shit|bitch|cunt|nigg|fagg|dick|cock|pussy|nazi|hitler|rape|порн|porn|sex|секс/;
+const TAG_FAKE = /модер|moder|автор|author|owner|владел|staff|support|поддерж|offic|офиц|создат|creator|разраб|developer|system|систем|[aа][dд][mм][iи][nн]|словопад|slovopad/;
+function cleanTag(raw) {
+  let tg = raw;
+  if (typeof tg === 'string') { try { tg = JSON.parse(tg); } catch (_) { return null; } }
+  if (!tg || typeof tg !== 'object') return null;
+  const t = String(tg.t || '').replace(/\s+/g, ' ').trim();
+  if (!/^[\p{L}\p{N} _.!+*&-]{1,12}$/u.test(t)) return null;
+  const low = t.toLowerCase().replace(/[^\p{L}\p{N}@$]/gu, ''), mapped = [...low].map(c => TAG_LOOK[c] || c).join(''), lat = [...low].map(c => TAG_LAT[c] || c).join('');
+  if ([low, mapped, lat].some(x => TAG_BAD.test(x) || TAG_FAKE.test(x))) return null;
+  const m = /^(\d{1,3}),(\d{1,3}),(\d{1,3})$/.exec(String(tg.c || ''));
+  const c = m && +m[1] <= 255 && +m[2] <= 255 && +m[3] <= 255 ? m[0] : '94,242,255';
+  return { t, c, a: tg.a === 1 || tg.a === 2 ? tg.a : 0 };
 }
 
 /* ---------- Помощники ---------- */
@@ -1049,7 +1067,13 @@ export default {
 
         const body = (await request.json().catch(() => null)) || {};
         const profObj = body.profile && typeof body.profile === 'object' ? body.profile : {};
-        if (profObj.pf && typeof profObj.pf === 'object') profObj.pf.a = String(profObj.pf.a || '').slice(0, 16);
+        if (profObj.pf && typeof profObj.pf === 'object') {
+          profObj.pf.a = String(profObj.pf.a || '').slice(0, 16);
+          const own = Array.isArray((body.data || {}).ow) ? body.data.ow : [];
+          const tg = cleanTag(profObj.pf.tg);
+          // тег работает только если он куплен; анимация — только если куплена
+          if (tg && own.includes('tg0')) { if (!own.includes('tg1')) tg.a = 0; profObj.pf.tg = tg; } else delete profObj.pf.tg;
+        }
         const profile = JSON.stringify(profObj);
         const data = JSON.stringify(body.data || {});
         if (profile.length > 300000) return reply({ error: 'Слишком большой профиль (уменьши фото).' }, 413);
@@ -1100,7 +1124,7 @@ export default {
         if (!row) return reply({ error: 'Игрок не найден.' }, 404);
         const pv = cleanPrivacy(parse(row.privacy_json, {}));
         const pf = (parse(row.profile_json, {}).pf) || {};
-        const out = { username: row.username, spCode: await ensureCode(env, row), avatar: pf.a || '' };
+        const out = { username: row.username, spCode: await ensureCode(env, row), avatar: pf.a || '', tag: cleanTag(pf.tg) };
         if (pv.rank) out.totalWords = row.total_words || 0;
         if (pv.records) out.bestScore = row.best_score || 0;
         if (pv.ach) out.achievements = Object.keys(parse(row.data_json, {}).ach || {}).length;
@@ -1289,7 +1313,7 @@ export default {
             const ms = ((await env.DB.prepare('SELECT uid FROM sp_room_members WHERE room=?').bind(roomId).all()).results || []).map(r => r.uid);
             const people = await usersByIds(env, ms);
             const nm = id => (people.get(id) || {}).username || '?';
-            return reply({ room: { id: room.id, name: room.name, mine: room.owner === user.id }, members: ms.map(id => ({ name: nm(id), owner: id === room.owner, me: id === user.id })), messages: rows.map(r => ({ id: r.id, mine: r.uid === user.id, who: nm(r.uid), body: r.body, t: r.t })) });
+            return reply({ room: { id: room.id, name: room.name, mine: room.owner === user.id }, members: ms.map(id => ({ name: nm(id), owner: id === room.owner, me: id === user.id, tag: cleanTag((people.get(id) || {}).tg) })), messages: rows.map(r => ({ id: r.id, mine: r.uid === user.id, who: nm(r.uid), body: r.body, t: r.t })) });
           }
 
           if (url.pathname === '/api/echo/room/send' && post) {

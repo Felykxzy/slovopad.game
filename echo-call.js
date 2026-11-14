@@ -14,10 +14,11 @@
   /* ---------- звуки (синтез, без файлов) ---------- */
   let AC = null;
   function actx() { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === "suspended") AC.resume(); return AC } catch (e) { return null } }
+  function cv() { try { var c = JSON.parse(localStorage.getItem("cfg") || "{}"), x = c.vol == null ? 100 : c.vol; return x * x / 1e4 } catch (e) { return 1 } }
   function tone(f, at, dur, type, vol, f2) {
     const a = actx(); if (!a) return; const o = a.createOscillator(), gn = a.createGain(), t = a.currentTime + at;
     o.type = type || "sine"; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
-    gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(vol || 0.12, t + 0.015); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(Math.max(0.0002, (vol || 0.12) * cv()), t + 0.015); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     o.connect(gn); gn.connect(a.destination); o.start(t); o.stop(t + dur + 0.03);
   }
   const NOTE = { A4: 440, B4: 494, C5: 523, D5: 587, E5: 659, F5: 698, G5: 784, A5: 880, E4: 330, C4: 262 };

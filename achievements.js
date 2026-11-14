@@ -25,7 +25,7 @@
   };
   const wpm = () => (tw() >= 100 && SlovopadCore.wordsPerMinute(PF.w, PF.t)) || 0;
   const streak = () => { const r = streakGet(); return Math.max(r.max || 0, streakNow()); };
-  const own = () => { try { return Math.max(0, owG().length - 2); } catch (e) { return 0; } };
+  const own = () => { try { return Math.max(0, owG().filter(function (x) { return !/^tg/.test(x); }).length - 2); } catch (e) { return 0; } };
 
   /* ---------- КАТАЛОГ ----------
      [id, значок, категория, цель, награда ✨, функция прогресса(S, have), секретное?,

@@ -146,7 +146,7 @@
     const row = f => {
       const r = h("button", "ecrow"); r.type = "button";
       r.appendChild(avatar(f.avatar || first(f.username), f.online, f.avatar ? null : tint(f.username)));
-      const t = h("div", "ect"); t.appendChild(h("b", f.unread ? "ecnew" : "", f.username)); t.appendChild(h("span", "", f.unread ? T("новых: ", "new: ", "нових: ") + f.unread : f.online ? T("в сети", "online", "у мережі") : T("не в сети", "offline", "не в мережі"))); r.appendChild(t);
+      const t = h("div", "ect"); t.appendChild(h("b", f.unread ? "ecnew" : "", f.username)); { const te = window.TagUI && TagUI.el(f.tag); if (te) t.firstChild.appendChild(te) } t.appendChild(h("span", "", f.unread ? T("новых: ", "new: ", "нових: ") + f.unread : f.online ? T("в сети", "online", "у мережі") : T("не в сети", "offline", "не в мережі"))); r.appendChild(t);
       if (f.unread) r.appendChild(badgeEl(f.unread));
       r.onclick = () => { const F = window.SlovopadFriends; if (F && F.chatOpen) { F.setBack(hubOpen); F.chatOpen(f) } };
       l.appendChild(r);
@@ -238,7 +238,7 @@
     const row = h("div", "msg" + (same ? " cont" : "") + (m.mine ? " mine" : "")); row.dataset.id = m.id; E.els[m.id] = row;
     const av = h("div", "mav", same ? "" : first(m.who)); if (!same) av.style.background = tint(m.who); row.appendChild(av);
     const body = h("div", "mbody");
-    if (!same && !m.mine) { const hd = h("div", "mhead"); const nm = h("b", "mnm", m.who); nm.style.color = "hsl(" + hue(m.who) + " 90% 74%)"; hd.appendChild(nm); body.appendChild(hd) }
+    if (!same && !m.mine) { const hd = h("div", "mhead"); const nm = h("b", "mnm", m.who); nm.style.color = "hsl(" + hue(m.who) + " 90% 74%)"; hd.appendChild(nm); { const mb = ((E.room && E.room.members) || []).find(x => x.name === m.who), te = window.TagUI && mb && TagUI.el(mb.tag); if (te) hd.appendChild(te) } body.appendChild(hd) }
     const text = p.t === "Q" ? p.text : m.body;
     if (p.t === "Q") {
       const q = E.msgs[p.mid], bq = h("div", "mq"); bq.appendChild(h("b", "", q ? q.who : "…")); bq.appendChild(h("span", "", q ? q.text.slice(0, 60) : T("сообщение удалено", "message gone", "повідомлення видалено")));
@@ -375,7 +375,7 @@
     }
     if (E.panel === "mem") {
       (rm.members || []).forEach(x => {
-        const r = h("div", "ecmem"); r.appendChild(h("span", "", (x.owner ? "👑 " : "") + x.name + (x.me ? " ✓" : "")));
+        const r = h("div", "ecmem"); { const sp = h("span", "", (x.owner ? "👑 " : "") + x.name + (x.me ? " ✓" : "")), te = window.TagUI && TagUI.el(x.tag); if (te) sp.appendChild(te); r.appendChild(sp) }
         if (rm.mine && !x.me) r.appendChild(btn("ecx", "✕", async () => { try { await post("/api/echo/room/kick", { room: rm.id, code: x.name }); roomPoll(false); E.panel = ""; m.hidden = true } catch (e) { setHint("rmSt", e.message, true) } }));
         m.appendChild(r);
       });
