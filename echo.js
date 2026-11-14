@@ -49,9 +49,9 @@
     hub.innerHTML = '<div class="ecw"><nav class="ecrail" id="ecR16"></nav><section class="ecpan"><div class="ecph" id="ecP16"></div>' +
       '<div class="ecset gl" id="ecSetP" hidden></div><div class="frlist" id="ecList"></div><div class="hint" id="ecSt"></div></section></div>';
     const rm = h("div", "ov"); rm.id = "o17";
-    rm.innerHTML = '<div class="frh ecrh"><button class="ib" id="rmBk" type="button">←</button><div class="frt"><h2 id="rmT"></h2><div class="sub" id="rmS"></div></div><button class="ib" id="rmMn" type="button">⋯</button></div>' +
+    rm.innerHTML = '<div class="frh ecrh"><button class="ib" id="rmBk" type="button">←</button><div class="frt"><h2 id="rmT"></h2><div class="sub" id="rmS"></div></div><button class="ib" id="rmCl" type="button">📞</button><button class="ib" id="rmMn" type="button">⋯</button></div>' +
       '<div class="chmenu" id="rmMenu" hidden></div>' +
-      '<div class="chl ecfeed" id="rmL"></div><div class="hint" id="rmSt"></div>' +
+      '<div class="rmcall" id="rmCall" hidden></div><div class="chl ecfeed" id="rmL"></div><div class="hint" id="rmSt"></div>' +
       '<div class="rmbar" id="rmBar" hidden></div><div class="rmrp" id="rmRp" hidden></div>' +
       '<div class="chbar"><input id="rmIn" type="text" maxlength="120" autocomplete="off" enterkeyhint="send"><button class="btn chsn" id="rmSn" type="button">➤</button></div>';
     const after = g("o15") || g("o11");
@@ -80,6 +80,7 @@
     g("rmBk").onclick = roomClose;
     g("rmSn").onclick = roomSend;
     g("rmIn").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); roomSend() } });
+    g("rmCl").onclick = () => { const rm = E.room; if (rm && window.EchoCall) EchoCall.join(rm.id, rm.name, () => roomOpen(rm.id, rm.name)) };
     g("rmMn").onclick = () => { const m = g("rmMenu"); if (m.hidden) { E.sure = 0; E.panel = ""; menuPaint() } m.hidden = !m.hidden };
     if (window.visualViewport) {
       const fit = () => { const o = g("o17"); if (!o || !o.classList.contains("s")) return; const v = window.visualViewport; o.style.height = v.height + "px"; o.style.transform = "translateY(" + v.offsetTop + "px)"; const l = g("rmL"); l.scrollTop = l.scrollHeight };
@@ -345,6 +346,7 @@
       if (!l.children.length) l.appendChild(h("div", "chem", T("Здесь пока тихо. Напиши первым 👋", "It's quiet here. Write first 👋", "Тут поки тихо. Напиши першим 👋")));
       else if (r.messages.length && l.querySelector(".chem")) l.querySelector(".chem").remove();
       if (stick) l.scrollTop = l.scrollHeight;
+      if (window.EchoCall) EchoCall.banner(rm.id, g("rmCall"), () => roomOpen(rm.id, rm.name), rm.name);
       setHint("rmSt", "");
     } catch (e) {
       if (/состоишь|не найден|not found/i.test((e && e.message) || "")) { roomClose(); return }
@@ -405,7 +407,7 @@
   const _over = window.over;
   if (typeof _over === "function") window.over = function (q) { const rc = typeof RACE !== "undefined" ? RACE : null; const r = _over.apply(this, arguments); try { if (state === "over") { const old = g("raceRes"); if (old) old.remove(); if (rc) { RACE = null; raceDone(rc, q) } } } catch (e) { } return r };
   build(); wireMenuBtn();
-  window.SlovopadEcho = { open: hubOpen, relabel: wireMenuBtn, badge: () => { labels() } };
+  window.SlovopadEcho = { open: hubOpen, roomOpen, relabel: wireMenuBtn, badge: () => { labels() } };
   const _menu = window.menu;
   if (typeof _menu === "function") window.menu = function () { const r = _menu.apply(this, arguments); try { wireMenuBtn() } catch (e) { } return r };
 })();

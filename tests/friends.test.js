@@ -224,3 +224,33 @@ test('Эхо: Telegram без токена бота не привязывает�
   const st = (await s.raw('/api/tg', null, a.token)).data;
   assert.equal(st.linked, false); assert.equal(st.available, false);
 });
+
+test('Эхо: звонок в комнате — вход, сигналы только адресату, предел 4 человека, выход', async t => {
+  const s = await setup(); if (!s) return t.skip('нет node:sqlite');
+  const names = ['Alice', 'Bobby', 'Carol', 'Danny', 'Ellie'], u = [];
+  for (const n of names) u.push(await s.reg(n));
+  const [a, b, c, d, e] = u;
+  for (const x of [b, c, d, e]) await makeFriends(s, a, x);
+  const id = (await s.raw('/api/echo/room', { name: 'Звонок' }, a.token)).data.id;
+  for (const x of [b, c, d, e]) assert.equal((await s.raw('/api/echo/room/invite', { room: id, code: x.code }, a.token)).status, 200);
+  const outsider = await s.reg('Frank');
+  assert.equal((await s.raw('/api/echo/call/join', { room: id }, outsider.token)).status, 403);   // чужой не войдёт
+  const ja = await s.raw('/api/echo/call/join', { room: id }, a.token);
+  assert.equal(ja.status, 200); assert.equal(ja.data.parts.length, 1); assert.ok(Array.isArray(ja.data.ice) && ja.data.ice.length);
+  assert.equal(ja.data.turn, false);                                                              // ключей TURN нет, только STUN
+  const jb = await s.raw('/api/echo/call/join', { room: id }, b.token);
+  assert.deepEqual(jb.data.parts.map(p => p.name), ['Alice', 'Bobby']);
+  assert.equal((await s.raw('/api/echo/call/sig', { room: id, to: 'Alice', data: JSON.stringify({ t: 'offer', sdp: 'x' }) }, b.token)).status, 200);
+  const pa = (await s.raw('/api/echo/call/poll?room=' + id + '&after=0', null, a.token)).data;
+  assert.equal(pa.sigs.length, 1); assert.equal(pa.sigs[0].from, 'Bobby');
+  const pb = (await s.raw('/api/echo/call/poll?room=' + id + '&after=0', null, b.token)).data;
+  assert.equal(pb.sigs.length, 0);                                                                // чужие сигналы не видны
+  assert.equal((await s.raw('/api/echo/call/poll?room=' + id + '&after=' + pa.sigs[0].id, null, a.token)).data.sigs.length, 0);
+  assert.equal((await s.raw('/api/echo/call/sig', { room: id, to: 'Alice', data: 'z'.repeat(13000) }, b.token)).status, 413);
+  assert.equal((await s.raw('/api/echo/call/join', { room: id }, c.token)).status, 200);
+  assert.equal((await s.raw('/api/echo/call/join', { room: id }, d.token)).status, 200);
+  assert.equal((await s.raw('/api/echo/call/join', { room: id }, e.token)).status, 409);          // пятый не помещается
+  assert.deepEqual((await s.raw('/api/echo/call/who?room=' + id, null, e.token)).data.parts.length, 4);
+  assert.equal((await s.raw('/api/echo/call/leave', { room: id }, d.token)).status, 200);
+  assert.equal((await s.raw('/api/echo/call/join', { room: id }, e.token)).status, 200);
+});

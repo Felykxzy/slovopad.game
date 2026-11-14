@@ -133,6 +133,10 @@ async function ensureSchema(env) {
     await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_room_members_u_idx ON sp_room_members(uid)').run();
     await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_room_msgs (id INTEGER PRIMARY KEY AUTOINCREMENT, room TEXT NOT NULL, uid TEXT NOT NULL, body TEXT NOT NULL, t INTEGER NOT NULL)').run();
     await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_room_msgs_r_idx ON sp_room_msgs(room,id)').run();
+    // голосовой звонок в комнате: кто в звонке и короткоживущие сигналы связи между участниками
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_call_part (room TEXT NOT NULL, name TEXT NOT NULL, j INTEGER NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (room,name))').run();
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_call_sig (id INTEGER PRIMARY KEY AUTOINCREMENT, room TEXT NOT NULL, frm TEXT NOT NULL, too TEXT NOT NULL, body TEXT NOT NULL, t INTEGER NOT NULL)').run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_call_sig_idx ON sp_call_sig(room,too,id)').run();
     await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_tg (uid TEXT PRIMARY KEY, chat TEXT NOT NULL, t INTEGER NOT NULL)').run();
     await env.DB.prepare("CREATE TABLE IF NOT EXISTS sp_bans (uid TEXT PRIMARY KEY, reason TEXT NOT NULL DEFAULT '', t INTEGER NOT NULL)").run();
     await env.DB.prepare("CREATE TABLE IF NOT EXISTS sp_grants (id INTEGER PRIMARY KEY AUTOINCREMENT, uid TEXT NOT NULL, kind TEXT NOT NULL, val TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', t INTEGER NOT NULL)").run();
@@ -187,6 +191,7 @@ async function ipHash(request, env) {
 const num = v => Math.max(0, Math.min(100000000, Number(v) || 0));
 
 /* ---------- Эхо: комнаты и уведомления в Telegram ---------- */
+const CALL_MAX = 4, CALL_STALE = 25 * 1000, CALL_SIG_MAX = 12000;
 const ROOM_MAX_MEMBERS = 20, ROOM_MAX_JOINED = 15, ROOM_KEEP = 100, ROOM_NAME_MAX = 24;
 const cleanText = (v, max) => {
   const t = String(v || '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -210,6 +215,20 @@ async function tgCheck(initData, token) {
   } catch (_) { return null; }
 }
 // уведомление в Telegram без текста сообщений; не чаще 6 за 10 минут на игрока
+// адреса серверов связи для звонка: Cloudflare TURN (если ключи заданы) или только бесплатный STUN
+async function iceServers(env) {
+  const stun = [{ urls: ['stun:stun.cloudflare.com:3478', 'stun:stun.l.google.com:19302'] }];
+  try {
+    if (!env.TURN_KEY_ID || !env.TURN_KEY_TOKEN) return { servers: stun, turn: false };
+    const r = await fetch('https://rtc.live.cloudflare.com/v1/turn/keys/' + encodeURIComponent(env.TURN_KEY_ID) + '/credentials/generate-ice-servers', {
+      method: 'POST', headers: { authorization: 'Bearer ' + env.TURN_KEY_TOKEN, 'content-type': 'application/json' }, body: JSON.stringify({ ttl: 6 * 3600 }),
+    });
+    if (!r.ok) return { servers: stun, turn: false };
+    const d = await r.json();
+    const list = Array.isArray(d && d.iceServers) ? d.iceServers : (d && d.iceServers ? [d.iceServers] : []);
+    return list.length ? { servers: list, turn: true } : { servers: stun, turn: false };
+  } catch (_) { return { servers: stun, turn: false }; }
+}
 async function notify(env, uid, text) {
   try {
     if (!env.GAME_BOT_TOKEN) return;
@@ -1214,6 +1233,53 @@ export default {
           if (!me) return reply({ error: 'Ты не состоишь в этой комнате.' }, 403);
           const room = await env.DB.prepare('SELECT id,name,owner FROM sp_rooms WHERE id=?').bind(roomId).first();
           if (!room) return reply({ error: 'Комната не найдена.' }, 404);
+
+          // звонок: вход, выход, опрос и обмен сигналами связи (сам звук и видео идут напрямую между игроками)
+          if (url.pathname.startsWith('/api/echo/call/')) {
+            const nm = user.username, cut = now - CALL_STALE;
+            const alive = async () => ((await env.DB.prepare('SELECT name,j FROM sp_call_part WHERE room=? AND t>? ORDER BY j ASC,name ASC').bind(roomId, cut).all()).results || []);
+            if (url.pathname === '/api/echo/call/who' && request.method === 'GET') {
+              if (!await allow(env, 'cw:' + user.id, 150, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+              return reply({ parts: (await alive()).map(p => p.name) });
+            }
+            if (url.pathname === '/api/echo/call/join' && post) {
+              if (!await allow(env, 'cj:' + user.id, 30, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+              await env.DB.prepare('DELETE FROM sp_call_part WHERE room=? AND t<=?').bind(roomId, cut).run();
+              await env.DB.prepare('DELETE FROM sp_call_sig WHERE t<?').bind(now - 120 * 1000).run();
+              const cur = await alive();
+              if (!cur.some(p => p.name === nm) && cur.length >= CALL_MAX) return reply({ error: 'В звонке уже ' + CALL_MAX + ' человека.' }, 409);
+              await env.DB.prepare('DELETE FROM sp_call_sig WHERE room=? AND (too=? OR frm=?)').bind(roomId, nm, nm).run();
+              await env.DB.prepare('INSERT OR REPLACE INTO sp_call_part (room,name,j,t) VALUES (?,?,?,?)').bind(roomId, nm, now, now).run();
+              const first = cur.length === 0;
+              if (first) {
+                const others = ((await env.DB.prepare('SELECT uid FROM sp_room_members WHERE room=? AND uid<>?').bind(roomId, user.id).all()).results || []).slice(0, ROOM_MAX_MEMBERS);
+                for (const o of others) push(ctx, notify(env, o.uid, '📞 Эхо · ' + room.name + ': ' + nm + ' начал(а) звонок'));
+              }
+              const ice = await iceServers(env);
+              return reply({ ok: true, me: nm, parts: await alive(), ice: ice.servers, turn: ice.turn });
+            }
+            if (url.pathname === '/api/echo/call/leave' && post) {
+              await env.DB.prepare('DELETE FROM sp_call_part WHERE room=? AND name=?').bind(roomId, nm).run();
+              await env.DB.prepare('DELETE FROM sp_call_sig WHERE room=? AND (too=? OR frm=?)').bind(roomId, nm, nm).run();
+              return reply({ ok: true });
+            }
+            if (url.pathname === '/api/echo/call/poll' && request.method === 'GET') {
+              const after = Math.max(0, Math.floor(Number(url.searchParams.get('after')) || 0));
+              if (url.searchParams.get('hb') === '1') await env.DB.prepare('INSERT INTO sp_call_part (room,name,j,t) VALUES (?,?,?,?) ON CONFLICT(room,name) DO UPDATE SET t=excluded.t').bind(roomId, nm, now, now).run();
+              const sigs = ((await env.DB.prepare('SELECT id,frm,body FROM sp_call_sig WHERE room=? AND too=? AND id>? ORDER BY id ASC LIMIT 100').bind(roomId, nm, after).all()).results || []);
+              return reply({ parts: await alive(), sigs: sigs.map(r => ({ id: r.id, from: r.frm, data: r.body })) });
+            }
+            if (url.pathname === '/api/echo/call/sig' && post) {
+              const to = String(body.to || '').slice(0, 40), data = String(body.data || '');
+              if (!to || to === nm || !data) return reply({ error: 'Пустой сигнал.' }, 400);
+              if (data.length > CALL_SIG_MAX) return reply({ error: 'Сигнал слишком большой.' }, 413);
+              const cnt = await env.DB.prepare('SELECT COUNT(*) AS n FROM sp_call_sig WHERE room=? AND frm=? AND t>?').bind(roomId, nm, now - 60 * 1000).first();
+              if (cnt && cnt.n >= 300) return reply(TOO_MANY, 429);
+              await env.DB.prepare('INSERT INTO sp_call_sig (room,frm,too,body,t) VALUES (?,?,?,?,?)').bind(roomId, nm, to, data, now).run();
+              return reply({ ok: true });
+            }
+            return reply({ error: 'Не найдено.' }, 404);
+          }
 
           if (url.pathname === '/api/echo/room/msgs' && request.method === 'GET') {
             if (!await allow(env, 'eg:' + user.id, 150, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
