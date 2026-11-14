@@ -238,14 +238,15 @@
     const row = h("div", "msg" + (same ? " cont" : "") + (m.mine ? " mine" : "")); row.dataset.id = m.id; E.els[m.id] = row;
     const av = h("div", "mav", same ? "" : first(m.who)); if (!same) av.style.background = tint(m.who); row.appendChild(av);
     const body = h("div", "mbody");
-    if (!same) { const hd = h("div", "mhead"); const nm = h("b", "mnm", m.mine ? m.who + " · " + T("ты", "you", "ти") : m.who); nm.style.color = "hsl(" + hue(m.who) + " 90% 74%)"; hd.appendChild(nm); hd.appendChild(h("i", "mtm", clock(m.t))); body.appendChild(hd) }
+    if (!same && !m.mine) { const hd = h("div", "mhead"); const nm = h("b", "mnm", m.who); nm.style.color = "hsl(" + hue(m.who) + " 90% 74%)"; hd.appendChild(nm); body.appendChild(hd) }
     const text = p.t === "Q" ? p.text : m.body;
     if (p.t === "Q") {
       const q = E.msgs[p.mid], bq = h("div", "mq"); bq.appendChild(h("b", "", q ? q.who : "…")); bq.appendChild(h("span", "", q ? q.text.slice(0, 60) : T("сообщение удалено", "message gone", "повідомлення видалено")));
       bq.onclick = e => { e.stopPropagation(); const t = E.els[p.mid]; if (t) { t.scrollIntoView({ block: "center", behavior: "smooth" }); t.classList.add("flash"); setTimeout(() => t.classList.remove("flash"), 1200) } };
       body.appendChild(bq);
     }
-    body.appendChild(h("div", "mtx", text)); body.appendChild(h("div", "rxs")); row.appendChild(body);
+    const tx2 = h("div", "mtx", text); tx2.appendChild(h("i", "mts", clock(m.t))); body.appendChild(tx2); body.appendChild(h("div", "rxs")); row.appendChild(body);
+    if (E.live && !m.mine && window.EchoCall) EchoCall.sfx("msg");
     E.msgs[m.id] = { who: m.who, text, mine: m.mine };
     row.onclick = () => select(m.id);
     l.appendChild(row); lastMsg = { who: m.who, t: m.t };
@@ -342,7 +343,7 @@
       rm.name = r.room.name; rm.mine = r.room.mine; rm.members = r.members; { const me = r.members.find(x => x.me); if (me) E.me = me.name }
       g("rmT").textContent = "# " + rm.name; g("rmS").textContent = "👥 " + r.members.map(x => x.name).slice(0, 4).join(", ") + (r.members.length > 4 ? " +" + (r.members.length - 4) : "");
       const l = g("rmL"), stick = first || l.scrollHeight - l.scrollTop - l.clientHeight < 80;
-      r.messages.forEach(m => { E.last = Math.max(E.last, m.id); roomAdd(m) });
+      E.live = !first; r.messages.forEach(m => { E.last = Math.max(E.last, m.id); roomAdd(m) }); E.live = false;
       if (!l.children.length) l.appendChild(h("div", "chem", T("Здесь пока тихо. Напиши первым 👋", "It's quiet here. Write first 👋", "Тут поки тихо. Напиши першим 👋")));
       else if (r.messages.length && l.querySelector(".chem")) l.querySelector(".chem").remove();
       if (stick) l.scrollTop = l.scrollHeight;

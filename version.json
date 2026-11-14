@@ -1,12 +1,15 @@
 {
-  "version": "3.8.2",
+  "version": "3.9.0",
   "notes": [
-    "Эхо на компьютере и планшете: список слева, чат справа"
+    "Чат комнаты пузырями",
+    "Новый экран звонка и звуки звонка"
   ],
   "notes_en": [
-    "Echo on desktop and tablet: list on the left, chat on the right"
+    "Room chat as bubbles",
+    "New call screen and call sounds"
   ],
   "notes_uk": [
-    "Ехо на комп'ютері та планшеті: список ліворуч, чат праворуч"
+    "Чат кімнати бульбашками",
+    "Новий екран дзвінка та звуки дзвінка"
   ]
 }
