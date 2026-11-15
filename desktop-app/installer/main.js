@@ -1,15 +1,22 @@
 const{app,BrowserWindow,ipcMain,dialog}=require("electron"),path=require("path"),fs=require("fs"),cp=require("child_process");
-let win;
+app.disableHardwareAcceleration();
+let win,alive=false;
 const LOG=path.join(app.getPath("temp"),"slovopad-installer.log");
 const log=t=>{try{fs.appendFileSync(LOG,new Date().toISOString()+" "+t+"\n")}catch(e){}};
 process.on("uncaughtException",e=>log("uncaught "+(e&&e.stack||e)));
 const setup=()=>app.isPackaged?path.join(process.resourcesPath,"setup.exe"):path.join(__dirname,"setup.exe");
 const defDir=()=>path.join(process.env.LOCALAPPDATA||app.getPath("home"),"Programs","Slovopad");
+log("start v"+app.getVersion()+" packaged="+app.isPackaged+" os="+process.getSystemVersion()+" electron="+process.versions.electron);
 if(!app.requestSingleInstanceLock())app.quit();
 app.whenReady().then(()=>{win=new BrowserWindow({width:760,height:470,resizable:false,maximizable:false,frame:false,backgroundColor:"#05060f",title:"СЛОВОПАД",icon:path.join(__dirname,"icon.ico"),webPreferences:{preload:path.join(__dirname,"preload.js"),contextIsolation:true,sandbox:false}});
  win.webContents.on("preload-error",(_,p,e)=>log("preload-error "+p+" "+(e&&e.message)));
  win.webContents.on("render-process-gone",(_,d)=>log("render gone "+d.reason));
- win.loadFile("ui.html")});
+ win.webContents.on("console-message",(_,l,m,ln)=>{if(l>=2)log("page error: "+m+" (line "+ln+")")});
+ win.webContents.on("did-fail-load",(_,c,d)=>log("fail-load "+c+" "+d));
+ win.webContents.on("did-finish-load",()=>log("page loaded"));
+ win.loadFile("ui.html");
+ /* если окно не ожило за 6 секунд, запускаем обычную установку, чтобы человек не остался с «кирпичом» */
+ setTimeout(()=>{if(alive)return;log("ui did not start, running plain setup");try{const c=cp.spawn(setup(),[],{detached:true,stdio:"ignore"});c.on("error",e=>log("plain setup "+e.message));c.unref()}catch(e){log("plain setup "+e.message)}setTimeout(()=>app.quit(),1500)},6000)});
 app.on("window-all-closed",()=>app.quit());
 ipcMain.handle("info",()=>({version:app.getVersion(),dir:defDir()}));
 ipcMain.handle("pick",async(_,cur)=>{let r;try{r=await dialog.showOpenDialog(win,{defaultPath:cur||undefined,properties:["openDirectory","createDirectory"]})}catch(e){log("pick "+e.message);r=await dialog.showOpenDialog({properties:["openDirectory","createDirectory"]})}if(r.canceled)return null;const d=r.filePaths[0];return/slovopad$/i.test(d)?d:path.join(d,"Slovopad")});
@@ -20,4 +27,5 @@ ipcMain.handle("install",(_,dir)=>new Promise(res=>{
   c.on("error",e=>{log("spawn "+e.message);end({ok:false,msg:e.message})});c.on("exit",code=>{log("setup exit "+code);end({ok:code===0,msg:"код "+code})})}
  catch(e){end({ok:false,msg:e.message})}}));
 ipcMain.handle("launch",(_,dir)=>{try{const f=fs.readdirSync(dir).find(x=>/\.exe$/i.test(x)&&!/uninstall/i.test(x));if(!f)return false;const c=cp.spawn(path.join(dir,f),[],{detached:true,stdio:"ignore"});c.on("error",()=>{});c.unref();return true}catch(e){return false}});
+ipcMain.on("ready",()=>{alive=true;log("ui ready")});
 ipcMain.on("close",()=>app.quit());ipcMain.on("min",()=>win&&win.minimize());

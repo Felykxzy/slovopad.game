@@ -1,15 +1,12 @@
 {
-  "version": "3.10.0",
+  "version": "3.10.1",
   "notes": [
-    "Ползунок громкости в настройках",
-    "Свой тег у ника: текст, цвет, перелив"
+    "Исправлен установщик для Windows"
   ],
   "notes_en": [
-    "Volume slider in settings",
-    "Your own nickname tag: text, colour, shimmer"
+    "Fixed the Windows installer"
   ],
   "notes_uk": [
-    "Повзунок гучності в налаштуваннях",
-    "Свій тег біля ніка: текст, колір, перелив"
+    "Виправлено інсталятор для Windows"
   ]
 }
