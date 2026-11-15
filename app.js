@@ -481,6 +481,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(state==="play")p
 $("qp").onclick=()=>pickTheme(THEMES[THEMES.length-1]);
 $("tp").onclick=()=>{lgUI();ov("o5");requestAnimationFrame(()=>fgUpd(1))};$("pl").onclick=()=>pickTheme(THEMES[cur]);$("c5").onclick=()=>ov("o1");$("rk").onclick=rkList;$("c6").onclick=()=>{rkUI();ov("o1")};
 const AVS=[["🧑‍🚀",0],["🦊",0],["🐱",0],["🐼",0],["🐸",0],["🦄",0],["🐲",0],["🤖",0],["👾",0],["🚀",0],["⚡",0],["🎧",0],["🔥",3],["🦅",4],["👑",5]];
+let PF_FRESH=false;try{PF_FRESH=!localStorage.getItem("pf")}catch(e){}
 let PF={n:"",a:"🧑‍🚀",p:"",g:0,h:0,m:0,c:0,t:0,w:0};
 try{Object.assign(PF,JSON.parse(localStorage.getItem("pf")||"{}"));PF.p=localStorage.getItem("pfp")||""}catch(e){}
 function pfSave(){try{localStorage.setItem("pf",JSON.stringify(Object.assign({},PF,{p:undefined})))}catch(e){}}
@@ -522,7 +523,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");glassSet((e.clientX/innerWidth-.5)/.55,(e.clientY/innerHeight-.5)/.5)},{passive:true});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="3.15.0";let upLater=false;
+const VER="3.16.0";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if($("spl")||state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
@@ -581,7 +582,7 @@ let cloudBusy=false,sidTimer=0;
 ["Сессия истекла. Войди снова.","Session expired. Log in again.","Сесію завершено. Увійди знову."],
 ["Вы вышли из ID. Локальный прогресс сохранён.","Logged out. Local progress is kept.","Ти вийшов з ID. Локальний прогрес збережено."],
 ["Пока нет игроков в рейтинге.","No players in the ranking yet.","Поки що немає гравців у рейтингу."],["очков","points","очок"],["Никнейм","Nickname","Нікнейм"],["Пароль (минимум 8 символов)","Password (8+ characters)","Пароль (мінімум 8 символів)"],
-["или","or","або"],["ВОЙТИ ЧЕРЕЗ TELEGRAM","LOG IN WITH TELEGRAM","УВІЙТИ ЧЕРЕЗ TELEGRAM"],["Telegram пока не привязан. Если аккаунт уже есть: перейди на вкладку ВОЙТИ и введи ник с паролем, Telegram привяжется сам. Нужен новый: впиши ник выше и нажми кнопку ещё раз.","Telegram is not linked yet. If you already have an account: open the LOG IN tab and enter your nickname and password, Telegram will link itself. Need a new one: type a nickname above and tap the button again.","Telegram ще не прив’язано. Якщо акаунт уже є: відкрий вкладку УВІЙТИ й введи нік з паролем, Telegram прив’яжеться сам. Потрібен новий: впиши нік вище й натисни кнопку ще раз."],["СОЗДАТЬ НОВЫЙ АККАУНТ ЧЕРЕЗ TELEGRAM","CREATE NEW ACCOUNT WITH TELEGRAM","СТВОРИТИ НОВИЙ АКАУНТ ЧЕРЕЗ TELEGRAM"],["С возвращением! Введи ник и пароль.","Welcome back! Enter your nickname and password.","З поверненням! Введи нік і пароль."],["Показать пароль","Show password","Показати пароль"],["👥 ДРУЗЬЯ","👥 FRIENDS","👥 ДРУЗІ"],["ЗВУК И ОТКЛИК","SOUND & FEEDBACK","ЗВУК І ВІДГУК"],["ИГРА","GAME","ГРА"],["ЯЗЫК","LANGUAGE","МОВА"]
+["или","or","або"],["АККАУНТЫ","ACCOUNTS","АКАУНТИ"],["Можно держать несколько аккаунтов на этом устройстве и переключаться между ними.","You can keep several accounts on this device and switch between them.","Можна тримати кілька акаунтів на цьому пристрої й перемикатися між ними."],["сейчас","current","зараз"],["+ ДОБАВИТЬ АККАУНТ","+ ADD ACCOUNT","+ ДОДАТИ АКАУНТ"],["Не удалось сохранить прогресс текущего аккаунта. Проверь интернет и попробуй ещё раз.","Could not save the current account progress. Check your connection and try again.","Не вдалося зберегти прогрес поточного акаунта. Перевір інтернет і спробуй ще раз."],["ВОЙТИ ЧЕРЕЗ TELEGRAM","LOG IN WITH TELEGRAM","УВІЙТИ ЧЕРЕЗ TELEGRAM"],["Telegram пока не привязан. Если аккаунт уже есть: перейди на вкладку ВОЙТИ и введи ник с паролем, Telegram привяжется сам. Нужен новый: впиши ник выше и нажми кнопку ещё раз.","Telegram is not linked yet. If you already have an account: open the LOG IN tab and enter your nickname and password, Telegram will link itself. Need a new one: type a nickname above and tap the button again.","Telegram ще не прив’язано. Якщо акаунт уже є: відкрий вкладку УВІЙТИ й введи нік з паролем, Telegram прив’яжеться сам. Потрібен новий: впиши нік вище й натисни кнопку ще раз."],["СОЗДАТЬ НОВЫЙ АККАУНТ ЧЕРЕЗ TELEGRAM","CREATE NEW ACCOUNT WITH TELEGRAM","СТВОРИТИ НОВИЙ АКАУНТ ЧЕРЕЗ TELEGRAM"],["С возвращением! Введи ник и пароль.","Welcome back! Enter your nickname and password.","З поверненням! Введи нік і пароль."],["Показать пароль","Show password","Показати пароль"],["👥 ДРУЗЬЯ","👥 FRIENDS","👥 ДРУЗІ"],["ЗВУК И ОТКЛИК","SOUND & FEEDBACK","ЗВУК І ВІДГУК"],["ИГРА","GAME","ГРА"],["ЯЗЫК","LANGUAGE","МОВА"]
 ].forEach(a=>IM.set(a[0],a));
 const SID_TOG=[["rank","РАНГ И СЛОВА"],["records","РЕКОРДЫ"],["ach","ДОСТИЖЕНИЯ"],["stats","СТАТИСТИКА"],["online","СТАТУС «В СЕТИ»"]];
 const sidTok=()=>{try{return localStorage.getItem(CLOUD_TOKEN_KEY)||""}catch(e){return""}};
@@ -602,7 +603,7 @@ if(r.eq&&typeof r.eq==="object"){if(EQ.s==="s0"&&r.eq.s&&ow.includes(r.eq.s))EQ.
 function sidApply(acc){if(!acc)return;if(acc.profile)cloudRestore(acc.profile);sidMerge(acc.data);
 if(acc.privacy&&!localStorage.getItem(SID_PRIV))localStorage.setItem(SID_PRIV,JSON.stringify(acc.privacy));
 if(acc.username)localStorage.setItem(SID_KEY,JSON.stringify({username:acc.username,spCode:acc.spCode||""}));sidCard()}
-function sidLogoutLocal(){localStorage.removeItem(CLOUD_TOKEN_KEY);localStorage.removeItem(SID_KEY);sidCard()}
+function sidLogoutLocal(){try{accForget((sidInfo()||{}).spCode)}catch(e){}localStorage.removeItem(CLOUD_TOKEN_KEY);localStorage.removeItem(SID_KEY);sidCard()}
 async function cloudRequest(path,options={}){const headers={...(options.headers||{})},token=sidTok();if(token)headers.authorization="Bearer "+token;if(options.body)headers["content-type"]="application/json";
 const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),20000);let response;try{response=await fetch(CLOUD_URL+path,{...options,headers,signal:ctl.signal})}catch(e){throw new Error(tx("Нет связи с сервером. Проверь интернет."))}finally{clearTimeout(tm)}
 let data={};try{data=await response.json()}catch(e){}
@@ -611,15 +612,34 @@ if(!response.ok)throw new Error((data.error||("Ошибка сервера: "+re
 function cloudSnapshot(){const bestScores={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith("best_"))bestScores[k]=Number(localStorage.getItem(k))||0}
 return {pf:{n:PF.n,a:PF.a,g:PF.g,h:PF.h,m:PF.m,c:PF.c,t:PF.t,w:PF.w,tg:PF.tg||null},pfp:localStorage.getItem("pfp")||"",tw:tw(),streak:streakGet(),bestScores}}
 function cloudRestore(remote){if(!remote||typeof remote!=="object")return;const local=cloudSnapshot(),incoming=remote;
-const a=local.pf||{},b=incoming.pf||{};PF={...PF,...b,...a,n:(a.n||b.n||PF.n),a:(a.a||b.a||PF.a),g:Math.max(+a.g||0,+b.g||0),h:Math.max(+a.h||0,+b.h||0),m:Math.max(+a.m||0,+b.m||0),c:Math.max(+a.c||0,+b.c||0),t:Math.max(+a.t||0,+b.t||0),w:Math.max(+a.w||0,+b.w||0),tg:(PF.tg!==undefined?PF.tg:(b.tg||null))};
-try{localStorage.setItem("pf",JSON.stringify(PF));const avatar=local.pfp||incoming.pfp;if(avatar)localStorage.setItem("pfp",avatar);localStorage.setItem("tw",Math.max(+local.tw||0,+incoming.tw||0));const merged=SlovopadCore.mergeBestScores(local.bestScores,incoming.bestScores);for(const [k,v] of Object.entries(merged))if(/^best_[a-z0-9_]{1,40}$/i.test(k)&&Number.isFinite(+v)&&+v>=0&&+v<1e7)localStorage.setItem(k,String(v));const st=local.streak||{},rs=incoming.streak||{};if((+rs.max||0)>(+st.max||0))localStorage.setItem("streak",JSON.stringify(rs))}catch(e){}
+const a=local.pf||{},b=incoming.pf||{};PF={...PF,...b,...a,n:(a.n||b.n||PF.n),a:((PF_FRESH&&b.a)?b.a:(a.a||b.a||PF.a)),g:Math.max(+a.g||0,+b.g||0),h:Math.max(+a.h||0,+b.h||0),m:Math.max(+a.m||0,+b.m||0),c:Math.max(+a.c||0,+b.c||0),t:Math.max(+a.t||0,+b.t||0),w:Math.max(+a.w||0,+b.w||0),tg:(PF.tg!==undefined?PF.tg:(b.tg||null))};
+PF_FRESH=false;try{localStorage.setItem("pf",JSON.stringify(PF));const avatar=local.pfp||incoming.pfp;if(avatar)localStorage.setItem("pfp",avatar);localStorage.setItem("tw",Math.max(+local.tw||0,+incoming.tw||0));const merged=SlovopadCore.mergeBestScores(local.bestScores,incoming.bestScores);for(const [k,v] of Object.entries(merged))if(/^best_[a-z0-9_]{1,40}$/i.test(k)&&Number.isFinite(+v)&&+v>=0&&+v<1e7)localStorage.setItem(k,String(v));const st=local.streak||{},rs=incoming.streak||{};if((+rs.max||0)>(+st.max||0))localStorage.setItem("streak",JSON.stringify(rs))}catch(e){}
 pfUI();stats()}
 async function cloudSync(silent){if(cloudBusy||!sidTok())return false;cloudBusy=true;const btn=$("sidSync");if(btn)btn.disabled=true;if(!silent)sidStatus("Сохраняю прогресс…");
 try{sidApply(await cloudRequest("/api/me"));const snap=cloudSnapshot(),bestScore=Math.max(0,...Object.values(snap.bestScores));
 const res=await cloudRequest("/api/sync",{method:"POST",body:JSON.stringify({profile:snap,data:sidData(),privacy:sidPriv(),bestScore,totalWords:snap.tw})});
-if(res.spCode)localStorage.setItem(SID_KEY,JSON.stringify({username:res.username,spCode:res.spCode}));sidCard();sidRender();if(!silent)sidStatus("Прогресс синхронизирован ✓","ok");return true}
+if(res.spCode)localStorage.setItem(SID_KEY,JSON.stringify({username:res.username,spCode:res.spCode}));accRemember();sidCard();sidRender();if(!silent)sidStatus("Прогресс синхронизирован ✓","ok");return true}
 catch(e){if(!silent)sidStatus(e.message,"er");return false}finally{cloudBusy=false;if(btn)btn.disabled=false}}
 function sidAuto(){if(!sidTok())return;clearTimeout(sidTimer);sidTimer=setTimeout(()=>cloudSync(true),4000)}
+/* несколько аккаунтов на одном устройстве: у каждого свой вход, а прогресс при переключении берётся из облака */
+const ACCS_KEY="slovopadAccs";
+function accList(){try{const a=JSON.parse(localStorage.getItem(ACCS_KEY)||"[]");return Array.isArray(a)?a.filter(x=>x&&x.c&&x.t):[]}catch(e){return[]}}
+function accPut(l){try{localStorage.setItem(ACCS_KEY,JSON.stringify(l.slice(0,8)))}catch(e){}}
+function accRemember(){const i=sidInfo(),t=sidTok();if(!i||!i.spCode||!t)return;accPut([{u:i.username,c:i.spCode,t},...accList().filter(x=>x.c!==i.spCode)])}
+function accForget(code){if(code)accPut(accList().filter(x=>x.c!==code))}
+function accWipe(){["pf","pfp","tw","streak","ach","achS","ow","co","coT","eq",SID_PRIV,"best"].forEach(k=>localStorage.removeItem(k));Object.keys(localStorage).filter(k=>/^best_/.test(k)).forEach(k=>localStorage.removeItem(k))}
+async function accSwitch(code){const to=accList().find(x=>x.c===code);if(!to||cloudBusy)return;sidStatus("Сохраняю прогресс…");
+if(!await cloudSync(true)){sidStatus("Не удалось сохранить прогресс текущего аккаунта. Проверь интернет и попробуй ещё раз.","er");return}
+accRemember();clearTimeout(sidTimer);
+localStorage.setItem(CLOUD_TOKEN_KEY,to.t);localStorage.setItem(SID_KEY,JSON.stringify({username:to.u,spCode:to.c}));accWipe();try{localStorage.setItem("tgNoAuto","1")}catch(e){}location.reload()}
+async function accAdd(){if(cloudBusy)return;sidStatus("Сохраняю прогресс…");
+if(!await cloudSync(true)){sidStatus("Не удалось сохранить прогресс текущего аккаунта. Проверь интернет и попробуй ещё раз.","er");return}
+accRemember();clearTimeout(sidTimer);localStorage.removeItem(CLOUD_TOKEN_KEY);localStorage.removeItem(SID_KEY);accWipe();try{localStorage.setItem("tgNoAuto","1");sessionStorage.setItem("openSid","1")}catch(e){}location.reload()}
+function accRender(){const box=$("sidAccs");if(!box)return;box.textContent="";const cur=(sidInfo()||{}).spCode;
+accList().forEach(a=>{const row=document.createElement("div");row.className="sid-acc"+(a.c===cur?" on":"");const b=document.createElement("button");b.type="button";b.className="sid-accb";const n=document.createElement("b");n.textContent=a.u;const s=document.createElement("span");s.textContent=a.c===cur?tx("сейчас"):a.c;b.append(n,s);row.appendChild(b);
+if(a.c!==cur){b.onclick=()=>accSwitch(a.c);const x=document.createElement("button");x.type="button";x.className="sid-accx";x.setAttribute("aria-label","remove");x.innerHTML=window.IC?IC.html("close"):"×";x.onclick=()=>{accForget(a.c);accRender()};row.appendChild(x)}
+box.appendChild(row)});
+const add=document.createElement("button");add.type="button";add.className="btn a sid-accadd";add.textContent=tx("+ ДОБАВИТЬ АККАУНТ");add.onclick=accAdd;box.appendChild(add)}
 async function cloudAuth(mode){if(cloudBusy)return;const username=$("sidName").value.trim(),password=$("sidPass").value;
 if(username.length<3||password.length<8){sidStatus("Укажи ник (3–20 символов) и пароль от 8 символов.","er");return}
 cloudBusy=true;$("sidReg").disabled=$("sidLogin").disabled=true;sidStatus("Подключаюсь…");
@@ -645,7 +665,7 @@ $("sidPass").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();(sidM==="reg"?
 function sidRender(){const on=!!sidTok(),i=sidInfo()||{};$("sidFormOut").style.display=on?"none":"";$("sidFormIn").style.display=on?"":"none";
 $("sidName").placeholder=tx("Никнейм");$("sidPass").placeholder=tx("Пароль (минимум 8 символов)");
 if(!on){sidMode(sidM);const tb=$("sidTg");if(tb){tb.hidden=!tgInit();tb.textContent=tx(tgNew?"СОЗДАТЬ НОВЫЙ АККАУНТ ЧЕРЕЗ TELEGRAM":"ВОЙТИ ЧЕРЕЗ TELEGRAM")}return}avSet($("sidAv"),PF.a,PF.p);$("sidNm").textContent=i.username||"";$("sidCode").textContent=i.spCode||"SP-······";
-const box=$("sidPriv"),p=sidPriv();box.textContent="";SID_TOG.forEach(([k,label])=>{const row=document.createElement("button");row.type="button";row.className="sid-sw"+(p[k]?" on":"");const s=document.createElement("span");s.textContent=tx(label);const t=document.createElement("i");row.append(s,t);
+accRender();const box=$("sidPriv"),p=sidPriv();box.textContent="";SID_TOG.forEach(([k,label])=>{const row=document.createElement("button");row.type="button";row.className="sid-sw"+(p[k]?" on":"");const s=document.createElement("span");s.textContent=tx(label);const t=document.createElement("i");row.append(s,t);
 row.onclick=()=>{const q=sidPriv();q[k]=!q[k];localStorage.setItem(SID_PRIV,JSON.stringify(q));sidRender();sidAuto()};box.appendChild(row)})}
 function sidOpen(){try{sidRender();sidStatus("")}catch(e){dbgShow("Экран ID: "+e.message)}ov("o11");$("o11").scrollTop=0;if(sidTok())cloudLoadRanks()}
 async function cloudLoadRanks(){const box=$("sidRanks");if(!box.firstChild)box.innerHTML="<div class='hint'>…</div>";
@@ -660,6 +680,7 @@ $("pSid").onclick=sidOpen;$("pc").onclick=()=>{if(sidTok())pfOpen();else sidOpen
 try{localStorage.removeItem("slovopadCloudApi")}catch(e){}
 {const _ia=i18nApply;i18nApply=function(){_ia();try{sidRender()}catch(e){}}}
 if(sidTok())setTimeout(()=>cloudSync(true),1500);
+try{if(sessionStorage.getItem("openSid")){sessionStorage.removeItem("openSid");setTimeout(sidOpen,300)}}catch(e){}
 
 
 /* Эффект стекла: блик на кнопках, реагирует на наклон телефона (если разрешено) */

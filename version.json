@@ -1,12 +1,12 @@
 {
-  "version": "3.15.0",
+  "version": "3.16.0",
   "notes": [
-    "Выбор камеры в звонке Эхо"
+    "Переключение между аккаунтами"
   ],
   "notes_en": [
-    "Camera picker in Echo calls"
+    "Switch between accounts"
   ],
   "notes_uk": [
-    "Вибір камери в дзвінку Ехо"
+    "Перемикання між акаунтами"
   ]
 }

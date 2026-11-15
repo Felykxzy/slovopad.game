@@ -1110,3 +1110,11 @@ body.eco #fg .fd.cur .ic,body.eco #fg .fd.cur .fr::after,body.eco #fg .fd.cur .w
 .clcm[hidden]{display:none}
 .clci{all:unset;text-align:left;box-sizing:border-box;cursor:pointer;padding:11px 14px;border-radius:12px;color:#dfe6ff;font-size:14px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .clci:hover{background:rgba(255,255,255,.08)}.clci.on{background:rgba(94,242,255,.18);color:#eaffff;font-weight:700}
+/* несколько аккаунтов */
+#sidAccs{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.sid-acc{display:flex;align-items:stretch;gap:6px}
+.sid-accb{all:unset;box-sizing:border-box;flex:1;min-width:0;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 16px;border-radius:16px;cursor:pointer;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#e8ecff}
+.sid-accb b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sid-accb span{font-size:11px;letter-spacing:.1em;opacity:.65;white-space:nowrap}
+.sid-acc.on .sid-accb{cursor:default;background:rgba(94,242,255,.12);border-color:rgba(94,242,255,.5)}.sid-acc.on .sid-accb span{color:#8ff3ff;opacity:1}
+.sid-accx{all:unset;box-sizing:border-box;width:46px;display:grid;place-items:center;border-radius:16px;cursor:pointer;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#c9cfee}.sid-accx svg{width:18px;height:18px}
+.sid-accadd{width:100%}
