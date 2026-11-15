@@ -1128,3 +1128,10 @@ body.eco #fg .fd.cur .ic,body.eco #fg .fd.cur .fr::after,body.eco #fg .fd.cur .w
 @keyframes ewup{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
 .ewn{font-size:22px;font-weight:800;letter-spacing:.04em;text-align:center}.ews{opacity:.7;font-size:13px;letter-spacing:.1em}.ewc2{font-size:12px;letter-spacing:.2em;opacity:.55}
 .ewc .btn{width:100%}.ewc .fpst{width:100%}.ewc .hint.bad{color:#ff8da1}
+
+/* маленькое объявление: приложение ЭХО */
+.eadvw{display:flex;align-items:center;gap:6px;max-width:100%;margin-top:4px}
+.eadv{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;font-size:12px;line-height:1.2;color:inherit;text-decoration:none;background:linear-gradient(90deg,rgba(94,242,255,.16),rgba(255,79,163,.16));border:1px solid rgba(94,242,255,.35);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eadv b{color:#8ff3ff}.eadv span{opacity:.75;flex:none}
+.eadvx{flex:none;width:26px;height:26px;border-radius:50%;border:0;background:rgba(255,255,255,.08);color:inherit;cursor:pointer;font-size:12px;opacity:.7}
+#eAdv.gone{display:none}

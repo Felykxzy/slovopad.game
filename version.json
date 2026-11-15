@@ -1,12 +1,12 @@
 {
-  "version": "3.18.0",
+  "version": "3.18.1",
   "notes": [
-    "Приложение для iPhone и iPad"
+    "Объявление о приложении ЭХО на главном экране"
   ],
   "notes_en": [
-    "App for iPhone and iPad"
+    "A small note about the ECHO app on the main screen"
   ],
   "notes_uk": [
-    "Застосунок для iPhone та iPad"
+    "Оголошення про застосунок ЕХО на головному екрані"
   ]
 }
