@@ -1,15 +1,12 @@
 {
-  "version": "3.11.0",
+  "version": "3.12.0",
   "notes": [
-    "Свои иконки вместо эмодзи",
-    "Новый вид Эхо и экрана звонка"
+    "Свои иконки по всей игре вместо эмодзи"
   ],
   "notes_en": [
-    "Custom icons instead of emoji",
-    "New look for Echo and the call screen"
+    "Custom icons across the whole game instead of emoji"
   ],
   "notes_uk": [
-    "Власні іконки замість емодзі",
-    "Новий вигляд Ехо та екрана дзвінка"
+    "Власні іконки по всій грі замість емодзі"
   ]
 }
