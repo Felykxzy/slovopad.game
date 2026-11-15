@@ -43,10 +43,10 @@
     const o = h("div", "ov"); o.id = "o19";
     o.innerHTML = '<div class="clh"><button class="ib" id="clBk" type="button" aria-label="minimize">'+IC.html("back")+'</button><div class="clt"><h2 id="clT"></h2><div class="sub"><span id="clS"></span><b id="clTm">0:00</b></div></div><div class="clq" id="clQ"></div></div>' +
       '<div class="cgrid" id="clG"></div><div class="hint" id="clSt"></div>' +
-      '<div class="cbar"><div class="cbw"><button class="cb" id="clMic" type="button">'+IC.html("mic")+'</button><span>' + T("Микрофон", "Mic", "Мікрофон") + '</span></div><div class="cbw"><button class="cb" id="clCam" type="button">'+IC.html("cam")+'</button><span>' + T("Камера", "Camera", "Камера") + '</span></div><div class="cbw" id="clFlw"><button class="cb" id="clFl" type="button">'+IC.html("flip")+'</button><span>' + T("Поворот", "Flip", "Поворот") + '</span></div><div class="cbw"><button class="cb end" id="clEnd" type="button">'+IC.html("hangup")+'</button><span>' + T("Выйти", "Leave", "Вийти") + '</span></div></div>';
+      '<div class="cbar"><div class="cbw"><button class="cb" id="clMic" type="button">'+IC.html("mic")+'</button><span>' + T("Микрофон", "Mic", "Мікрофон") + '</span></div><div class="cbw"><button class="cb" id="clCam" type="button">'+IC.html("cam")+'</button><span>' + T("Камера", "Camera", "Камера") + '</span></div><div class="cbw" id="clScw" hidden><button class="cb" id="clScr" type="button">'+IC.html("screen")+'</button><span>' + T("Экран", "Screen", "Екран") + '</span></div><div class="cbw" id="clFlw"><button class="cb" id="clFl" type="button">'+IC.html("flip")+'</button><span>' + T("Поворот", "Flip", "Поворот") + '</span></div><div class="cbw"><button class="cb end" id="clEnd" type="button">'+IC.html("hangup")+'</button><span>' + T("Выйти", "Leave", "Вийти") + '</span></div></div>';
     const after = g("o18") || g("o17") || g("o16") || g("o1"); after.parentNode.insertBefore(o, after.nextSibling);
     g("clBk").onclick = () => minimize();
-    g("clMic").onclick = toggleMic; g("clCam").onclick = toggleCam; g("clFl").onclick = flip; g("clEnd").onclick = () => leave(true);
+    g("clMic").onclick = toggleMic; g("clCam").onclick = toggleCam; g("clFl").onclick = flip; g("clScr").onclick = toggleScr; g("clScw").hidden = !(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia); g("clEnd").onclick = () => leave(true);
   }
   const hint = (msg, bad) => { const e = g("clSt"); if (e) { e.textContent = msg || ""; e.classList.toggle("bad", !!bad) } };
   const hue = n => { let x = 0; for (const c of String(n)) x = (x * 31 + c.charCodeAt(0)) % 360; return x };
@@ -66,14 +66,14 @@
     let w = G.querySelector(".cwait"); if (!names.length && !w) { w = h("div", "cwait"); w.appendChild(h("i", "")); w.appendChild(h("span", "", T("Ждём друзей…", "Waiting for friends…", "Чекаємо друзів…"))); G.appendChild(w) } else if (names.length && w) w.remove();
   }
   function paintTile(P) {
-    const t = P.tile; if (!t) return; t.classList.toggle("nocam", !P.cam);
+    const t = P.tile; if (!t) return; t.classList.toggle("nocam", !P.cam); t.classList.toggle("scr", !!(P.cam && P.scr));
     IC.t(t._st, P.mic === false ? "{mic-off}" : "");
   }
   function paintSelf() {
-    if (!C.tile) return; C.tile.classList.toggle("nocam", !C.camOn); C.tile.classList.toggle("flip", C.facing === "user");
+    if (!C.tile) return; C.tile.classList.toggle("nocam", !C.camOn); C.tile.classList.toggle("flip", C.facing === "user" && !C.scr); C.tile.classList.toggle("scr", !!C.scr); g("clScr").classList.toggle("on", !!C.scr);
     IC.t(C.tile._st, C.micOn ? "" : "{mic-off}");
     g("clMic").classList.toggle("off", !C.micOn); IC.t(g("clMic"), C.micOn ? "{mic}" : "{mic-off}"); IC.t(g("clCam"), C.camOn ? "{cam}" : "{cam-off}");
-    g("clCam").classList.toggle("on", C.camOn); g("clFlw").hidden = !C.camOn;
+    g("clCam").classList.toggle("on", C.camOn); g("clFlw").hidden = !C.camOn || !!C.scr;
   }
   // кто говорит: мерим громкость каждого потока
   function watch(tile, stream) {
@@ -110,14 +110,14 @@
   function tune(sender) {
     try {
       const n = Math.max(1, Object.keys(C.peers).length), p = sender.getParameters(); p.encodings = p.encodings && p.encodings.length ? p.encodings : [{}];
-      p.encodings[0].maxBitrate = n <= 1 ? 2500000 : n === 2 ? 1800000 : 1200000; p.encodings[0].maxFramerate = 60; p.degradationPreference = "maintain-framerate";
+      p.encodings[0].maxBitrate = n <= 1 ? 2500000 : n === 2 ? 1800000 : 1200000; p.encodings[0].maxFramerate = C.scr ? 30 : 60; p.degradationPreference = C.scr ? "maintain-resolution" : "maintain-framerate";
       sender.setParameters(p).catch(() => { });
     } catch (e) { }
   }
-  function sendState(P) { try { if (P.dc && P.dc.readyState === "open") P.dc.send(JSON.stringify({ cam: C.camOn, mic: C.micOn })) } catch (e) { } }
+  function sendState(P) { try { if (P.dc && P.dc.readyState === "open") P.dc.send(JSON.stringify({ cam: C.camOn, mic: C.micOn, scr: !!C.scr })) } catch (e) { } }
   function wireDc(P, dc) {
     P.dc = dc; dc.onopen = () => sendState(P);
-    dc.onmessage = e => { try { const d = JSON.parse(e.data); P.cam = !!d.cam; P.mic = d.mic !== false; paintTile(P) } catch (x) { } };
+    dc.onmessage = e => { try { const d = JSON.parse(e.data); P.cam = !!d.cam; P.mic = d.mic !== false; P.scr = !!d.scr; paintTile(P) } catch (x) { } };
   }
   function ensurePeer(name) {
     if (C.peers[name]) return C.peers[name];
@@ -209,7 +209,26 @@
     if (C.tile) C.tile._v.srcObject = null;
     Object.values(C.peers).forEach(attachLocal);
   }
+  /* показ экрана: вместо камеры уходит картинка экрана (только там, где браузер это умеет) */
+  async function scrStart() {
+    const s = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 30 } }, audio: false });
+    const tr = s.getVideoTracks()[0]; if (!tr) throw new Error("no video");
+    if (C.cam) { try { C.cam.stop() } catch (e) { } }
+    C.cam = tr; C.scr = true; C.camOn = true; try { tr.contentHint = "detail" } catch (e) { }
+    tr.onended = () => { if (C.scr && C.cam === tr) scrStop() };
+    C.tile._v.srcObject = new MediaStream([tr]); try { C.tile._v.play().catch(() => { }) } catch (e) { }
+    Object.values(C.peers).forEach(attachLocal);
+  }
+  function scrStop() {
+    C.scr = false; C.camOn = false; camStop(); sfx("cam"); paintSelf(); Object.values(C.peers).forEach(sendState);
+  }
+  async function toggleScr() {
+    if (C.scr) return scrStop();
+    try { await scrStart(); sfx("cam"); hint(""); paintSelf(); Object.values(C.peers).forEach(sendState) }
+    catch (e) { C.scr = false; if (C.cam && !C.camOn) C.cam = null; if (e && e.name !== "NotAllowedError" && e.name !== "AbortError") hint(T("Показ экрана здесь недоступен.", "Screen sharing is not available here.", "Показ екрана тут недоступний."), true); paintSelf() }
+  }
   async function toggleCam() {
+    if (C.scr) return scrStop();
     if (!navigator.mediaDevices) return hint(T("Камера здесь недоступна.", "Camera is not available here.", "Камера тут недоступна."), true);
     try {
       if (C.camOn) { C.camOn = false; camStop() } else { await camStart(); C.camOn = true } sfx("cam");
@@ -243,7 +262,7 @@
   async function leave(goBack) {
     const room = C.room, was = C.active; if (was) sfx("me-leave"); C.active = false; clearInterval(C.timer); C.timer = 0; clearTimeout(C.sp); clearInterval(C.tt);
     Object.keys(C.peers).forEach(closePeer);
-    [C.mic, C.cam].forEach(t => { try { t && t.stop() } catch (e) { } }); C.mic = C.cam = null; C.camOn = false;
+    [C.mic, C.cam].forEach(t => { try { t && t.stop() } catch (e) { } }); C.mic = C.cam = null; C.camOn = false; C.scr = false;
     const G = g("clG"); if (G) G.textContent = ""; C.tile = null;
     if (was) { try { await post("/api/echo/call/leave", { room }) } catch (e) { } }
     if (goBack) minimize();

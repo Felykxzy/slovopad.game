@@ -1102,3 +1102,6 @@ body.eco #fg .fd.cur .ic,body.eco #fg .fd.cur .fr::after,body.eco #fg .fd.cur .w
 .c-gold{color:#ffd166}.c-orange{color:#ff9a4d}.c-pink{color:#ff6fae}.c-red{color:#ff6b6b}.c-green{color:#7dff9c}
 .aci .ei>.ic{width:1em;height:1em}
 .ao.lk:after{content:"";width:12px;height:12px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='10.5' width='14' height='10' rx='2.6'/%3E%3Cpath d='M8 10.5V8a4 4 0 0 1 8 0v2.5'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='10.5' width='14' height='10' rx='2.6'/%3E%3Cpath d='M8 10.5V8a4 4 0 0 1 8 0v2.5'/%3E%3C/svg%3E") center/contain no-repeat;right:4px!important;bottom:4px!important}
+/* показ экрана */
+.ctile.scr video{object-fit:contain;background:#05060f}.ctile.scr.self.flip video{transform:none}
+.cb#clScr.on{background:rgba(94,242,255,.28);border-color:var(--ac);color:#eaffff}

@@ -1,12 +1,12 @@
 {
-  "version": "3.12.1",
+  "version": "3.13.0",
   "notes": [
-    "Исправлен сбой размера меню в Telegram"
+    "Показ экрана в звонке Эхо"
   ],
   "notes_en": [
-    "Fixed the menu size glitch in Telegram"
+    "Screen sharing in Echo calls"
   ],
   "notes_uk": [
-    "Виправлено збій розміру меню в Telegram"
+    "Показ екрана в дзвінку Ехо"
   ]
 }

@@ -33,6 +33,7 @@
     sliders: '<path d="M4 7h9M19 7h1M4 17h1M11 17h9"/><circle cx="16" cy="7" r="2.4"/><circle cx="8" cy="17" r="2.4"/>',
     swords: '<path d="M5 19l9-9M14 4h6v6l-9 9-3 .8.8-3zM19 19l-9-9M10 4H4v6"/>',
     smile: '<circle cx="12" cy="12" r="8.5"/><path d="M8.5 14a4 4 0 0 0 7 0"/><circle cx="9.3" cy="10" r=".9" fill="currentColor" stroke="none"/><circle cx="14.7" cy="10" r=".9" fill="currentColor" stroke="none"/>',
+    screen: '<rect x="3" y="4.5" width="18" height="12.5" rx="2.6"/><path d="M8.5 20.5h7M12 17v3.5M9.3 11.4L12 8.7l2.7 2.7M12 8.7v5.2"/>',
     signal: '<path d="M5 19v-3M10 19v-6M15 19V9M20 19V5"/>',
     "arrow-r": '<path d="M5 12h14M13 6l6 6-6 6"/>',
     play: '<path d="M8 5.5v13l11-6.5z" fill="currentColor" fill-opacity=".2"/>',
