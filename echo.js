@@ -6,7 +6,7 @@
   const T = (a, b, c) => L3(a, b, c);
   const g = id => document.getElementById(id);
   const E = { els: {}, msgs: {}, races: {}, react: {}, sel: null, reply: null, day: "", lastRoom: null, rooms: [], friends: [], room: null, last: 0, timer: 0, hub: 0, busy: false, tg: null, sure: 0, panel: "" };
-  function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+  function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) { if (window.IC && typeof text === "string" && text.indexOf("{") >= 0) IC.t(e, text); else e.textContent = text } return e; }
   function btn(cls, text, fn) { const b = h("button", cls, text); b.type = "button"; b.onclick = fn; return b; }
   const post = (path, body) => cloudRequest(path, { method: "POST", body: JSON.stringify(body || {}) });
   const clock = ms => { const d = new Date(ms); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") };
@@ -27,8 +27,8 @@
   }
   function pretty(body) {
     const p = parse(body);
-    if (p.t === "K") return "🏁 " + T("Заезд", "Race", "Заїзд");
-    if (p.t === "S") return "🏁 " + T("результат заезда", "race result", "результат заїзду");
+    if (p.t === "K") return T("Заезд", "Race", "Заїзд");
+    if (p.t === "S") return T("результат заезда", "race result", "результат заїзду");
     if (p.t === "R") return p.emo;
     if (p.t === "Q") return "↩ " + p.text;
     return p.text;
@@ -49,11 +49,11 @@
     hub.innerHTML = '<div class="ecw"><nav class="ecrail" id="ecR16"></nav><section class="ecpan"><div class="ecph" id="ecP16"></div>' +
       '<div class="ecset gl" id="ecSetP" hidden></div><div class="frlist" id="ecList"></div><div class="hint" id="ecSt"></div></section></div>';
     const rm = h("div", "ov"); rm.id = "o17";
-    rm.innerHTML = '<div class="frh ecrh"><button class="ib" id="rmBk" type="button">←</button><div class="frt"><h2 id="rmT"></h2><div class="sub" id="rmS"></div></div><button class="ib" id="rmCl" type="button">📞</button><button class="ib" id="rmMn" type="button">⋯</button></div>' +
+    rm.innerHTML = '<div class="frh ecrh"><button class="ib" id="rmBk" type="button" aria-label="back">'+IC.html("back")+'</button><div class="frt"><h2 id="rmT"></h2><div class="sub" id="rmS"></div></div><button class="ib" id="rmCl" type="button" aria-label="call">'+IC.html("phone")+'</button><button class="ib" id="rmMn" type="button" aria-label="menu">'+IC.html("dots")+'</button></div>' +
       '<div class="chmenu" id="rmMenu" hidden></div>' +
       '<div class="rmcall" id="rmCall" hidden></div><div class="chl ecfeed" id="rmL"></div><div class="hint" id="rmSt"></div>' +
       '<div class="rmbar" id="rmBar" hidden></div><div class="rmrp" id="rmRp" hidden></div>' +
-      '<div class="chbar"><input id="rmIn" type="text" maxlength="120" autocomplete="off" enterkeyhint="send"><button class="btn chsn" id="rmSn" type="button">➤</button></div>';
+      '<div class="chbar"><input id="rmIn" type="text" maxlength="120" autocomplete="off" enterkeyhint="send"><button class="btn chsn" id="rmSn" type="button" aria-label="send">'+IC.html("send")+'</button></div>';
     const after = g("o15") || g("o11");
     after.parentNode.insertBefore(hub, after.nextSibling); hub.parentNode.insertBefore(rm, hub.nextSibling);
     // экран друзей встраиваем в ту же рамку: рейка слева, его содержимое справа
@@ -102,25 +102,25 @@
       if (badge) b.appendChild(h("i", "bdg", num(badge)));
       box.appendChild(b); return b;
     };
-    add("home", "🌀", T("Личные сообщения", "Direct messages", "Особисті повідомлення"), () => hubOpen(), bd.dm, null, "orb-home");
-    add("fr", "👥", T("Друзья", "Friends", "Друзі"), () => { if (F) F.open() }, bd.friends);
+    add("home", "{echo}", T("Личные сообщения", "Direct messages", "Особисті повідомлення"), () => hubOpen(), bd.dm, null, "orb-home");
+    add("fr", "{people}", T("Друзья", "Friends", "Друзі"), () => { if (F) F.open() }, bd.friends);
     box.appendChild(h("i", "ecdiv"));
     E.rooms.forEach(r => add("r:" + r.id, first(r.name), r.name, () => roomOpen(r.id, r.name), r.unread, tint(r.id), r.unread ? "ping" : ""));
-    if (sidTok()) add("mk", "＋", T("Новая комната", "New room", "Нова кімната"), () => { E.panel = "mk"; hubOpen() }, 0, null, "orb-add");
+    if (sidTok()) add("mk", "{plus}", T("Новая комната", "New room", "Нова кімната"), () => { E.panel = "mk"; hubOpen() }, 0, null, "orb-add");
     box.appendChild(h("i", "ecsp"));
-    add("ai", "🤖", T("ИИ-помощник", "AI assistant", "ШІ-помічник"), () => { if (window.EchoAI) window.EchoAI.open(hubOpen) });
-    add("bell", "🔔", T("Уведомления", "Notifications", "Сповіщення"), () => { E.panel = E.panel === "tg" ? "" : "tg"; hubOpen(); if (E.panel) loadTg() });
+    add("ai", "{bot}", T("ИИ-помощник", "AI assistant", "ШІ-помічник"), () => { if (window.EchoAI) window.EchoAI.open(hubOpen) });
+    add("bell", "{bell}", T("Уведомления", "Notifications", "Сповіщення"), () => { E.panel = E.panel === "tg" ? "" : "tg"; hubOpen(); if (E.panel) loadTg() });
   }
   function paintHead(box, title, sub) {
     if (!box) return; box.textContent = "";
-    box.appendChild(btn("ib", "←", () => { clearInterval(E.hub); E.hub = 0; ov("o1") }));
+    box.appendChild(btn("ib", "{back}", () => { clearInterval(E.hub); E.hub = 0; ov("o1") }));
     const t = h("div", "frt"); t.appendChild(h("h2", "", title)); t.appendChild(h("div", "sub", sub)); box.appendChild(t);
   }
   function labels() {
     const mine = E.room ? "r:" + E.room.id : "";
     paintRail(g("ecR16"), "home"); paintRail(g("ecR13"), "fr");
-    paintHead(g("ecP16"), "🌀 " + T("ЭХО", "ECHO", "ЕХО"), T("ЛИЧНЫЕ · КОМНАТЫ", "DIRECT · ROOMS", "ОСОБИСТІ · КІМНАТИ"));
-    paintHead(g("ecP13"), "👥 " + T("ДРУЗЬЯ", "FRIENDS", "ДРУЗІ"), T("ЗАПРОСЫ · ТОП · ВЫЗОВЫ", "REQUESTS · TOP · CHALLENGES", "ЗАПИТИ · ТОП · ВИКЛИКИ"));
+    paintHead(g("ecP16"), "{echo}" + T("ЭХО", "ECHO", "ЕХО"), T("ЛИЧНЫЕ · КОМНАТЫ", "DIRECT · ROOMS", "ОСОБИСТІ · КІМНАТИ"));
+    paintHead(g("ecP13"), "{people}" + T("ДРУЗЬЯ", "FRIENDS", "ДРУЗІ"), T("ЗАПРОСЫ · ТОП · ВЫЗОВЫ", "REQUESTS · TOP · CHALLENGES", "ЗАПИТИ · ТОП · ВИКЛИКИ"));
   }
   function avatar(txt, on, bg) { const a = h("div", "fav" + (on ? " on" : ""), txt); a.style.width = a.style.height = "42px"; a.style.fontSize = "20px"; if (bg) a.style.background = bg; return a }
 
@@ -130,7 +130,7 @@
   function paint() {
     const l = g("ecList"); l.textContent = "";
     const done = () => [...l.children].forEach((c, i) => c.style.setProperty("--i", Math.min(i, 10)));
-    const ai = h("button", "ecrow ecai2"); ai.type = "button"; ai.appendChild(avatar("🤖", false));
+    const ai = h("button", "ecrow ecai2"); ai.type = "button"; ai.appendChild(avatar("{bot}", false));
     const at = h("div", "ect"); at.appendChild(h("b", "", T("ИИ-ПОМОЩНИК", "AI ASSISTANT", "ШІ-ПОМІЧНИК"))); at.appendChild(h("span", "", T("Свой ключ · выбор модели", "Your own key · pick a model", "Свій ключ · вибір моделі"))); ai.appendChild(at);
     ai.onclick = () => { if (window.EchoAI) window.EchoAI.open(hubOpen) }; l.appendChild(ai);
     if (!sidTok()) { l.appendChild(h("div", "chem", T("Чтобы писать друзьям и создавать комнаты, нужен аккаунт.", "You need an account to message friends and make rooms.", "Потрібен акаунт, щоб писати друзям і створювати кімнати."))); l.appendChild(btn("btn", T("ВОЙТИ В АККАУНТ", "SIGN IN", "УВІЙТИ В АКАУНТ"), () => sidOpen())); return }
@@ -138,7 +138,7 @@
     if (!E.rooms.length) l.appendChild(h("div", "ecdim ecnone", T("Комнат пока нет. Нажми ＋ слева и позови друзей.", "No rooms yet. Tap ＋ on the left and invite friends.", "Кімнат поки немає. Натисни ＋ ліворуч і поклич друзів.")));
     E.rooms.forEach(rm => {
       const r = h("button", "ecrow"); r.type = "button"; r.appendChild(avatar("#", false, tint(rm.id)));
-      const t = h("div", "ect"); t.appendChild(h("b", "", rm.name)); t.appendChild(h("span", "", rm.last ? pretty(rm.last) : "👥 " + rm.members)); r.appendChild(t);
+      const t = h("div", "ect"); t.appendChild(h("b", "", rm.name)); t.appendChild(h("span", "", rm.last ? pretty(rm.last) : "{people}" + rm.members)); r.appendChild(t);
       if (rm.unread) r.appendChild(badgeEl(rm.unread));
       r.onclick = () => roomOpen(rm.id, rm.name); l.appendChild(r);
     });
@@ -154,7 +154,7 @@
     if (!E.friends.length) {
       section(l, T("ЛИЧНЫЕ", "DIRECT", "ОСОБИСТІ"));
       l.appendChild(h("div", "ecdim ecnone", T("Здесь будут чаты с друзьями. Сначала добавь друга.", "Chats with friends will appear here. Add a friend first.", "Тут будуть чати з друзями. Спершу додай друга.")));
-      l.appendChild(btn("btn a", "👥 " + T("ДОБАВИТЬ ДРУГА", "ADD A FRIEND", "ДОДАТИ ДРУГА"), () => { const F = window.SlovopadFriends; if (F) F.open() }));
+      l.appendChild(btn("btn a", "{plus}" + T("ДОБАВИТЬ ДРУГА", "ADD A FRIEND", "ДОДАТИ ДРУГА"), () => { const F = window.SlovopadFriends; if (F) F.open() }));
       done(); return;
     }
     if (onl.length) { section(l, T("В СЕТИ — ", "ONLINE — ", "У МЕРЕЖІ — ") + onl.length); onl.sort((a, b) => (b.unread || 0) - (a.unread || 0)).forEach(row) }
@@ -284,7 +284,7 @@
     const q = E.reply && E.msgs[E.reply]; r.hidden = !q; if (!q) { E.reply = null; inp.maxLength = 120; return }
     inp.maxLength = 120 - (PX + "Q|" + E.reply + "|").length;
     r.appendChild(h("span", "", "↩ " + q.who + ": " + q.text.slice(0, 50)));
-    r.appendChild(btn("ecx", "✕", () => { E.reply = null; replyPaint() }));
+    r.appendChild(btn("ecx", "{close}", () => { E.reply = null; replyPaint() }));
   }
   async function sendRaw(text) {
     const rm = E.room; if (!rm) return;
@@ -301,11 +301,11 @@
   function raceDraw(rc) {
     const c = rc.el; if (!c) return; c.textContent = "";
     const lang = String(rc.lang || "").toUpperCase();
-    c.appendChild(h("div", "rach", "🏁 " + T("ЗАЕЗД", "RACE", "ЗАЇЗД") + " · " + (rc.th ? rc.th.i + " " + tx(rc.th.n) : rc.theme) + " · " + lang));
+    c.appendChild(h("div", "rach", "{flag}" + T("ЗАЕЗД", "RACE", "ЗАЇЗД") + " · " + (rc.th ? rc.th.i + " " + tx(rc.th.n) : rc.theme) + " · " + lang));
     c.appendChild(h("div", "rasub", T("Запустил ", "Started by ", "Запустив ") + rc.by + T(". Все печатают одни и те же слова.", ". Everyone types the same words.", ". Усі друкують одні й ті самі слова.")));
     const rows = Object.keys(rc.sc).map(n => [n, rc.sc[n]]).sort((a, b) => b[1] - a[1]);
     if (!rows.length) c.appendChild(h("div", "ecdim", T("Пока никто не сыграл. Будь первым!", "Nobody played yet. Be the first!", "Поки ніхто не грав. Будь першим!")));
-    rows.forEach((r, i) => { const row = h("div", "rarow" + (E.me && r[0] === E.me ? " me" : "")); row.appendChild(h("i", "", ["🥇", "🥈", "🥉"][i] || String(i + 1))); row.appendChild(h("span", "", r[0])); row.appendChild(h("b", "", String(r[1]))); c.appendChild(row) });
+    rows.forEach((r, i) => { const row = h("div", "rarow" + (E.me && r[0] === E.me ? " me" : "")); row.appendChild(h("i", "mdl m" + (i + 1), String(i + 1))); row.appendChild(h("span", "", r[0])); row.appendChild(h("b", "", String(r[1]))); c.appendChild(row) });
     if (rc.th && E.me !== undefined) c.appendChild(btn("btn" + (E.me && rc.sc[E.me] ? " a" : ""), "▶ " + (E.me && rc.sc[E.me] ? T("ЕЩЁ РАЗ", "AGAIN", "ЩЕ РАЗ") : T("ИГРАТЬ", "PLAY", "ГРАТИ")), () => raceGo(rc)));
     else if (rc.th) c.appendChild(btn("btn", "▶ " + T("ИГРАТЬ", "PLAY", "ГРАТИ"), () => raceGo(rc)));
     else c.appendChild(h("div", "ecdim", T("Эта тема есть только в новой версии игры.", "This theme needs a newer version.", "Ця тема є лише в новій версії гри.")));
@@ -328,7 +328,7 @@
     let res = g("raceRes");
     if (!res) { res = h("div", "chres w"); res.id = "raceRes"; const a = g("bA"); a.parentNode.insertBefore(res, a) }
     res.textContent = ""; res.className = "chres w";
-    res.appendChild(h("div", "", "🏁 " + T("Результат заезда отправлен: ", "Race result sent: ", "Результат заїзду надіслано: ") + sc));
+    res.appendChild(h("div", "", "{flag}" + T("Результат заезда отправлен: ", "Race result sent: ", "Результат заїзду надіслано: ") + sc));
     res.appendChild(btn("btn a", "↩ " + T("В КОМНАТУ", "BACK TO ROOM", "ДО КІМНАТИ"), () => roomOpen(room, name)));
   }
 
@@ -341,10 +341,10 @@
       const r = await cloudRequest("/api/echo/room/msgs?room=" + encodeURIComponent(rm.id) + "&after=" + E.last);
       if (E.room !== rm) return;
       rm.name = r.room.name; rm.mine = r.room.mine; rm.members = r.members; { const me = r.members.find(x => x.me); if (me) E.me = me.name }
-      g("rmT").textContent = "# " + rm.name; g("rmS").textContent = "👥 " + r.members.map(x => x.name).slice(0, 4).join(", ") + (r.members.length > 4 ? " +" + (r.members.length - 4) : "");
+      g("rmT").textContent = "# " + rm.name; IC.t(g("rmS"), "{people}" + r.members.map(x => x.name).slice(0, 4).join(", ") + (r.members.length > 4 ? " +" + (r.members.length - 4) : ""));
       const l = g("rmL"), stick = first || l.scrollHeight - l.scrollTop - l.clientHeight < 80;
       E.live = !first; r.messages.forEach(m => { E.last = Math.max(E.last, m.id); roomAdd(m) }); E.live = false;
-      if (!l.children.length) l.appendChild(h("div", "chem", T("Здесь пока тихо. Напиши первым 👋", "It's quiet here. Write first 👋", "Тут поки тихо. Напиши першим 👋")));
+      if (!l.children.length) l.appendChild(h("div", "chem", T("Здесь пока тихо. Напиши первым", "It's quiet here. Write first", "Тут поки тихо. Напиши першим")));
       else if (r.messages.length && l.querySelector(".chem")) l.querySelector(".chem").remove();
       if (stick) l.scrollTop = l.scrollHeight;
       if (window.EchoCall) EchoCall.banner(rm.id, g("rmCall"), () => roomOpen(rm.id, rm.name), rm.name);
@@ -375,8 +375,8 @@
     }
     if (E.panel === "mem") {
       (rm.members || []).forEach(x => {
-        const r = h("div", "ecmem"); { const sp = h("span", "", (x.owner ? "👑 " : "") + x.name + (x.me ? " ✓" : "")), te = window.TagUI && TagUI.el(x.tag); if (te) sp.appendChild(te); r.appendChild(sp) }
-        if (rm.mine && !x.me) r.appendChild(btn("ecx", "✕", async () => { try { await post("/api/echo/room/kick", { room: rm.id, code: x.name }); roomPoll(false); E.panel = ""; m.hidden = true } catch (e) { setHint("rmSt", e.message, true) } }));
+        const r = h("div", "ecmem"); { const sp = h("span", "", (x.owner ? "{crown}" : "") + x.name + (x.me ? " {check}" : "")), te = window.TagUI && TagUI.el(x.tag); if (te) sp.appendChild(te); r.appendChild(sp) }
+        if (rm.mine && !x.me) r.appendChild(btn("ecx", "{close}", async () => { try { await post("/api/echo/room/kick", { room: rm.id, code: x.name }); roomPoll(false); E.panel = ""; m.hidden = true } catch (e) { setHint("rmSt", e.message, true) } }));
         m.appendChild(r);
       });
       m.appendChild(btn("btn a", "←", () => { E.panel = ""; menuPaint() })); return;
@@ -385,9 +385,9 @@
       (typeof THEMES !== "undefined" ? THEMES : []).forEach(t => m.appendChild(btn("btn a", t.i + " " + tx(t.n), () => raceNew(t.id))));
       m.appendChild(btn("btn a", "←", () => { E.panel = ""; menuPaint() })); return;
     }
-    m.appendChild(btn("btn", "🏁 " + T("НАЧАТЬ ЗАЕЗД", "START A RACE", "ПОЧАТИ ЗАЇЗД"), () => { E.panel = "race"; menuPaint() }));
+    m.appendChild(btn("btn", "{flag}" + T("НАЧАТЬ ЗАЕЗД", "START A RACE", "ПОЧАТИ ЗАЇЗД"), () => { E.panel = "race"; menuPaint() }));
     m.appendChild(btn("btn a", "＋ " + T("ПРИГЛАСИТЬ ДРУГА", "INVITE A FRIEND", "ЗАПРОСИТИ ДРУГА"), () => { E.panel = "inv"; menuPaint() }));
-    m.appendChild(btn("btn a", "👥 " + T("УЧАСТНИКИ", "MEMBERS", "УЧАСНИКИ"), () => { E.panel = "mem"; menuPaint() }));
+    m.appendChild(btn("btn a", "{people}" + T("УЧАСТНИКИ", "MEMBERS", "УЧАСНИКИ"), () => { E.panel = "mem"; menuPaint() }));
     m.appendChild(btn("btn a", E.sure === 1 ? T("ТОЧНО ПОЖАЛОВАТЬСЯ?", "REALLY REPORT?", "ТОЧНО СКАРЖИТИСЬ?") : T("ПОЖАЛОВАТЬСЯ", "REPORT", "СКАРЖИТИСЬ"), async () => {
       if (E.sure !== 1) { E.sure = 1; menuPaint(); return }
       try { await post("/api/echo/room/report", { room: rm.id }); setHint("rmSt", T("Жалоба отправлена.", "Report sent.", "Скаргу надіслано.")) } catch (e) { setHint("rmSt", e.message, true) }
@@ -402,7 +402,7 @@
   /* ---------- кнопка в меню ---------- */
   function wireMenuBtn() {
     const b = g("echoB"); if (!b) return;
-    b.firstChild.nodeType === 3 && (b.firstChild.textContent = "🌀 " + T("ЭХО", "ECHO", "ЕХО"));
+    b.firstChild.nodeType === 3 && (b.firstChild.textContent = T("ЭХО", "ECHO", "ЕХО"));
     b.onclick = hubOpen;
   }
   const _over = window.over;

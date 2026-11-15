@@ -1,12 +1,15 @@
 {
-  "version": "3.10.2",
+  "version": "3.11.0",
   "notes": [
-    "Исправлен установщик для Windows"
+    "Свои иконки вместо эмодзи",
+    "Новый вид Эхо и экрана звонка"
   ],
   "notes_en": [
-    "Fixed the Windows installer"
+    "Custom icons instead of emoji",
+    "New look for Echo and the call screen"
   ],
   "notes_uk": [
-    "Виправлено інсталятор для Windows"
+    "Власні іконки замість емодзі",
+    "Новий вигляд Ехо та екрана дзвінка"
   ]
 }

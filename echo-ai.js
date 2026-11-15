@@ -5,7 +5,7 @@
   "use strict";
   const T = (a, b, c) => L3(a, b, c);
   const g = id => document.getElementById(id);
-  function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+  function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) { if (window.IC && typeof text === "string" && text.indexOf("{") >= 0) IC.t(e, text); else e.textContent = text } return e; }
   function btn(cls, text, fn) { const b = h("button", cls, text); b.type = "button"; b.onclick = fn; return b; }
 
   const PROV = {
@@ -99,11 +99,11 @@
   function build() {
     if (g("o18")) return;
     const o = h("div", "ov"); o.id = "o18";
-    o.innerHTML = '<div class="frh"><button class="ib" id="aiBk" type="button">←</button><div class="frt"><h2>🤖 ' + 'ИИ' + '</h2><div class="sub" id="aiSub"></div></div><button class="ib" id="aiSet" type="button" aria-label="settings">⚙</button></div>' +
+    o.innerHTML = '<div class="frh"><button class="ib" id="aiBk" type="button" aria-label="back">'+IC.html("back")+'</button><div class="frt"><h2>'+IC.html("bot")+' ' + 'ИИ' + '</h2><div class="sub" id="aiSub"></div></div><button class="ib" id="aiSet" type="button" aria-label="settings">'+IC.html("sliders")+'</button></div>' +
       '<div class="aiset gl" id="aiSetP" hidden></div>' +
       '<div class="chl" id="aiL"></div><div class="hint" id="aiSt"></div>' +
       '<div class="aichips" id="aiCh"></div><div class="aibar"><select id="aiPv" aria-label="provider"></select><select id="aiMd" aria-label="model"></select></div>' +
-      '<div class="chbar"><input id="aiIn" type="text" maxlength="800" autocomplete="off" enterkeyhint="send"><button class="btn chsn" id="aiSn" type="button">➤</button></div>';
+      '<div class="chbar"><input id="aiIn" type="text" maxlength="800" autocomplete="off" enterkeyhint="send"><button class="btn chsn" id="aiSn" type="button" aria-label="send">'+IC.html("send")+'</button></div>';
     const after = g("o17") || g("o15");
     after.parentNode.insertBefore(o, after.nextSibling);
     g("aiBk").onclick = close;
@@ -119,10 +119,10 @@
   }
   function chips() {
     const b = g("aiCh"); if (!b) return; b.textContent = ""; if (!ready()) { b.hidden = true; return } b.hidden = false;
-    [["📊", T("Разбери мою игру", "Review my play", "Розбери мою гру"), T("Разбери мою статистику и скажи, что подтянуть в первую очередь.", "Review my stats and tell me what to improve first.", "Розбери мою статистику і скажи, що підтягнути в першу чергу.")],
-     ["🎯", T("Тренировка", "Drill", "Тренування"), T("Дай мне короткую тренировку печати на 8 слов из моей слабой темы и скажи, как их набирать без ошибок.", "Give me a short typing drill of 8 words from my weakest theme and tips to type them without mistakes.", "Дай мені коротке тренування друку на 8 слів із моєї слабкої теми й скажи, як їх набирати без помилок.")],
-     ["🔤", T("Слова-цепочка", "Word chain", "Слова-ланцюжок"), T("Давай сыграем в слова: я называю слово, ты отвечаешь словом на его последнюю букву. Начинай ты, одно слово из тем игры.", "Let's play a word chain: I say a word, you answer with a word starting with its last letter. You start with one word from the game's themes.", "Давай зіграємо в слова: я називаю слово, ти відповідаєш словом на його останню літеру. Почни ти, одним словом із тем гри.")],
-     ["🧠", T("Как набрать больше", "Score more", "Як набрати більше"), T("Как мне набирать больше очков? Дай 3 приёма для моего ранга.", "How can I score more? Give me 3 tricks for my rank.", "Як мені набирати більше очок? Дай 3 прийоми для мого рангу.")]
+    [["{chart}", T("Разбери мою игру", "Review my play", "Розбери мою гру"), T("Разбери мою статистику и скажи, что подтянуть в первую очередь.", "Review my stats and tell me what to improve first.", "Розбери мою статистику і скажи, що підтягнути в першу чергу.")],
+     ["{target}", T("Тренировка", "Drill", "Тренування"), T("Дай мне короткую тренировку печати на 8 слов из моей слабой темы и скажи, как их набирать без ошибок.", "Give me a short typing drill of 8 words from my weakest theme and tips to type them without mistakes.", "Дай мені коротке тренування друку на 8 слів із моєї слабкої теми й скажи, як їх набирати без помилок.")],
+     ["{letters}", T("Слова-цепочка", "Word chain", "Слова-ланцюжок"), T("Давай сыграем в слова: я называю слово, ты отвечаешь словом на его последнюю букву. Начинай ты, одно слово из тем игры.", "Let's play a word chain: I say a word, you answer with a word starting with its last letter. You start with one word from the game's themes.", "Давай зіграємо в слова: я називаю слово, ти відповідаєш словом на його останню літеру. Почни ти, одним словом із тем гри.")],
+     ["{idea}", T("Как набрать больше", "Score more", "Як набрати більше"), T("Как мне набирать больше очков? Дай 3 приёма для моего ранга.", "How can I score more? Give me 3 tricks for my rank.", "Як мені набирати більше очок? Дай 3 прийоми для мого рангу.")]
     ].forEach(c => { const x = h("button", "aich", c[0] + " " + c[1]); x.type = "button"; x.onclick = () => { g("aiIn").value = c[2]; send() }; b.appendChild(x) });
   }
   function head() { g("aiSub").textContent = ready() ? PROV[cfg.prov].name.split(" (")[0] + " · " + model() : T("НУЖЕН КЛЮЧ", "KEY NEEDED", "ПОТРІБЕН КЛЮЧ") }
@@ -133,7 +133,7 @@
     const list = PROV[cfg.prov].models.slice(); if (model() && !list.includes(model())) list.push(model());
     list.forEach(m => { const o = h("option", "", m); o.value = m; if (m === model()) o.selected = true; md.appendChild(o) });
     const c = h("option", "", T("＋ своя модель…", "＋ custom model…", "＋ своя модель…")); c.value = "__c"; md.appendChild(c);
-    g("aiIn").placeholder = ready() ? T("Спроси про игру или печать…", "Ask about the game or typing…", "Запитай про гру чи друк…") : T("Сначала подключи ключ (⚙)", "Connect a key first (⚙)", "Спершу підключи ключ (⚙)");
+    g("aiIn").placeholder = ready() ? T("Спроси про игру или печать…", "Ask about the game or typing…", "Запитай про гру чи друк…") : T("Сначала подключи ключ", "Connect a key first", "Спершу підключи ключ");
     g("aiIn").disabled = g("aiSn").disabled = !ready();
   }
   function paintPanel() {
@@ -143,7 +143,7 @@
     p.appendChild(h("span", "", T("Тебе нужен свой ключ у выбранного провайдера. Он хранится только на этом устройстве и отправляется прямо провайдеру — игра и наш сервер его не видят. Расходы идут с твоего счёта у провайдера.", "You need your own key from the chosen provider. It stays on this device and goes straight to the provider — the game and our server never see it. Costs are billed to your account with the provider.", "Тобі потрібен свій ключ у обраного провайдера. Він зберігається лише на цьому пристрої й іде прямо до провайдера — гра і наш сервер його не бачать. Витрати йдуть із твого рахунку у провайдера.")));
     p.appendChild(h("span", "ecdim", T("Чтобы советы были точнее, помощник видит твой ранг, рекорды и статистику. Имя, ник и контакты не отправляются.", "To give better tips, the helper sees your rank, records and stats. Your name, nickname and contacts are not sent.", "Щоб поради були точнішими, помічник бачить твій ранг, рекорди й статистику. Ім'я, нік і контакти не надсилаються.")));
     const ol = h("ol", "aist"); T(pr.steps, pr.en, pr.uk).forEach(s => ol.appendChild(h("li", "", s))); p.appendChild(ol);
-    if (pr.url) { const a = h("a", "ailink", "🔗 " + pr.url.replace("https://", "")); a.href = pr.url; a.target = "_blank"; a.rel = "noopener noreferrer"; p.appendChild(a) }
+    if (pr.url) { const a = h("a", "ailink", "{link}" + pr.url.replace("https://", "")); a.href = pr.url; a.target = "_blank"; a.rel = "noopener noreferrer"; p.appendChild(a) }
     if (cfg.prov === "custom") {
       const b = h("input", "aifld"); b.type = "text"; b.placeholder = "https://api.example.com/v1"; b.value = cfg.base || ""; b.autocomplete = "off"; b.spellcheck = false;
       b.onchange = () => { const v = b.value.trim(); cfg.base = /^https:\/\//i.test(v) || /^http:\/\/(localhost|127\.0\.0\.1)/i.test(v) ? v : ""; if (v && !cfg.base) setSt(T("Адрес должен начинаться с https://", "The address must start with https://", "Адреса має починатися з https://"), true); save(); paintBar(); head() };
@@ -163,7 +163,7 @@
   }
   function paintChat() {
     const l = g("aiL"); l.textContent = "";
-    if (!hist.length) l.appendChild(h("div", "chem", ready() ? T("Привет! Я Эхо 👋 Спроси, как печатать быстрее или как лучше играть.", "Hi! I'm Echo 👋 Ask how to type faster or play better.", "Привіт! Я Ехо 👋 Запитай, як друкувати швидше чи грати краще.") : T("Подключи свой ключ ИИ — нажми ⚙ сверху. Там есть инструкция.", "Connect your own AI key — tap ⚙ at the top. There are instructions.", "Підключи свій ключ ШІ — натисни ⚙ угорі. Там є інструкція.")));
+    if (!hist.length) l.appendChild(h("div", "chem", ready() ? T("Привет! Я Эхо. Спроси, как печатать быстрее или как лучше играть.", "Hi! I'm Echo. Ask how to type faster or play better.", "Привіт! Я Ехо. Запитай, як друкувати швидше чи грати краще.") : T("Подключи свой ключ ИИ — нажми кнопку настроек сверху. Там есть инструкция.", "Connect your own AI key — tap the settings button at the top. There are instructions.", "Підключи свій ключ ШІ — натисни кнопку налаштувань угорі. Там є інструкція.")));
     hist.forEach(m => addMsg(m.role, m.text));
     l.scrollTop = l.scrollHeight;
   }

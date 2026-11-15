@@ -5,7 +5,7 @@
   "use strict";
   const T = (a, b, c) => L3(a, b, c);
   const g = id => document.getElementById(id);
-  function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e }
+  function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) { if (window.IC && typeof text === "string" && text.indexOf("{") >= 0) IC.t(e, text); else e.textContent = text } return e }
   function btn(cls, text, fn) { const b = h("button", cls, text); b.type = "button"; b.onclick = fn; return b }
   const api = (path, opt) => cloudRequest(path, opt);
   const post = (path, body) => api(path, { method: "POST", body: JSON.stringify(body || {}) });
@@ -41,9 +41,9 @@
   function build() {
     if (g("o19")) return;
     const o = h("div", "ov"); o.id = "o19";
-    o.innerHTML = '<div class="clh"><button class="ib" id="clBk" type="button">←</button><div class="clt"><h2 id="clT"></h2><div class="sub"><span id="clS"></span><b id="clTm">0:00</b></div></div><div class="clq" id="clQ"></div></div>' +
+    o.innerHTML = '<div class="clh"><button class="ib" id="clBk" type="button" aria-label="minimize">'+IC.html("back")+'</button><div class="clt"><h2 id="clT"></h2><div class="sub"><span id="clS"></span><b id="clTm">0:00</b></div></div><div class="clq" id="clQ"></div></div>' +
       '<div class="cgrid" id="clG"></div><div class="hint" id="clSt"></div>' +
-      '<div class="cbar"><div class="cbw"><button class="cb" id="clMic" type="button">🎤</button><span>' + T("Микрофон", "Mic", "Мікрофон") + '</span></div><div class="cbw"><button class="cb" id="clCam" type="button">📷</button><span>' + T("Камера", "Camera", "Камера") + '</span></div><div class="cbw" id="clFlw"><button class="cb" id="clFl" type="button">🔄</button><span>' + T("Поворот", "Flip", "Поворот") + '</span></div><div class="cbw"><button class="cb end" id="clEnd" type="button">☎</button><span>' + T("Выйти", "Leave", "Вийти") + '</span></div></div>';
+      '<div class="cbar"><div class="cbw"><button class="cb" id="clMic" type="button">'+IC.html("mic")+'</button><span>' + T("Микрофон", "Mic", "Мікрофон") + '</span></div><div class="cbw"><button class="cb" id="clCam" type="button">'+IC.html("cam")+'</button><span>' + T("Камера", "Camera", "Камера") + '</span></div><div class="cbw" id="clFlw"><button class="cb" id="clFl" type="button">'+IC.html("flip")+'</button><span>' + T("Поворот", "Flip", "Поворот") + '</span></div><div class="cbw"><button class="cb end" id="clEnd" type="button">'+IC.html("hangup")+'</button><span>' + T("Выйти", "Leave", "Вийти") + '</span></div></div>';
     const after = g("o18") || g("o17") || g("o16") || g("o1"); after.parentNode.insertBefore(o, after.nextSibling);
     g("clBk").onclick = () => minimize();
     g("clMic").onclick = toggleMic; g("clCam").onclick = toggleCam; g("clFl").onclick = flip; g("clEnd").onclick = () => leave(true);
@@ -60,19 +60,19 @@
   function layout() {
     const G = g("clG"); if (!G) return; G.dataset.n = String(G.querySelectorAll(".ctile").length);
     const names = Object.keys(C.peers);
-    g("clT").textContent = "📞 " + C.roomName; g("clS").textContent = (names.length + 1) + " " + T("в звонке", "in call", "у дзвінку") + " · ";
-    g("clQ").textContent = C.turn ? "🟢" : "🟡"; g("clQ").title = C.turn ? T("защищённая связь", "relay available", "захищений зв'язок") : T("прямая связь", "direct link", "пряма зв'язь");
+    g("clT").textContent = C.roomName; g("clS").textContent = (names.length + 1) + " " + T("в звонке", "in call", "у дзвінку") + " · ";
+    g("clQ").className = "clq " + (C.turn ? "good" : "mid"); IC.t(g("clQ"), "{signal}"); g("clQ").title = C.turn ? T("защищённая связь", "relay available", "захищений зв'язок") : T("прямая связь", "direct link", "пряма зв'язь");
     G.classList.toggle("alone", names.length === 0);
     let w = G.querySelector(".cwait"); if (!names.length && !w) { w = h("div", "cwait"); w.appendChild(h("i", "")); w.appendChild(h("span", "", T("Ждём друзей…", "Waiting for friends…", "Чекаємо друзів…"))); G.appendChild(w) } else if (names.length && w) w.remove();
   }
   function paintTile(P) {
     const t = P.tile; if (!t) return; t.classList.toggle("nocam", !P.cam);
-    t._st.textContent = P.mic === false ? "🔇" : "";
+    IC.t(t._st, P.mic === false ? "{mic-off}" : "");
   }
   function paintSelf() {
     if (!C.tile) return; C.tile.classList.toggle("nocam", !C.camOn); C.tile.classList.toggle("flip", C.facing === "user");
-    C.tile._st.textContent = C.micOn ? "" : "🔇";
-    g("clMic").classList.toggle("off", !C.micOn); g("clMic").textContent = C.micOn ? "🎤" : "🔇";
+    IC.t(C.tile._st, C.micOn ? "" : "{mic-off}");
+    g("clMic").classList.toggle("off", !C.micOn); IC.t(g("clMic"), C.micOn ? "{mic}" : "{mic-off}"); IC.t(g("clCam"), C.camOn ? "{cam}" : "{cam-off}");
     g("clCam").classList.toggle("on", C.camOn); g("clFlw").hidden = !C.camOn;
   }
   // кто говорит: мерим громкость каждого потока
@@ -257,11 +257,11 @@
       el.textContent = "";
       if (C.active && C.room === room) {
         el.hidden = false; el.className = "rmcall on";
-        el.appendChild(h("span", "", "🔊 " + T("Ты в звонке", "You are in the call", "Ти в дзвінку")));
+        el.appendChild(h("span", "", "{speaker}" + T("Ты в звонке", "You are in the call", "Ти в дзвінку")));
         el.appendChild(btn("rcb", T("ОТКРЫТЬ", "OPEN", "ВІДКРИТИ"), show)); el.appendChild(btn("rcb end", T("ВЫЙТИ", "LEAVE", "ВИЙТИ"), () => { leave(false).then(() => banner(room, el, back, name)) }));
       } else if (parts && parts.length) {
         el.hidden = false; el.className = "rmcall";
-        el.appendChild(h("span", "", "📞 " + T("В звонке: ", "In call: ", "У дзвінку: ") + parts.join(", ")));
+        el.appendChild(h("span", "", "{phone}" + T("В звонке: ", "In call: ", "У дзвінку: ") + parts.join(", ")));
         el.appendChild(btn("rcb", T("ВОЙТИ", "JOIN", "ПРИЄДНАТИСЬ"), () => join(room, name, back)));
       } else el.hidden = true;
     };

@@ -522,14 +522,14 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");glassSet((e.clientX/innerWidth-.5)/.55,(e.clientY/innerHeight-.5)/.5)},{passive:true});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="3.10.2";let upLater=false;
+const VER="3.11.0";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if($("spl")||state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
 if(j.version&&j.version!==VER){let t=0;try{t=+sessionStorage.getItem("upTry")||0}catch(e){}if(Date.now()-t<900000)return;upShow("new",j);return}
 let seen=null;try{seen=localStorage.getItem("seenVer")}catch(e){}
 if(seen!==VER){try{localStorage.setItem("seenVer",VER)}catch(e){}if(seen&&j.notes&&j.notes.length)upShow("whats",j)}}catch(e){}}
-const UPF=["./","index.html","styles.css","core.js","qr.js","qrscan.js","app.js","qrlogin.js","maint.js","friends.js","echo.js","echo-ai.js","echo-call.js","tag.js","grants.js","fullscreen.js","achievements.js","tutorial.js","tour.js","practice.js","manifest.webmanifest","version.json"];
+const UPF=["./","index.html","styles.css","core.js","qr.js","qrscan.js","app.js","qrlogin.js","maint.js","friends.js","echo.js","echo-ai.js","echo-call.js","icons.js","tag.js","grants.js","fullscreen.js","achievements.js","tutorial.js","tour.js","practice.js","manifest.webmanifest","version.json"];
 async function upDo(set,txt){let n=0;try{const k=await caches.keys();await Promise.all(k.map(x=>caches.delete(x)));const g=await navigator.serviceWorker.getRegistrations();await Promise.all(g.map(x=>x.unregister()))}catch(e){}
 try{await Promise.all(UPF.map(f=>fetch(f,{cache:"reload"}).catch(()=>0).then(()=>{n++;set(n/UPF.length*95)})))}catch(e){}
 set(98);txt("inst");try{sessionStorage.setItem("upTry",String(Date.now()))}catch(e){}
