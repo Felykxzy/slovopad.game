@@ -1,12 +1,12 @@
 {
-  "version": "3.12.0",
+  "version": "3.12.1",
   "notes": [
-    "Свои иконки по всей игре вместо эмодзи"
+    "Исправлен сбой размера меню в Telegram"
   ],
   "notes_en": [
-    "Custom icons across the whole game instead of emoji"
+    "Fixed the menu size glitch in Telegram"
   ],
   "notes_uk": [
-    "Власні іконки по всій грі замість емодзі"
+    "Виправлено збій розміру меню в Telegram"
   ]
 }
