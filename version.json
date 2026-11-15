@@ -1,12 +1,12 @@
 {
-  "version": "3.16.2",
+  "version": "3.17.0",
   "notes": [
-    "Профиль друга открывается из чата"
+    "Профиль игрока открывается из комнат Эхо"
   ],
   "notes_en": [
-    "Open a friend profile from the chat"
+    "Open a player profile from Echo rooms"
   ],
   "notes_uk": [
-    "Профіль друга відкривається з чату"
+    "Профіль гравця відкривається з кімнат Ехо"
   ]
 }

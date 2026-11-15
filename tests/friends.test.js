@@ -210,6 +210,10 @@ test('Эхо: комнаты — создание, приглашение тол
   assert.equal(m.messages.length, 1); assert.equal(m.messages[0].who, 'Alice'); assert.equal(m.messages[0].mine, false);
   assert.equal((await s.raw('/api/echo/rooms', null, b.token)).data.rooms[0].unread, 0);
   assert.equal((await s.raw('/api/echo/room/kick', { room: id, code: a.code }, b.token)).status, 403);   // не создатель
+  const who = (await s.raw('/api/echo/room/who', { room: id, code: 'Alice' }, b.token)).data;           // профиль участника
+  assert.equal(who.username, 'Alice'); assert.equal(who.rel, 'friend'); assert.equal(who.owner, true);
+  assert.equal((await s.raw('/api/echo/room/who', { room: id, code: 'Carol' }, b.token)).status, 404);   // не в комнате
+  assert.equal((await s.raw('/api/echo/room/who', { room: id, code: 'Alice' }, c.token)).status, 403);   // чужой
   assert.equal((await s.raw('/api/echo/room/report', { room: id }, b.token)).status, 200);
   assert.equal((await s.raw('/api/echo/room/kick', { room: id, code: b.code }, a.token)).status, 200);
   assert.equal((await s.raw('/api/echo/rooms', null, b.token)).data.rooms.length, 0);

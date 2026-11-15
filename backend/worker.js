@@ -1418,6 +1418,18 @@ export default {
             return reply({ ok: true });
           }
 
+          // профиль участника комнаты: показываем только тем, кто сам состоит в этой комнате
+          if (url.pathname === '/api/echo/room/who' && post) {
+            if (!await allow(env, 'ew:' + user.id, 60, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+            const other = await findUser(env, body.code);
+            const inRoom = other ? await env.DB.prepare('SELECT 1 AS x FROM sp_room_members WHERE room=? AND uid=?').bind(roomId, other.id).first() : null;
+            if (!other || !inRoom) return reply({ error: 'Игрок не найден.' }, 404);
+            const row = (await usersByIds(env, [other.id])).get(other.id);
+            const info = await pubInfo(env, row, now);
+            const rl = other.id === user.id ? null : await relation(env, user.id, other.id);
+            return reply({ ...info, me: other.id === user.id, owner: other.id === room.owner, rel: rl ? (rl.state === 'accepted' ? 'friend' : (rl.a === user.id ? 'sent' : 'got')) : '' });
+          }
+
           if (url.pathname === '/api/echo/room/report' && post) {
             if (!await allow(env, 'ex:' + user.id, 5, 60 * 60 * 1000)) return reply(TOO_MANY, 429);
             const rows = (await env.DB.prepare('SELECT body FROM sp_room_msgs WHERE room=? AND uid<>? ORDER BY id DESC LIMIT 5').bind(roomId, user.id).all()).results || [];
