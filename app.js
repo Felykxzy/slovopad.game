@@ -522,7 +522,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");glassSet((e.clientX/innerWidth-.5)/.55,(e.clientY/innerHeight-.5)/.5)},{passive:true});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="3.13.0";let upLater=false;
+const VER="3.14.0";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if($("spl")||state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
@@ -581,7 +581,7 @@ let cloudBusy=false,sidTimer=0;
 ["Сессия истекла. Войди снова.","Session expired. Log in again.","Сесію завершено. Увійди знову."],
 ["Вы вышли из ID. Локальный прогресс сохранён.","Logged out. Local progress is kept.","Ти вийшов з ID. Локальний прогрес збережено."],
 ["Пока нет игроков в рейтинге.","No players in the ranking yet.","Поки що немає гравців у рейтингу."],["очков","points","очок"],["Никнейм","Nickname","Нікнейм"],["Пароль (минимум 8 символов)","Password (8+ characters)","Пароль (мінімум 8 символів)"],
-["или","or","або"],["С возвращением! Введи ник и пароль.","Welcome back! Enter your nickname and password.","З поверненням! Введи нік і пароль."],["Показать пароль","Show password","Показати пароль"],["👥 ДРУЗЬЯ","👥 FRIENDS","👥 ДРУЗІ"],["ЗВУК И ОТКЛИК","SOUND & FEEDBACK","ЗВУК І ВІДГУК"],["ИГРА","GAME","ГРА"],["ЯЗЫК","LANGUAGE","МОВА"]
+["или","or","або"],["ВОЙТИ ЧЕРЕЗ TELEGRAM","LOG IN WITH TELEGRAM","УВІЙТИ ЧЕРЕЗ TELEGRAM"],["Telegram пока не привязан. Впиши ник выше и нажми кнопку ещё раз: создам аккаунт. Если аккаунт уже есть, войди с паролем, и Telegram привяжется сам.","Telegram is not linked yet. Type a nickname above and tap the button again to create an account. If you already have one, log in with your password and Telegram will link itself.","Telegram ще не прив’язано. Впиши нік вище й натисни кнопку ще раз: створю акаунт. Якщо акаунт уже є, увійди з паролем, і Telegram прив’яжеться сам."],["С возвращением! Введи ник и пароль.","Welcome back! Enter your nickname and password.","З поверненням! Введи нік і пароль."],["Показать пароль","Show password","Показати пароль"],["👥 ДРУЗЬЯ","👥 FRIENDS","👥 ДРУЗІ"],["ЗВУК И ОТКЛИК","SOUND & FEEDBACK","ЗВУК І ВІДГУК"],["ИГРА","GAME","ГРА"],["ЯЗЫК","LANGUAGE","МОВА"]
 ].forEach(a=>IM.set(a[0],a));
 const SID_TOG=[["rank","РАНГ И СЛОВА"],["records","РЕКОРДЫ"],["ach","ДОСТИЖЕНИЯ"],["stats","СТАТИСТИКА"],["online","СТАТУС «В СЕТИ»"]];
 const sidTok=()=>{try{return localStorage.getItem(CLOUD_TOKEN_KEY)||""}catch(e){return""}};
@@ -623,8 +623,15 @@ function sidAuto(){if(!sidTok())return;clearTimeout(sidTimer);sidTimer=setTimeou
 async function cloudAuth(mode){if(cloudBusy)return;const username=$("sidName").value.trim(),password=$("sidPass").value;
 if(username.length<3||password.length<8){sidStatus("Укажи ник (3–20 символов) и пароль от 8 символов.","er");return}
 cloudBusy=true;$("sidReg").disabled=$("sidLogin").disabled=true;sidStatus("Подключаюсь…");
-try{const data=await cloudRequest("/api/"+mode,{method:"POST",body:JSON.stringify({username,password})});localStorage.setItem(CLOUD_TOKEN_KEY,data.token);sidApply(data);$("sidPass").value="";if(window.ACH)ACH.cloud();cloudBusy=false;await cloudSync(true);pfOpen()}
+try{const data=await cloudRequest("/api/"+mode,{method:"POST",body:JSON.stringify({username,password})});localStorage.setItem(CLOUD_TOKEN_KEY,data.token);sidApply(data);$("sidPass").value="";if(window.ACH)ACH.cloud();cloudBusy=false;if(tgInit())cloudRequest("/api/tg/bind",{method:"POST",body:JSON.stringify({initData:tgInit()})}).catch(()=>{});await cloudSync(true);pfOpen()}
 catch(e){sidStatus(e.message,"er")}finally{cloudBusy=false;$("sidReg").disabled=$("sidLogin").disabled=false}}
+/* вход через Telegram: подпись бота доказывает, кто открыл игру */
+function tgInit(){try{return (tg&&tg.initData)||""}catch(e){return ""}}
+async function tgLogin(silent){const init=tgInit();if(!init||cloudBusy)return false;cloudBusy=true;const b=$("sidTg");if(b)b.disabled=true;if(!silent)sidStatus("Подключаюсь…");
+try{const nm=$("sidName").value.trim();const d=await cloudRequest("/api/tg/login",{method:"POST",body:JSON.stringify({initData:init,username:silent?undefined:(nm||undefined)})});
+if(d.needNick){if(!silent){sidStatus(tx("Telegram пока не привязан. Впиши ник выше и нажми кнопку ещё раз: создам аккаунт. Если аккаунт уже есть, войди с паролем, и Telegram привяжется сам."),"ok");$("sidName").focus()}return false}
+try{localStorage.removeItem("tgNoAuto")}catch(e){}localStorage.setItem(CLOUD_TOKEN_KEY,d.token);sidApply(d);if(window.ACH)ACH.cloud();cloudBusy=false;await cloudSync(true);sidRender();if(!silent)pfOpen();return true}
+catch(e){if(!silent)sidStatus(e.message,"er");return false}finally{cloudBusy=false;if(b)b.disabled=false}}
 let sidM="reg";
 function sidMode(m){sidM=m;const reg=m==="reg";$("sidReg").hidden=!reg;$("sidLogin").hidden=reg;
 $("sidTabReg").classList.toggle("on",reg);$("sidTabIn").classList.toggle("on",!reg);$("sidTabReg").setAttribute("aria-selected",reg);$("sidTabIn").setAttribute("aria-selected",!reg);
@@ -636,7 +643,7 @@ $("sidName").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();$("sidPass").f
 $("sidPass").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();(sidM==="reg"?$("sidReg"):$("sidLogin")).click()}};
 function sidRender(){const on=!!sidTok(),i=sidInfo()||{};$("sidFormOut").style.display=on?"none":"";$("sidFormIn").style.display=on?"":"none";
 $("sidName").placeholder=tx("Никнейм");$("sidPass").placeholder=tx("Пароль (минимум 8 символов)");
-if(!on){sidMode(sidM);return}avSet($("sidAv"),PF.a,PF.p);$("sidNm").textContent=i.username||"";$("sidCode").textContent=i.spCode||"SP-······";
+if(!on){sidMode(sidM);const tb=$("sidTg");if(tb){tb.hidden=!tgInit();tb.textContent=tx("ВОЙТИ ЧЕРЕЗ TELEGRAM")}return}avSet($("sidAv"),PF.a,PF.p);$("sidNm").textContent=i.username||"";$("sidCode").textContent=i.spCode||"SP-······";
 const box=$("sidPriv"),p=sidPriv();box.textContent="";SID_TOG.forEach(([k,label])=>{const row=document.createElement("button");row.type="button";row.className="sid-sw"+(p[k]?" on":"");const s=document.createElement("span");s.textContent=tx(label);const t=document.createElement("i");row.append(s,t);
 row.onclick=()=>{const q=sidPriv();q[k]=!q[k];localStorage.setItem(SID_PRIV,JSON.stringify(q));sidRender();sidAuto()};box.appendChild(row)})}
 function sidOpen(){try{sidRender();sidStatus("")}catch(e){dbgShow("Экран ID: "+e.message)}ov("o11");$("o11").scrollTop=0;if(sidTok())cloudLoadRanks()}
@@ -646,7 +653,8 @@ const me=(sidInfo()||{}).username;data.items.forEach((item,n)=>{const row=docume
 catch(e){box.textContent="";const h=document.createElement("div");h.className="hint er";h.textContent=e.message;box.appendChild(h)}}
 async function sidCopy(){const c=(sidInfo()||{}).spCode;if(!c)return;try{await navigator.clipboard.writeText(c)}catch(e){const t=document.createElement("textarea");t.value=c;document.body.appendChild(t);t.select();try{document.execCommand("copy")}catch(_){}t.remove()}sidStatus("КОД СКОПИРОВАН ✓","ok")}
 $("sidReg").onclick=()=>cloudAuth("register");$("sidLogin").onclick=()=>cloudAuth("login");$("sidSync").onclick=()=>cloudSync(false);$("sidCopy").onclick=sidCopy;$("sidClose").onclick=()=>ov(sidTok()?"o7":"o1");
-$("sidLogout").onclick=()=>{sidLogoutLocal();sidRender();sidStatus("Вы вышли из ID. Локальный прогресс сохранён.")};
+$("sidLogout").onclick=()=>{try{localStorage.setItem("tgNoAuto","1")}catch(e){}sidLogoutLocal();sidRender();sidStatus("Вы вышли из ID. Локальный прогресс сохранён.")};
+$("sidTg").onclick=()=>tgLogin(false);try{if(tgInit()&&!sidTok()&&!localStorage.getItem("tgNoAuto"))setTimeout(()=>tgLogin(true),600)}catch(e){}
 $("pSid").onclick=sidOpen;$("pc").onclick=()=>{if(sidTok())pfOpen();else sidOpen()};
 try{localStorage.removeItem("slovopadCloudApi")}catch(e){}
 {const _ia=i18nApply;i18nApply=function(){_ia();try{sidRender()}catch(e){}}}

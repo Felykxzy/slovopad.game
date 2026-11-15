@@ -138,6 +138,7 @@ async function ensureSchema(env) {
     await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_call_sig (id INTEGER PRIMARY KEY AUTOINCREMENT, room TEXT NOT NULL, frm TEXT NOT NULL, too TEXT NOT NULL, body TEXT NOT NULL, t INTEGER NOT NULL)').run();
     await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_call_sig_idx ON sp_call_sig(room,too,id)').run();
     await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_tg (uid TEXT PRIMARY KEY, chat TEXT NOT NULL, t INTEGER NOT NULL)').run();
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_tglogin (tgid TEXT PRIMARY KEY, uid TEXT NOT NULL, t INTEGER NOT NULL)').run();
     await env.DB.prepare("CREATE TABLE IF NOT EXISTS sp_bans (uid TEXT PRIMARY KEY, reason TEXT NOT NULL DEFAULT '', t INTEGER NOT NULL)").run();
     await env.DB.prepare("CREATE TABLE IF NOT EXISTS sp_grants (id INTEGER PRIMARY KEY AUTOINCREMENT, uid TEXT NOT NULL, kind TEXT NOT NULL, val TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', t INTEGER NOT NULL)").run();
     await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_grants_u_idx ON sp_grants(uid)').run();
@@ -748,7 +749,7 @@ async function runCron(env) {
 /* ---------- Удаление игрока целиком (используется и самим игроком, и панель управленияю) ---------- */
 async function wipeUser(env, id) {
   const db = env.DB;
-  for (const [t, w] of [['qr_login', 'user_id=?'], ['sp_friends', 'a=? OR b=?'], ['sp_msgs', 'a=? OR b=?'], ['sp_blocks', 'a=? OR b=?'], ['sp_reports', 'reporter=? OR target=?'], ['sp_challenges', 'from_id=? OR to_id=?'], ['sp_room_members', 'uid=?'], ['sp_room_msgs', 'uid=?'], ['sp_tg', 'uid=?'], ['sp_grants', 'uid=?'], ['sp_bans', 'uid=?']]) {
+  for (const [t, w] of [['qr_login', 'user_id=?'], ['sp_friends', 'a=? OR b=?'], ['sp_msgs', 'a=? OR b=?'], ['sp_blocks', 'a=? OR b=?'], ['sp_reports', 'reporter=? OR target=?'], ['sp_challenges', 'from_id=? OR to_id=?'], ['sp_room_members', 'uid=?'], ['sp_room_msgs', 'uid=?'], ['sp_tg', 'uid=?'], ['sp_tglogin', 'uid=?'], ['sp_grants', 'uid=?'], ['sp_bans', 'uid=?']]) {
     try { await db.prepare('DELETE FROM ' + t + ' WHERE ' + w).bind(...(w.includes('OR') ? [id, id] : [id])).run(); } catch (_) {}
   }
   try { await db.prepare('DELETE FROM sp_rooms WHERE id NOT IN (SELECT room FROM sp_room_members)').run(); } catch (_) {}
@@ -975,6 +976,48 @@ export default {
           if (ban) return reply({ error: 'Аккаунт заблокирован' + (ban.reason ? ': ' + ban.reason : '.') }, 403);
         } catch (_) {}
 
+        const token = await sign({ sub: user.id, exp: Date.now() + 30 * 24 * 60 * 60 * 1000 }, secretOf(env));
+        return reply({ token, ...(await account(env, user)) });
+      }
+
+      /* вход через Telegram: игрок открыл игру из Telegram, подпись бота доказывает, кто он.
+         Если Telegram уже привязан к аккаунту, выдаём вход. Если нет и передан ник, создаём новый аккаунт со случайным паролем */
+      if (url.pathname === '/api/tg/login' && request.method === 'POST') {
+        const ipH = await ipHash(request, env);
+        if (!await allow(env, 'tgl:' + ipH, 30, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+        if (!env.GAME_BOT_TOKEN) return reply({ error: 'Вход через Telegram на сервере не включён.' }, 503);
+        const body = (await request.json().catch(() => null)) || {};
+        const tgid = await tgCheck(body.initData, env.GAME_BOT_TOKEN);
+        if (!tgid) return reply({ error: 'Не удалось проверить Telegram. Открой игру через бота.' }, 400);
+        let user = null;
+        const link = await env.DB.prepare('SELECT uid FROM sp_tglogin WHERE tgid=?').bind(tgid).first();
+        if (link) user = await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(link.uid).first();
+        if (!user) {
+          const username = String(body.username || '').trim();
+          if (!username) return reply({ needNick: true });
+          if (!/^[\p{L}\p{N}_.-]{3,20}$/u.test(username) || /^sp-/i.test(username)) return reply({ error: 'Ник: 3–20 символов (буквы, цифры, _ . -, не может начинаться с SP-).' }, 400);
+          if (!await allow(env, 'reg:' + ipH, 5, 60 * 60 * 1000)) return reply(TOO_MANY, 429);
+          const key = nickKey(username);
+          const dup = await env.DB.prepare('SELECT 1 AS x FROM users WHERE username_key=? OR username=? COLLATE NOCASE LIMIT 1').bind(key, username).first();
+          if (dup) return reply({ error: 'Этот ник уже занят или слишком похож на другой.' }, 409);
+          const salt = b64(random(16));
+          const hash = await passwordHash(b64(random(24)), salt);
+          const id = crypto.randomUUID();
+          try {
+            await env.DB.prepare('INSERT INTO users (id,username,salt,password_hash,updated_at,username_key) VALUES (?,?,?,?,?,?)')
+              .bind(id, username, salt, hash, new Date().toISOString(), key).run();
+          } catch (e) {
+            if (/UNIQUE/i.test(String(e && e.message))) return reply({ error: 'Этот ник уже занят или слишком похож на другой.' }, 409);
+            console.error('tg register', e);
+            return reply({ error: 'Не удалось создать аккаунт. Попробуй позже.' }, 500);
+          }
+          await env.DB.prepare('INSERT OR REPLACE INTO sp_tglogin (tgid,uid,t) VALUES (?,?,?)').bind(tgid, id, Date.now()).run();
+          user = await env.DB.prepare('SELECT * FROM users WHERE id=?').bind(id).first();
+        }
+        try {
+          const ban = await env.DB.prepare('SELECT reason FROM sp_bans WHERE uid=?').bind(user.id).first();
+          if (ban) return reply({ error: 'Аккаунт заблокирован' + (ban.reason ? ': ' + ban.reason : '.') }, 403);
+        } catch (_) {}
         const token = await sign({ sub: user.id, exp: Date.now() + 30 * 24 * 60 * 60 * 1000 }, secretOf(env));
         return reply({ token, ...(await account(env, user)) });
       }
@@ -1222,6 +1265,16 @@ export default {
           if (!chat) return reply({ error: 'Не удалось проверить Telegram.' }, 400);
           await env.DB.prepare('INSERT OR REPLACE INTO sp_tg (uid,chat,t) VALUES (?,?,?)').bind(user.id, chat, now).run();
           return reply({ ok: true, linked: true });
+        }
+        // Telegram: привязка для входа (после обычного входа по паролю)
+        if (url.pathname === '/api/tg/bind' && post) {
+          if (!await allow(env, 'tb:' + user.id, 10, 60 * 60 * 1000)) return reply(TOO_MANY, 429);
+          if (body.off === true) { await env.DB.prepare('DELETE FROM sp_tglogin WHERE uid=?').bind(user.id).run(); return reply({ ok: true, bound: false }); }
+          const tgid = await tgCheck(body.initData, env.GAME_BOT_TOKEN);
+          if (!tgid) return reply({ error: 'Не удалось проверить Telegram.' }, 400);
+          await env.DB.prepare('DELETE FROM sp_tglogin WHERE uid=?').bind(user.id).run();
+          await env.DB.prepare('INSERT OR REPLACE INTO sp_tglogin (tgid,uid,t) VALUES (?,?,?)').bind(tgid, user.id, now).run();
+          return reply({ ok: true, bound: true });
         }
         if (url.pathname === '/api/tg' && request.method === 'GET') {
           const r = await env.DB.prepare('SELECT 1 AS x FROM sp_tg WHERE uid=?').bind(user.id).first();

@@ -272,3 +272,30 @@ test('Свой тег: виден друзьям и в комнате, толь�
   await sync({ t: '<b>x</b>', c: '1,2,3', a: 0 }, ['tg0', 'tg1'], a.token); assert.equal(await seen(), null);
   await sync({ t: 'Ок', c: 'red', a: 9 }, ['tg0', 'tg1'], a.token); assert.deepEqual(await seen(), { t: 'Ок', c: '94,242,255', a: 0 });
 });
+
+test('Вход через Telegram: без токена бота выключен; с подписью создаёт аккаунт, потом пускает и привязывается после пароля', async t => {
+  const s = await setup(); if (!s) return t.skip('нет node:sqlite');
+  assert.equal((await s.raw('/api/tg/login', { initData: 'hash=bad' })).status, 503);
+  s.env.GAME_BOT_TOKEN = '123:TESTTOKEN';
+  const crypto = require('node:crypto');
+  const mkInit = id => {
+    const p = new URLSearchParams({ auth_date: String(Math.floor(Date.now() / 1000)), user: JSON.stringify({ id, first_name: 'T' }) });
+    const str = [...p.entries()].sort((x, y) => (x[0] < y[0] ? -1 : 1)).map(([k, v]) => k + '=' + v).join('\n');
+    const sec = crypto.createHmac('sha256', 'WebAppData').update('123:TESTTOKEN').digest();
+    p.set('hash', crypto.createHmac('sha256', sec).update(str).digest('hex')); return p.toString();
+  };
+  assert.equal((await s.raw('/api/tg/login', { initData: 'hash=bad' })).status, 400);        // подделка
+  const init = mkInit(777);
+  assert.equal((await s.raw('/api/tg/login', { initData: init })).data.needNick, true);       // новый Telegram: нужен ник
+  const c = await s.raw('/api/tg/login', { initData: init, username: 'Tgplayer' });
+  assert.equal(c.status, 200); assert.ok(c.data.token);
+  const again = await s.raw('/api/tg/login', { initData: init });                              // дальше пускает сам
+  assert.equal(again.status, 200); assert.ok(again.data.token);
+  assert.equal((await s.raw('/api/tg/login', { initData: mkInit(778), username: 'Tgplayer' })).status, 409);  // ник занят
+  const a = await s.reg('Alice');                                                              // обычный аккаунт привязываем к другому Telegram
+  assert.equal((await s.raw('/api/tg/bind', { initData: mkInit(999) }, a.token)).data.bound, true);
+  const viaTg = await s.raw('/api/tg/login', { initData: mkInit(999) });
+  assert.equal(viaTg.status, 200); assert.equal(viaTg.data.username, 'Alice');
+  assert.equal((await s.raw('/api/tg/bind', { off: true }, a.token)).data.bound, false);
+  assert.equal((await s.raw('/api/tg/login', { initData: mkInit(999) })).data.needNick, true);
+});

@@ -1,12 +1,12 @@
 {
-  "version": "3.13.0",
+  "version": "3.14.0",
   "notes": [
-    "Показ экрана в звонке Эхо"
+    "Вход через Telegram"
   ],
   "notes_en": [
-    "Screen sharing in Echo calls"
+    "Log in with Telegram"
   ],
   "notes_uk": [
-    "Показ екрана в дзвінку Ехо"
+    "Вхід через Telegram"
   ]
 }
