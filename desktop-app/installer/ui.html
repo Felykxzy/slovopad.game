@@ -30,23 +30,23 @@ h2{margin:0;font-size:36px;letter-spacing:.18em;font-weight:900;background:linea
 <div class="s" id="s3"><h2>ГОТОВО!</h2><div class="tg">СЛОВОПАД УСТАНОВЛЕН · ЯРЛЫК НА РАБОЧЕМ СТОЛЕ</div><div class="row"><button class="b big" id="pl">▶ ИГРАТЬ</button></div><button class="b a" id="cl2">ЗАКРЫТЬ</button></div>
 <div class="s" id="s4"><h2 style="background:linear-gradient(90deg,#ff4d6d,#ff8a5c);-webkit-background-clip:text">УПС…</h2><div class="er" id="er"></div><div class="row"><button class="b" id="rt">ПОВТОРИТЬ</button><button class="b a" id="cl3">ЗАКРЫТЬ</button></div></div>
 <div id="ver"></div><script>
-const $=i=>document.getElementById(i),api=window.api||{info:async()=>({version:"",dir:""}),pick:async()=>null,install:async()=>({ok:false,msg:"нет связи с программой установки"}),launch:async()=>false,close(){window.close()},min(){}};let dir="",VER="";
+const $=i=>document.getElementById(i),host=window.api||{info:async()=>({version:"",dir:""}),pick:async()=>null,install:async()=>({ok:false,msg:"нет связи с программой установки"}),launch:async()=>false,close(){window.close()},min(){}};let dir="",VER="";
 window.addEventListener("error",e=>{const t=document.getElementById("pt");if(t)t.textContent="Ошибка: "+e.message});
-try{api.ready&&api.ready()}catch(e){}
+try{host.ready&&host.ready()}catch(e){}
 if(!window.api)setTimeout(()=>{$("pt").textContent="Ошибка запуска. Скачай обычный Slovopad-Setup с GitHub"},50);
 function logo(el){const w="СЛОВОПАД",a=[94,242,255],m=[255,79,216];el.innerHTML="";[...w].forEach((ch,i)=>{const t=i/7,c=a.map((v,k)=>Math.round(v+(m[k]-v)*t)).join(","),s=document.createElement("span");s.textContent=ch;s.style.color="rgb("+c+")";s.style.textShadow="0 0 22px rgba("+c+",.7),0 0 3px rgba("+c+",.9)";s.style.setProperty("--d",i*.12+"s");el.appendChild(s)})}
 logo($("lg"));logo($("lg2"));
 function show(n){["s1","s2","s3","s4"].forEach(i=>$(i).classList.toggle("on",i===n))}
 function setDir(d){dir=d;$("pt").textContent=d}
-$("cl").onclick=$("cl2").onclick=$("cl3").onclick=()=>api.close();$("mn").onclick=()=>api.min();
-$("ch").onclick=async()=>{const d=await api.pick(dir);if(d)setDir(d)};
+$("cl").onclick=$("cl2").onclick=$("cl3").onclick=()=>host.close();$("mn").onclick=()=>host.min();
+$("ch").onclick=async()=>{const d=await host.pick(dir);if(d)setDir(d)};
 let p=0,tm=0;const MS=["РАСПАКОВЫВАЕМ ФАЙЛЫ…","КОПИРУЕМ ИГРУ…","СОЗДАЁМ ЯРЛЫКИ…","ПОЧТИ ГОТОВО…"];
 function setP(v){p=v;$("bf").style.width=v+"%";$("pc").textContent=Math.round(v)+"%";$("st").textContent=MS[Math.min(3,v/26|0)]}
 async function run(){show("s2");setP(0);clearInterval(tm);tm=setInterval(()=>{if(p<92)setP(p+(94-p)*.018)},120);
- const r=await api.install(dir);clearInterval(tm);
+ const r=await host.install(dir);clearInterval(tm);
  if(r.ok){setP(100);setTimeout(()=>show("s3"),700)}else{$("er").textContent="Не получилось установить ("+r.msg+"). Попробуй другую папку или закрой антивирус на минуту.";show("s4")}}
-$("go").onclick=run;$("rt").onclick=run;$("pl").onclick=async()=>{await api.launch(dir);api.close()};
-api.info().then(i=>{VER=i.version;$("ver").textContent="v"+VER;setDir(i.dir)});
+$("go").onclick=run;$("rt").onclick=run;$("pl").onclick=async()=>{await host.launch(dir);host.close()};
+host.info().then(i=>{VER=i.version;$("ver").textContent="v"+VER;setDir(i.dir)});
 const cv=$("c"),x=cv.getContext("2d"),W=760,H=470,WD="кот тигр щит слово бонус звезда комета ракета город игра очки комбо лев луна шторм дракон зебра пицца ветер огонь".split(" "),CL=["94,242,255","255,209,102","255,79,216","184,255,92","160,130,255"];
 const ST=Array.from({length:90},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.1+.2,a:Math.random()*.6+.2}));
 const it=Array.from({length:13},(_,i)=>({t:WD[i%WD.length].toUpperCase(),x:30+Math.random()*(W-110),y:Math.random()*H,v:18+Math.random()*30,s:12+Math.random()*7,c:CL[i%5]})),P=[];let last=0;
