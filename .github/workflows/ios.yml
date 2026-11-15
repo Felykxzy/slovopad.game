@@ -1,0 +1,47 @@
+name: iOS
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+permissions:
+  contents: write
+jobs:
+  ipa:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Установить XcodeGen
+        run: brew install xcodegen
+      - name: Собрать проект
+        working-directory: ios-app
+        run: |
+          export APP_VERSION=$(jq -r .version ../version.json)
+          export APP_BUILD=$(( $(date +%s) / 60 ))
+          xcodegen generate
+      - name: Собрать приложение без подписи
+        working-directory: ios-app
+        run: |
+          xcodebuild -project Slovopad.xcodeproj -scheme Slovopad -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+      - name: Упаковать IPA
+        working-directory: ios-app
+        run: |
+          V=$(jq -r .version ../version.json)
+          rm -rf Payload && mkdir Payload
+          cp -R build/Build/Products/Release-iphoneos/Slovopad.app Payload/
+          zip -qry "Slovopad-$V.ipa" Payload
+          ls -la *.ipa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Slovopad-ipa
+          path: ios-app/*.ipa
+      - name: Положить в релиз
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          V=$(jq -r .version version.json)
+          gh release view "v$V" >/dev/null 2>&1 || gh release create "v$V" --title "Версия $V" --notes "Версия $V"
+          gh release upload "v$V" "ios-app/Slovopad-$V.ipa" --clobber
