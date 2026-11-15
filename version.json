@@ -1,12 +1,12 @@
 {
-  "version": "3.14.0",
+  "version": "3.14.1",
   "notes": [
-    "Вход через Telegram"
+    "Вход через Telegram: новый аккаунт только по отдельному нажатию"
   ],
   "notes_en": [
-    "Log in with Telegram"
+    "Telegram login: a new account is only created after a separate tap"
   ],
   "notes_uk": [
-    "Вхід через Telegram"
+    "Вхід через Telegram: новий акаунт лише після окремого натискання"
   ]
 }

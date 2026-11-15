@@ -43,11 +43,43 @@
     const o = h("div", "ov"); o.id = "o19";
     o.innerHTML = '<div class="clh"><button class="ib" id="clBk" type="button" aria-label="minimize">'+IC.html("back")+'</button><div class="clt"><h2 id="clT"></h2><div class="sub"><span id="clS"></span><b id="clTm">0:00</b></div></div><div class="clq" id="clQ"></div></div>' +
       '<div class="cgrid" id="clG"></div><div class="hint" id="clSt"></div>' +
-      '<div class="cbar"><div class="cbw"><button class="cb" id="clMic" type="button">'+IC.html("mic")+'</button><span>' + T("Микрофон", "Mic", "Мікрофон") + '</span></div><div class="cbw"><button class="cb" id="clCam" type="button">'+IC.html("cam")+'</button><span>' + T("Камера", "Camera", "Камера") + '</span></div><div class="cbw" id="clScw" hidden><button class="cb" id="clScr" type="button">'+IC.html("screen")+'</button><span>' + T("Экран", "Screen", "Екран") + '</span></div><div class="cbw" id="clFlw"><button class="cb" id="clFl" type="button">'+IC.html("flip")+'</button><span>' + T("Поворот", "Flip", "Поворот") + '</span></div><div class="cbw"><button class="cb end" id="clEnd" type="button">'+IC.html("hangup")+'</button><span>' + T("Выйти", "Leave", "Вийти") + '</span></div></div>';
+      '<div class="cbar"><div class="cbw"><button class="cb" id="clMic" type="button">'+IC.html("mic")+'</button><span>' + T("Микрофон", "Mic", "Мікрофон") + '</span></div><div class="cbw"><button class="cb" id="clCam" type="button">'+IC.html("cam")+'</button><span>' + T("Камера", "Camera", "Камера") + '</span></div><div class="cbw" id="clScw" hidden><button class="cb" id="clScr" type="button">'+IC.html("screen")+'</button><span>' + T("Экран", "Screen", "Екран") + '</span></div><div class="cbw" id="clCsw" hidden><button class="cb" id="clCs" type="button">'+IC.html("swap")+'</button><span>' + T("Камеры", "Cameras", "Камери") + '</span></div><div class="cbw" id="clFlw"><button class="cb" id="clFl" type="button">'+IC.html("flip")+'</button><span>' + T("Поворот", "Flip", "Поворот") + '</span></div><div class="cbw"><button class="cb end" id="clEnd" type="button">'+IC.html("hangup")+'</button><span>' + T("Выйти", "Leave", "Вийти") + '</span></div></div>';
     const after = g("o18") || g("o17") || g("o16") || g("o1"); after.parentNode.insertBefore(o, after.nextSibling);
     g("clBk").onclick = () => minimize();
     g("clMic").onclick = toggleMic; g("clCam").onclick = toggleCam; g("clFl").onclick = flip; g("clScr").onclick = toggleScr; g("clScw").hidden = !(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia); g("clEnd").onclick = () => leave(true);
+    const cm = h("div", "clcm"); cm.id = "clCm"; cm.hidden = true; o.appendChild(cm);
+    g("clCs").onclick = e => { e.stopPropagation(); if (cm.hidden) camMenu(); else cm.hidden = true };
+    o.addEventListener("click", e => { if (!cm.hidden && !cm.contains(e.target)) cm.hidden = true });
+    try { navigator.mediaDevices.addEventListener("devicechange", () => { camList().then(camUi) }) } catch (e) { }
   }
+  /* выбор камеры: на компьютере их может быть несколько (вебкамера, внешняя, виртуальная) */
+  const coarse = () => { try { return matchMedia("(pointer:coarse)").matches } catch (e) { return false } };
+  async function camList() {
+    try { const d = await navigator.mediaDevices.enumerateDevices(); C.cams = d.filter(x => x.kind === "videoinput" && x.deviceId) } catch (e) { C.cams = [] }
+    return C.cams;
+  }
+  function camUi() {
+    const w = g("clCsw"); if (!w) return;
+    const many = !!(C.cams && C.cams.length > 1 && C.camOn && !C.scr && !coarse());
+    w.hidden = !many; if (many) g("clFlw").hidden = true; if (!many && g("clCm")) g("clCm").hidden = true;
+  }
+  async function camMenu() {
+    const m = g("clCm"), list = await camList(); m.textContent = "";
+    list.forEach((d, i) => {
+      const b = h("button", "clci" + ((C.cam && C.cam.getSettings && C.cam.getSettings().deviceId === d.deviceId) ? " on" : "")); b.type = "button";
+      b.textContent = d.label || (T("Камера ", "Camera ", "Камера ") + (i + 1));
+      b.onclick = async () => { m.hidden = true; await camPick(d.deviceId) };
+      m.appendChild(b);
+    });
+    m.hidden = false;
+  }
+  async function camPick(id) {
+    if (!C.camOn || C.scr) return;
+    const old = C.devId; C.devId = id; try { localStorage.setItem("callCamId", id) } catch (e) { }
+    try { if (C.cam) { C.cam.stop(); C.cam = null } await camStart(); sendAll(); paintSelf() }
+    catch (e) { C.devId = old; try { await camStart() } catch (x) { C.camOn = false; paintSelf(); Object.values(C.peers).forEach(sendState); hint(T("Эта камера не включилась.", "This camera did not start.", "Ця камера не ввімкнулась."), true) } }
+  }
+  const sendAll = () => Object.values(C.peers).forEach(sendState);
   const hint = (msg, bad) => { const e = g("clSt"); if (e) { e.textContent = msg || ""; e.classList.toggle("bad", !!bad) } };
   const hue = n => { let x = 0; for (const c of String(n)) x = (x * 31 + c.charCodeAt(0)) % 360; return x };
   function makeTile(name, self) {
@@ -73,7 +105,7 @@
     if (!C.tile) return; C.tile.classList.toggle("nocam", !C.camOn); C.tile.classList.toggle("flip", C.facing === "user" && !C.scr); C.tile.classList.toggle("scr", !!C.scr); g("clScr").classList.toggle("on", !!C.scr);
     IC.t(C.tile._st, C.micOn ? "" : "{mic-off}");
     g("clMic").classList.toggle("off", !C.micOn); IC.t(g("clMic"), C.micOn ? "{mic}" : "{mic-off}"); IC.t(g("clCam"), C.camOn ? "{cam}" : "{cam-off}");
-    g("clCam").classList.toggle("on", C.camOn); g("clFlw").hidden = !C.camOn || !!C.scr;
+    g("clCam").classList.toggle("on", C.camOn); g("clFlw").hidden = !C.camOn || !!C.scr; camUi();
   }
   // кто говорит: мерим громкость каждого потока
   function watch(tile, stream) {
@@ -200,7 +232,12 @@
   /* ---------- управление ---------- */
   function toggleMic() { C.micOn = !C.micOn; sfx(C.micOn ? "unmute" : "mute"); if (C.mic) C.mic.enabled = C.micOn; paintSelf(); Object.values(C.peers).forEach(sendState) }
   async function camStart() {
-    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: C.facing, width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: 60 } }, audio: false });
+    if (C.devId === undefined) { try { C.devId = localStorage.getItem("callCamId") || "" } catch (e) { C.devId = "" } }
+    const base = { width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: 60 } };
+    let s;
+    if (C.devId) { try { s = await navigator.mediaDevices.getUserMedia({ video: { ...base, deviceId: { exact: C.devId } }, audio: false }) } catch (e) { C.devId = "" } }
+    if (!s) s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: C.facing, ...base }, audio: false });
+    await camList();
     C.cam = s.getVideoTracks()[0]; try { C.cam.contentHint = "motion" } catch (e) { } C.tile._v.srcObject = new MediaStream([C.cam]); try { C.tile._v.play().catch(() => { }) } catch (e) { }
     Object.values(C.peers).forEach(attachLocal);
   }
