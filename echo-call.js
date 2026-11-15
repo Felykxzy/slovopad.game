@@ -47,6 +47,7 @@
     const after = g("o18") || g("o17") || g("o16") || g("o1"); after.parentNode.insertBefore(o, after.nextSibling);
     g("clBk").onclick = () => minimize();
     g("clMic").onclick = toggleMic; g("clCam").onclick = toggleCam; g("clFl").onclick = flip; g("clScr").onclick = toggleScr; g("clScw").hidden = !(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia); g("clEnd").onclick = () => leave(true);
+    document.addEventListener("visibilitychange", () => { if (document.hidden) C.hid = Date.now() });
     const cm = h("div", "clcm"); cm.id = "clCm"; cm.hidden = true; o.appendChild(cm);
     g("clCs").onclick = e => { e.stopPropagation(); if (cm.hidden) camMenu(); else cm.hidden = true };
     o.addEventListener("click", e => { if (!cm.hidden && !cm.contains(e.target)) cm.hidden = true });
@@ -252,7 +253,7 @@
     const tr = s.getVideoTracks()[0]; if (!tr) throw new Error("no video");
     if (C.cam) { try { C.cam.stop() } catch (e) { } }
     C.cam = tr; C.scr = true; C.camOn = true; try { tr.contentHint = "detail" } catch (e) { }
-    tr.onended = () => { if (C.scr && C.cam === tr) scrStop() };
+    tr.onended = () => { if (C.scr && C.cam === tr) { const bg = document.hidden || Date.now() - (C.hid || 0) < 5000; scrStop(); if (bg) hint(T("Показ экрана остановился: приложение свернулось. Вернись и нажми «Экран» снова.", "Screen sharing stopped because the app went to the background. Come back and tap Screen again.", "Показ екрана зупинився: застосунок згорнувся. Повернись і натисни «Екран» знову."), true) } };
     C.tile._v.srcObject = new MediaStream([tr]); try { C.tile._v.play().catch(() => { }) } catch (e) { }
     Object.values(C.peers).forEach(attachLocal);
   }
