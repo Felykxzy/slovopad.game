@@ -1,12 +1,12 @@
 {
-  "version": "3.14.1",
+  "version": "3.15.0",
   "notes": [
-    "Вход через Telegram: новый аккаунт только по отдельному нажатию"
+    "Выбор камеры в звонке Эхо"
   ],
   "notes_en": [
-    "Telegram login: a new account is only created after a separate tap"
+    "Camera picker in Echo calls"
   ],
   "notes_uk": [
-    "Вхід через Telegram: новий акаунт лише після окремого натискання"
+    "Вибір камери в дзвінку Ехо"
   ]
 }
