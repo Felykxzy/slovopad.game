@@ -1,12 +1,12 @@
 {
-  "version": "3.18.1",
+  "version": "3.18.2",
   "notes": [
-    "Объявление о приложении ЭХО на главном экране"
+    "Убрали объявление о приложении ЭХО с главного экрана"
   ],
   "notes_en": [
-    "A small note about the ECHO app on the main screen"
+    "Removed the ECHO app note from the main screen"
   ],
   "notes_uk": [
-    "Оголошення про застосунок ЕХО на головному екрані"
+    "Прибрали оголошення про застосунок ЕХО з головного екрана"
   ]
 }
