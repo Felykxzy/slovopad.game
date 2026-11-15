@@ -1118,3 +1118,6 @@ body.eco #fg .fd.cur .ic,body.eco #fg .fd.cur .fr::after,body.eco #fg .fd.cur .w
 .sid-acc.on .sid-accb{cursor:default;background:rgba(94,242,255,.12);border-color:rgba(94,242,255,.5)}.sid-acc.on .sid-accb span{color:#8ff3ff;opacity:1}
 .sid-accx{all:unset;box-sizing:border-box;width:46px;display:grid;place-items:center;border-radius:16px;cursor:pointer;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#c9cfee}.sid-accx svg{width:18px;height:18px}
 .sid-accadd{width:100%}
+/* шапка личного чата: по имени и аватарке открывается профиль */
+#o15 .chav{flex:none;display:block;cursor:pointer}#o15 .chav .av{width:40px;height:40px}
+#o15 #chFrt{cursor:pointer}

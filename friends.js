@@ -5,6 +5,7 @@
   "use strict";
   const T = (a, b, c) => L3(a, b, c);
   const g = id => document.getElementById(id);
+  let backChat = false;
   let data = null, tab = 0, pick = null, cur = null, busy = false, CH = null, lastErr = "";
   const badge = { r: 0, c: 0, m: 0, k: 0 };
   let backFn = null, openFrom = null;
@@ -46,7 +47,7 @@
     const p = h("div", "ov sc"); p.id = "o14";
     p.innerHTML = '<div class="fph" id="fpH"></div><div class="frlist" id="fpB"></div><div class="hint" id="fpSt"></div><div class="mb"><button class="btn" id="fpBk" type="button"></button></div>';
     const c15 = h("div", "ov"); c15.id = "o15";
-    c15.innerHTML = '<div class="frh"><button class="ib" id="chBk" type="button">←</button><div class="frt"><h2 id="chT"></h2><div class="sub" id="chS"></div></div><button class="ib" id="chMn" type="button">⋯</button></div>' +
+    c15.innerHTML = '<div class="frh"><button class="ib" id="chBk" type="button">←</button><span class="chav" id="chAv"></span><div class="frt" id="chFrt"><h2 id="chT"></h2><div class="sub" id="chS"></div></div><button class="ib" id="chMn" type="button">⋯</button></div>' +
       '<div class="chmenu" id="chMenu" hidden><button class="btn a" id="chBl" type="button"></button><button class="btn a" id="chRpb" type="button"></button></div>' +
       '<div class="chl" id="chL"></div><div class="hint" id="chSt"></div>' +
       '<div class="chrp" id="chRp" hidden></div>' +
@@ -55,7 +56,8 @@
     after.parentNode.insertBefore(o, after.nextSibling); o.parentNode.insertBefore(p, o.nextSibling); p.parentNode.insertBefore(c15, p.nextSibling);
     chatWire();
     g("frBk").onclick = () => { pick = null; if (openFrom) { const f = openFrom; openFrom = null; f(); return } ov("o1"); };
-    g("fpBk").onclick = () => { render(); ov("o13"); };
+    g("fpBk").onclick = () => { if (backChat) { backChat = false; ov("o15"); return } render(); ov("o13"); };
+    g("chFrt").onclick = g("chAv").onclick = () => { if (chat.p) { backChat = true; profile(chat.p.spCode) } };
     g("frAdd").onclick = addFriend;
     g("frIn").addEventListener("keydown", e => { if (e.key === "Enter") addFriend(); });
     const fb = g("frB"); if (fb) fb.onclick = () => open();
@@ -300,6 +302,7 @@
     build(); chat.p = p; chat.last = 0; chat.blocked = false; chat.sure = 0;
     g("chL").textContent = ""; g("chSt").textContent = ""; g("chMenu").hidden = true; g("chRp").hidden = true; g("chIn").value = "";
     g("chT").textContent = p.username; g("chS").textContent = status(p) || " ";
+    { const av = g("chAv"); av.textContent = ""; av.appendChild(avatar(p, 40)) }
     chatLabels(); ov("o15"); chatFit();
     chatPoll(true);
     clearInterval(chat.timer); chat.timer = setInterval(() => chatPoll(false), 8000);

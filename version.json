@@ -1,12 +1,12 @@
 {
-  "version": "3.16.1",
+  "version": "3.16.2",
   "notes": [
-    "Подсказка, если показ экрана остановился при сворачивании"
+    "Профиль друга открывается из чата"
   ],
   "notes_en": [
-    "Hint when screen sharing stops after minimizing"
+    "Open a friend profile from the chat"
   ],
   "notes_uk": [
-    "Підказка, якщо показ екрана зупинився під час згортання"
+    "Профіль друга відкривається з чату"
   ]
 }
