@@ -1330,7 +1330,8 @@ export default {
               const first = cur.length === 0;
               if (first) {
                 const others = ((await env.DB.prepare('SELECT uid FROM sp_room_members WHERE room=? AND uid<>?').bind(roomId, user.id).all()).results || []).slice(0, ROOM_MAX_MEMBERS);
-                for (const o of others) push(ctx, notify(env, o.uid, '📞 Эхо · ' + room.name + ': ' + nm + ' начал(а) звонок'));
+                const dmCall = String(room.name || '').startsWith('Зв:');
+                for (const o of others) push(ctx, notify(env, o.uid, dmCall ? '📞 Эхо: ' + nm + ' звонит тебе' : '📞 Эхо · ' + room.name + ': ' + nm + ' начал(а) звонок'));
               }
               const ice = await iceServers(env);
               return reply({ ok: true, me: nm, parts: await alive(), ice: ice.servers, turn: ice.turn });

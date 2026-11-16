@@ -32,6 +32,31 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
     override func viewDidLoad() {
         super.viewDidLoad()
         load()
+        checkShell()
+    }
+
+    /// Версия самой оболочки приложения (не игры: игра обновляется сама). Увеличивай, когда меняешь Swift-код.
+    private static let shellVersion = 1
+
+    /// Раз в запуск спрашивает shell.json и, если оболочка устарела, показывает окно «Вышла новая версия приложения».
+    private func checkShell() {
+        guard let u = URL(string: "https://felykxzy.github.io/slovopad.game/shell.json?t=\(Int(Date().timeIntervalSince1970))") else { return }
+        var r = URLRequest(url: u); r.cachePolicy = .reloadIgnoringLocalCacheData; r.timeoutInterval = 10
+        URLSession.shared.dataTask(with: r) { [weak self] data, _, _ in
+            guard let data = data,
+                  let j = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let v = j["v"] as? Int, v > GameViewController.shellVersion,
+                  UserDefaults.standard.integer(forKey: "shellAsked") < v else { return }
+            let text = (j["text"] as? String) ?? "Вышла новая версия приложения. Установи её через Sideloadly, прогресс сохранится."
+            let link = (j["url"] as? String).flatMap(URL.init(string:))
+            DispatchQueue.main.async {
+                let a = UIAlertController(title: "Новая версия приложения", message: text, preferredStyle: .alert)
+                if let link = link { a.addAction(UIAlertAction(title: "Открыть", style: .default) { _ in UIApplication.shared.open(link) }) }
+                a.addAction(UIAlertAction(title: "Позже", style: .cancel))
+                UserDefaults.standard.set(v, forKey: "shellAsked")
+                self?.present(a, animated: true)
+            }
+        }.resume()
     }
 
     private func load() {
