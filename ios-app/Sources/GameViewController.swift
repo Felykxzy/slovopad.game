@@ -15,6 +15,10 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
         cfg.allowsInlineMediaPlayback = true
         cfg.mediaTypesRequiringUserActionForPlayback = []
         cfg.websiteDataStore = .default()
+        if CommandLine.arguments.contains("-shot") {
+            let js = "try{localStorage.setItem('tutDone','1');localStorage.setItem('cfg',JSON.stringify({gls:1}))}catch(e){}"
+            cfg.userContentController.addUserScript(WKUserScript(source: js, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        }
         let w = WKWebView(frame: .zero, configuration: cfg)
         w.navigationDelegate = self
         w.uiDelegate = self
@@ -32,6 +36,84 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
     override func viewDidLoad() {
         super.viewDidLoad()
         load()
+        buildDock()
+        timer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) { [weak self] _ in self?.syncDock() }
+    }
+
+    // MARK: - Настоящее жидкое стекло (iOS 26): родная панель поверх игры
+
+    private var dock: UIVisualEffectView!
+    private var timer: Timer?
+    private let items: [(icon: String, id: String, title: String)] = [
+        ("play.fill", "tp", "Играть"),
+        ("dot.radiowaves.left.and.right", "echoB", "Эхо"),
+        ("bag.fill", "shopB", "Магазин"),
+        ("slider.horizontal.3", "gs", "Настройки"),
+    ]
+
+    private func makeGlass() -> UIVisualEffectView {
+        if #available(iOS 26.0, *) {
+            let e = UIGlassEffect()
+            e.isInteractive = true
+            return UIVisualEffectView(effect: e)
+        }
+        return UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterialDark))
+    }
+
+    private func buildDock() {
+        let g = makeGlass()
+        g.translatesAutoresizingMaskIntoConstraints = false
+        g.clipsToBounds = true
+        g.layer.cornerRadius = 34
+        g.alpha = 0
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.distribution = .fillEqually
+        stack.spacing = 6
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        for (i, it) in items.enumerated() {
+            var c = UIButton.Configuration.plain()
+            c.image = UIImage(systemName: it.icon)
+            c.title = it.title
+            c.imagePlacement = .top
+            c.imagePadding = 4
+            c.baseForegroundColor = .white
+            c.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { a in
+                var a = a; a.font = UIFont.systemFont(ofSize: 10, weight: .semibold); return a
+            }
+            let b = UIButton(configuration: c)
+            b.tag = i
+            b.addTarget(self, action: #selector(tapDock(_:)), for: .touchUpInside)
+            stack.addArrangedSubview(b)
+        }
+        g.contentView.addSubview(stack)
+        view.addSubview(g)
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: g.contentView.leadingAnchor, constant: 12),
+            stack.trailingAnchor.constraint(equalTo: g.contentView.trailingAnchor, constant: -12),
+            stack.topAnchor.constraint(equalTo: g.contentView.topAnchor, constant: 8),
+            stack.bottomAnchor.constraint(equalTo: g.contentView.bottomAnchor, constant: -8),
+            g.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            g.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -8),
+            g.heightAnchor.constraint(equalToConstant: 68),
+            g.widthAnchor.constraint(equalToConstant: 320),
+        ])
+        dock = g
+    }
+
+    @objc private func tapDock(_ b: UIButton) {
+        let id = items[b.tag].id
+        web.evaluateJavaScript("(function(){var e=document.getElementById('\(id)');if(e)e.click()})()")
+    }
+
+    /// Панель видна только в главном меню игры.
+    private func syncDock() {
+        let js = "(function(){var m=document.getElementById('o1');return !!(m&&m.classList.contains('s')&&!document.querySelector('.ov.s:not(#o1)')&&!document.body.classList.contains('hold'))})()"
+        web.evaluateJavaScript(js) { [weak self] r, _ in
+            let on = (r as? Bool) ?? false
+            guard let d = self?.dock, (d.alpha > 0.5) != on else { return }
+            UIView.animate(withDuration: 0.3) { d.alpha = on ? 1 : 0 }
+        }
     }
 
     private func load() {
