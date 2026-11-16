@@ -1129,3 +1129,19 @@ body.eco #fg .fd.cur .ic,body.eco #fg .fd.cur .fr::after,body.eco #fg .fd.cur .w
 .ewn{font-size:22px;font-weight:800;letter-spacing:.04em;text-align:center}.ews{opacity:.7;font-size:13px;letter-spacing:.1em}.ewc2{font-size:12px;letter-spacing:.2em;opacity:.55}
 .ewc .btn{width:100%}.ewc .fpst{width:100%}.ewc .hint.bad{color:#ff8da1}
 
+
+/* ===== Жидкое стекло (превью, только по настройке) ===== */
+body.lq .btn,body.lq .ib,body.lq .hs i{background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.04) 45%,rgba(255,255,255,.09));border:0;-webkit-backdrop-filter:blur(10px) saturate(190%) brightness(1.12);backdrop-filter:blur(10px) saturate(190%) brightness(1.12);box-shadow:inset 1.5px 1.5px 1px -.5px rgba(255,255,255,.95),inset -1.5px -1.5px 1px -.5px rgba(255,255,255,.55),inset 0 0 14px 2px rgba(255,255,255,.12),inset 0 -10px 18px -8px rgba(160,220,255,.28),0 10px 30px rgba(0,0,0,.28),0 2px 6px rgba(0,0,0,.2);text-shadow:0 1px 6px rgba(0,0,0,.35)}
+body.lq .btn:not(.a){background:linear-gradient(180deg,rgba(120,235,255,.34),rgba(255,120,225,.2) 90%),linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,0) 50%)}
+body.lq.lqc .btn,body.lq.lqc .ib{-webkit-backdrop-filter:url(#lqf) blur(7px) saturate(200%) brightness(1.12);backdrop-filter:url(#lqf) blur(7px) saturate(200%) brightness(1.12)}
+body.lq .btn::before,body.lq .ib::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;padding:1px;background:conic-gradient(from 210deg,rgba(255,255,255,.95),rgba(255,255,255,.05) 22%,rgba(255,255,255,.55) 50%,rgba(255,255,255,.05) 72%,rgba(255,255,255,.95));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.9}
+body.lq .btn:active,body.lq .ib:active{transform:scale(.95);filter:brightness(1.15)}
+body.lq .btn.pr,body.lq .ib.pr{box-shadow:inset 1.5px 1.5px 1px -.5px #fff,inset -1.5px -1.5px 1px -.5px rgba(255,255,255,.7),0 0 34px rgba(150,230,255,.5),0 14px 34px rgba(0,0,0,.3)}
+@media (prefers-reduced-motion:reduce){body.lq .btn:active{transform:none}}
+
+/* лёгкий режим для слабых телефонов: без тяжёлого размытия */
+html.lite *,html.lite *::before,html.lite *::after{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+/* фон для жидкого стекла: цветные пятна, сквозь которые стекло преломляет свет */
+body.lq::before{content:"";position:fixed;inset:-20%;z-index:0;pointer-events:none;background:radial-gradient(38% 28% at 18% 22%,rgba(70,200,255,.42),transparent 70%),radial-gradient(38% 30% at 82% 60%,rgba(255,80,200,.36),transparent 70%),radial-gradient(36% 28% at 38% 92%,rgba(130,100,255,.38),transparent 70%);animation:lqd 16s ease-in-out infinite alternate}
+@keyframes lqd{to{transform:translate3d(4%,-3%,0) scale(1.12)}}
+@media (prefers-reduced-motion:reduce){body.lq::before{animation:none}}

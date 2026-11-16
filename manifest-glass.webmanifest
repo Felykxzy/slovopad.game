@@ -1,0 +1,34 @@
+{
+ "id": "./?glass=1",
+ "name": "СЛОВОПАД Glass",
+ "short_name": "Glass",
+ "description": "Аркадная игра на скорость печати. Защищай щит, набирая падающие слова.",
+ "start_url": "./?glass=1",
+ "scope": "./",
+ "display": "standalone",
+ "display_override": [
+  "standalone",
+  "minimal-ui"
+ ],
+ "orientation": "any",
+ "background_color": "#05060f",
+ "theme_color": "#05060f",
+ "categories": [
+  "games",
+  "entertainment"
+ ],
+ "icons": [
+  {
+   "src": "icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any maskable"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any maskable"
+  }
+ ]
+}
