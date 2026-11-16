@@ -48,7 +48,7 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
         ("play.fill", "tp", "Играть"),
         ("dot.radiowaves.left.and.right", "echoB", "Эхо"),
         ("bag.fill", "shopB", "Магазин"),
-        ("slider.horizontal.3", "gs", "Настройки"),
+        ("slider.horizontal.3", "gs", "Опции"),
     ]
 
     private func makeGlass() -> UIVisualEffectView {
