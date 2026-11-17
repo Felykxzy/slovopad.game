@@ -1,15 +1,15 @@
 {
-  "version": "3.19.1",
+  "version": "3.20.0",
   "notes": [
-    "Уведомление о звонке в ЭХО стало понятнее",
-    "Приложение для айфона подскажет о новой версии"
+    "Новое главное меню и новый магазин с примеркой",
+    "6 новых щитов и 2 новых фона, щиты стали детальнее"
   ],
   "notes_en": [
-    "Clearer call notification in ECHO",
-    "The iPhone app tells you when a new version is out"
+    "New main menu and a new shop with try-before-you-buy",
+    "6 new shields and 2 new backgrounds, shields are more detailed"
   ],
   "notes_uk": [
-    "Зрозуміліше сповіщення про дзвінок в ЕХО",
-    "Застосунок для айфона підкаже про нову версію"
+    "Нове головне меню та новий магазин з приміркою",
+    "6 нових щитів і 2 нових фони, щити стали детальнішими"
   ]
 }

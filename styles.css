@@ -1145,3 +1145,33 @@ html.lite *,html.lite *::before,html.lite *::after{-webkit-backdrop-filter:none!
 body.lq::before{content:"";position:fixed;inset:-20%;z-index:0;pointer-events:none;background:radial-gradient(38% 28% at 18% 22%,rgba(70,200,255,.42),transparent 70%),radial-gradient(38% 30% at 82% 60%,rgba(255,80,200,.36),transparent 70%),radial-gradient(36% 28% at 38% 92%,rgba(130,100,255,.38),transparent 70%);animation:lqd 16s ease-in-out infinite alternate}
 @keyframes lqd{to{transform:translate3d(4%,-3%,0) scale(1.12)}}
 @media (prefers-reduced-motion:reduce){body.lq::before{animation:none}}
+
+/* ===== БЕТА: новое главное меню (?beta=1) — только нижняя панель ===== */
+html.beta #o1{justify-content:flex-start;padding-top:calc(76px + var(--sat));padding-bottom:calc(112px + var(--sab,0px))}
+html.beta .hero{flex:1;min-height:0;width:100%;max-width:520px;margin-inline:auto;gap:clamp(20px,3.8vh,40px)}
+html.beta .lg{font-size:clamp(40px,13vw,78px)}
+html.beta .hs i{font-size:11px;padding:9px 15px}
+html.beta .rkb{padding:18px 20px;border-radius:28px;gap:14px}
+html.beta .rkt{font-size:13px}
+html.beta .lg{margin-top:auto;font-weight:700;letter-spacing:-.01em;filter:drop-shadow(0 0 18px rgba(94,242,255,.3)) drop-shadow(0 4px 0 rgba(10,8,40,.45))}
+html.beta #o1 .mb{margin-top:auto;padding-top:20px;width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:22px 10px}
+html.beta #o1 .mb .btn{width:auto;flex:none}
+html.beta #o1 .mb .btn.a{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:7px;padding:14px 4px 11px;border-radius:22px;font-size:10px;letter-spacing:.1em;line-height:1.15;text-align:center;min-height:0}
+html.beta #o1 .mb .btn.a svg,html.beta #o1 .mb .btn.a .ic{width:22px;height:22px}
+html.beta #o1 #shopB .ei:last-child{display:none}
+html.beta #o1 .mb #tp{grid-row:2;grid-column:1/-1;padding:23px 18px;border-radius:30px 30px 34px 34px;font-size:17px;letter-spacing:.34em;box-shadow:0 0 44px rgba(94,242,255,.35),0 0 90px rgba(255,79,216,.22),inset 0 1px 1px rgba(255,255,255,.6)}
+@media (min-width:760px){html.beta #o1{align-items:center}html.beta .hero{max-width:560px}}
+@media (max-width:380px){html.beta #o1 .mb .btn.a{letter-spacing:.02em;font-size:9px}html.beta #o1 .mb{gap:7px}}
+
+/* ===== Магазин: крупный предпросмотр и компактная сетка ===== */
+.shg{grid-template-columns:repeat(3,1fr);gap:10px}
+.shH{grid-column:1/-1;border-radius:26px;overflow:hidden;border:1px solid rgba(255,255,255,.2);background:linear-gradient(180deg,rgba(18,20,56,.9),rgba(6,8,24,.95));box-shadow:0 14px 44px rgba(0,0,0,.45),0 0 0 1px rgba(94,242,255,.12)}
+.shH canvas{display:block;width:100%;aspect-ratio:460/246}
+.shHr{display:flex;align-items:center;gap:12px;padding:14px 16px 16px}
+.shHn{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}.shHn b{font-size:17px;letter-spacing:.14em}.shHn small{font-size:11px;color:rgba(232,236,255,.55);letter-spacing:.04em}
+.shHb{flex:none;border:0;border-radius:18px;padding:14px 18px;font:inherit;font-weight:800;font-size:12px;letter-spacing:.1em;cursor:pointer}
+.shHb.pr{background:linear-gradient(120deg,#ffd166,#ff9f43);color:#2a1700}.shHb.eq{background:linear-gradient(120deg,#5ef2ff,#a78bfa);color:#06102a}.shHb.on{background:rgba(255,255,255,.1);color:rgba(232,236,255,.7);cursor:default}
+.sx2 .sf{padding:7px 8px 8px;gap:4px}.sx2 .sf b{font-size:10px;letter-spacing:.08em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sx2 .pl{font-size:10px;padding:3px 7px;white-space:nowrap}
+.sx2.sel{border-color:#5ef2ff;box-shadow:0 0 0 1px #5ef2ff,0 0 22px rgba(94,242,255,.35)}.sx2.lk canvas{filter:saturate(.8)}
+.sx2 .pl:empty{display:none}.sx2 .pl.on{padding:3px 9px;min-width:0;width:auto;flex:none}.sx2 .sf{justify-content:space-between}
+.shHn b{font-size:15px;letter-spacing:.08em;line-height:1.2}.shHb{padding:13px 14px}
