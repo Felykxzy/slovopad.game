@@ -1245,3 +1245,8 @@ html.beta #o1 #hwB{animation:mbg 5.6s ease-in-out -3.1s infinite}
 html.beta #o1 #shopB{animation:mbf 6.6s ease-in-out -.9s infinite}
 html.lite.beta #o1 #qp,html.lite.beta #o1 #echoB,html.lite.beta #o1 #hwB,html.lite.beta #o1 #shopB{animation:none}
 @media (prefers-reduced-motion:reduce){html.beta #o1 #qp,html.beta #o1 #echoB,html.beta #o1 #hwB,html.beta #o1 #shopB{animation:none}}
+
+/* плашка в зоне «острова» (см. app.js) */
+#isl{position:fixed;left:50%;margin-left:-55px;width:110px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:5px;z-index:2147483000;pointer-events:none;font:800 11px/1 -apple-system,system-ui,sans-serif;letter-spacing:.09em;color:#0a0c28;background:linear-gradient(110deg,#5ef2ff,#a78bfa 55%,#ff4fd8);box-shadow:0 0 14px rgba(94,242,255,.45)}
+#isl i{font-style:normal;font-size:13px}
+@media (orientation:landscape){#isl{display:none}}

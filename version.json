@@ -1,12 +1,12 @@
 {
-  "version": "3.22.0",
+  "version": "3.23.0",
   "notes": [
-    "Главное меню: кнопки вокруг «Тематики» слегка парят"
+    "iPhone: плашка «СЛОВОПАД» в зоне острова, видна при «удобном доступе»"
   ],
   "notes_en": [
-    "Main menu: the buttons around Themes now float gently"
+    "iPhone: a SLOVOPAD badge in the Dynamic Island area, visible in Reachability"
   ],
   "notes_uk": [
-    "Головне меню: кнопки навколо «Тематик» злегка ширяють"
+    "iPhone: плашка «СЛОВОПАД» у зоні острова, видно під час «зручного доступу»"
   ]
 }

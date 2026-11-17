@@ -557,7 +557,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");glassSet((e.clientX/innerWidth-.5)/.55,(e.clientY/innerHeight-.5)/.5)},{passive:true});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="3.22.0";let upLater=false;
+const VER="3.23.0";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if($("spl")||state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
@@ -734,3 +734,9 @@ document.addEventListener("click",()=>{if(CFG.gls!==0)glassReady()},{passive:tru
 document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");document.documentElement.style.setProperty("--gx",(e.clientX/innerWidth*80+10).toFixed(1))},{passive:true});
 glassApply();i18nInit();i18nApply();menu();hud();upCheck();requestAnimationFrame(t=>{last=t;loop(t)});
 
+/* Плашка «СЛОВОПАД» в зоне «острова» на iPhone (приложение/PWA): прячется за самим островом, а когда тянешь экран вниз («удобный доступ») — видна */
+(function(){try{const ua=navigator.userAgent,force=/[?&]island\b/.test(location.search);if(!/iPhone/.test(ua)&&!force)return;
+const nat=force||navigator.standalone===true||matchMedia("(display-mode: standalone)").matches||!/Safari\//.test(ua);if(!nat)return;
+if(window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initData)return;
+const pr=document.createElement("div");pr.style.cssText="position:fixed;left:0;top:0;height:env(safe-area-inset-top);width:1px;visibility:hidden";document.body.appendChild(pr);let top=pr.getBoundingClientRect().height;pr.remove();if(force&&!top)top=59;if(top<54)return;
+const p=document.createElement("div");p.id="isl";p.setAttribute("aria-hidden","true");p.style.top=Math.round(top/2-14+1)+"px";p.innerHTML="<i>⌁</i>СЛОВОПАД";document.body.appendChild(p)}catch(e){}})();
