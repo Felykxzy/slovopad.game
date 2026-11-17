@@ -5,7 +5,7 @@
   "use strict";
   const T = (a, b, c) => L3(a, b, c);
   const g = id => document.getElementById(id);
-  const E = { els: {}, msgs: {}, races: {}, react: {}, sel: null, reply: null, day: "", lastRoom: null, rooms: [], friends: [], room: null, last: 0, timer: 0, hub: 0, busy: false, tg: null, sure: 0, panel: "" };
+  const E = { els: {}, msgs: {}, races: {}, react: {}, sel: null, reply: null, edit: null, since: 0, typedAt: 0, day: "", lastRoom: null, rooms: [], friends: [], room: null, last: 0, timer: 0, hub: 0, busy: false, tg: null, sure: 0, panel: "" };
   function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) { if (window.IC && typeof text === "string" && text.indexOf("{") >= 0) IC.t(e, text); else e.textContent = text } return e; }
   function btn(cls, text, fn) { const b = h("button", cls, text); b.type = "button"; b.onclick = fn; return b; }
   const post = (path, body) => cloudRequest(path, { method: "POST", body: JSON.stringify(body || {}) });
@@ -14,6 +14,7 @@
   const setHint = (id, msg, bad) => { const e = g(id); if (e) { e.textContent = msg || ""; e.classList.toggle("bad", !!bad) } };
 
   /* ---------- протокол: служебные сообщения в комнате (сервер хранит их как обычный текст) ---------- */
+  const kit = EchoKit.create({ me: () => E.me || "", img: id => cloudRequest("/api/echo/room/img?room=" + encodeURIComponent(E.room.id) + "&id=" + id).then(r => r.img), react: (id, emo) => roomReact(id, emo) });
   const PX = "§", EMO = ["👍", "❤️", "😂", "🔥", "😮"];
   function parse(body) {
     body = String(body || "");
@@ -50,10 +51,10 @@
       '<div class="ecset gl" id="ecSetP" hidden></div><div class="frlist" id="ecList"></div><div class="hint" id="ecSt"></div></section></div>';
     const rm = h("div", "ov"); rm.id = "o17";
     rm.innerHTML = '<div class="frh ecrh"><button class="ib" id="rmBk" type="button" aria-label="back">'+IC.html("back")+'</button><div class="frt"><h2 id="rmT"></h2><div class="sub" id="rmS"></div></div><button class="ib" id="rmCl" type="button" aria-label="call">'+IC.html("phone")+'</button><button class="ib" id="rmMn" type="button" aria-label="menu">'+IC.html("dots")+'</button></div>' +
-      '<div class="chmenu" id="rmMenu" hidden></div>' +
+      '<div class="chmenu" id="rmMenu" hidden></div><div class="pinb" id="rmPin" hidden></div><div class="rmabout" id="rmAb" hidden></div>' +
       '<div class="rmcall" id="rmCall" hidden></div><div class="chl ecfeed" id="rmL"></div><div class="hint" id="rmSt"></div>' +
       '<div class="rmbar" id="rmBar" hidden></div><div class="rmrp" id="rmRp" hidden></div>' +
-      '<div class="chbar"><input id="rmIn" type="text" maxlength="120" autocomplete="off" enterkeyhint="send"><button class="btn chsn" id="rmSn" type="button" aria-label="send">'+IC.html("send")+'</button></div>';
+      '<div class="chrp stkp" id="rmSk" hidden></div><div class="chbar"><button class="ib chrx" id="rmStk" type="button" aria-label="stickers">😊</button><button class="ib chph" id="rmPh" type="button" aria-label="photo">📷</button><input id="rmIn" type="text" maxlength="120" autocomplete="off" enterkeyhint="send"><button class="btn chsn" id="rmSn" type="button" aria-label="send">'+IC.html("send")+'</button></div>';
     const after = g("o15") || g("o11");
     after.parentNode.insertBefore(hub, after.nextSibling); hub.parentNode.insertBefore(rm, hub.nextSibling);
     // экран друзей встраиваем в ту же рамку: рейка слева, его содержимое справа
@@ -78,7 +79,10 @@
     });
     eo.forEach(e => mo.observe(e, { attributes: true, attributeFilter: ["class"] }));
     g("rmBk").onclick = roomClose;
-    g("rmSn").onclick = roomSend;
+    g("rmSn").onclick = () => roomSend();
+    g("rmStk").onclick = () => { const r = g("rmSk"); if (r.hidden) kit.stickers(r, x => roomSend(x)); r.hidden = !r.hidden };
+    g("rmPh").onclick = () => kit.pick((e, img) => { if (e) { setHint("rmSt", e.message, true); return } roomSend(null, img) });
+    g("rmIn").addEventListener("input", () => { const n = Date.now(); if (!E.room || !g("rmIn").value || n - E.typedAt < 3000) return; E.typedAt = n; post("/api/echo/room/typing", { room: E.room.id }).catch(() => { }) });
     g("rmIn").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); roomSend() } });
     g("rmCl").onclick = () => { const rm = E.room; if (rm && window.EchoCall) EchoCall.join(rm.id, rm.name, () => roomOpen(rm.id, rm.name)) };
     g("rmMn").onclick = () => { const m = g("rmMenu"); if (m.hidden) { E.sure = 0; E.panel = ""; menuPaint() } m.hidden = !m.hidden };
@@ -215,7 +219,7 @@
 
   /* ---------- комната ---------- */
   function roomOpen(id, name) {
-    build(); E.room = { id, name: name || "", mine: false, members: [] }; E.lastRoom = { id, name: name || "" }; E.last = 0; E.sure = 0; lastMsg = null; E.els = {}; E.msgs = {}; E.races = {}; E.react = {}; E.sel = null; E.reply = null; E.day = ""; barPaint(); replyPaint();
+    build(); E.room = { id, name: name || "", mine: false, members: [] }; E.lastRoom = { id, name: name || "" }; E.last = 0; E.sure = 0; lastMsg = null; E.els = {}; E.msgs = {}; E.races = {}; E.react = {}; E.sel = null; E.reply = null; E.edit = null; E.since = 0; E.day = ""; kit.reset(); replyPaint(); g("rmSk").hidden = true; g("rmPin").hidden = true; g("rmAb").hidden = true;
     g("rmL").textContent = ""; g("rmSt").textContent = ""; g("rmMenu").hidden = true; g("rmIn").value = "";
     g("rmIn").placeholder = T("Написать в # ", "Message # ", "Написати в # ") + (name || "");
     g("rmT").textContent = "# " + E.room.name; g("rmS").textContent = " ";
@@ -260,7 +264,7 @@
   function roomAdd(m) {
     const l = g("rmL"), p = parse(m.body);
     if (p.t === "S") { const rc = E.races[p.id]; if (rc) { if (p.v > (rc.sc[m.who] || 0)) rc.sc[m.who] = p.v; raceDraw(rc) } return }
-    if (p.t === "R") { reactAdd(m, p); return }
+    if (p.t === "R") return;
     const dn = dayName(m.t); if (dn !== E.day) { E.day = dn; l.appendChild(h("div", "dday", dn)); lastMsg = null }
     if (p.t === "K") { raceAdd(m, p); lastMsg = null; return }
     const same = lastMsg && lastMsg.who === m.who && m.t - lastMsg.t < 300000;
@@ -268,52 +272,43 @@
     const av = h("div", "mav", same ? "" : first(m.who)); if (!same) { av.style.background = tint(m.who); if (!m.mine) { av.classList.add("tap"); av.onclick = e => { e.stopPropagation(); whoOpen(m.who) } } } row.appendChild(av);
     const body = h("div", "mbody");
     if (!same && !m.mine) { const hd = h("div", "mhead"); const nm = h("b", "mnm", m.who); nm.style.color = "hsl(" + hue(m.who) + " 90% 74%)"; nm.classList.add("tap"); nm.onclick = e => { e.stopPropagation(); whoOpen(m.who) }; hd.appendChild(nm); { const mb = ((E.room && E.room.members) || []).find(x => x.name === m.who), te = window.TagUI && mb && TagUI.el(mb.tag); if (te) hd.appendChild(te) } body.appendChild(hd) }
-    const text = p.t === "Q" ? p.text : m.body;
-    if (p.t === "Q") {
-      const q = E.msgs[p.mid], bq = h("div", "mq"); bq.appendChild(h("b", "", q ? q.who : "…")); bq.appendChild(h("span", "", q ? q.text.slice(0, 60) : T("сообщение удалено", "message gone", "повідомлення видалено")));
-      bq.onclick = e => { e.stopPropagation(); const t = E.els[p.mid]; if (t) { t.scrollIntoView({ block: "center", behavior: "smooth" }); t.classList.add("flash"); setTimeout(() => t.classList.remove("flash"), 1200) } };
-      body.appendChild(bq);
-    }
-    const tx2 = h("div", "mtx", text); tx2.appendChild(h("i", "mts", clock(m.t))); body.appendChild(tx2); body.appendChild(h("div", "rxs")); row.appendChild(body);
+    if (p.t === "Q") { const o = kit.msgs[p.mid]; m = { ...m, body: p.text, rp: { id: +p.mid, who: o ? o.who : "", text: o ? String(o.body || "").slice(0, 60) : "", dl: !o } } }
+    const mc = h("div", "mc"); body.appendChild(mc); row.appendChild(body);
+    kit.msgs[m.id] = m; roomFill(row, m);
     if (E.live && !m.mine && window.EchoCall) EchoCall.sfx("msg");
-    E.msgs[m.id] = { who: m.who, text, mine: m.mine };
-    row.onclick = () => select(m.id);
     l.appendChild(row); lastMsg = { who: m.who, t: m.t };
-    if (E.react[m.id]) reactDraw(m.id);
   }
 
-  /* ---------- реакции, ответы ---------- */
-  function reactAdd(m, p) {
-    const r = E.react[p.mid] || (E.react[p.mid] = {}), s = r[p.emo] || (r[p.emo] = new Set());
-    if (s.has(m.who)) s.delete(m.who); else s.add(m.who);
-    if (m.mine) E.me = m.who;
-    reactDraw(p.mid);
+  /* ---------- сообщение: наполнение, меню, реакции ---------- */
+  function roomFill(row, m) {
+    const mc = row.querySelector(".mc"); if (!mc) return; mc.textContent = "";
+    const q = kit.quote(m, kit.jump); if (q) mc.appendChild(q);
+    const im = kit.media(m); if (im) mc.appendChild(im);
+    const tx = h("div", "mtx"); if (m.body || m.dl) tx.appendChild(kit.text(m)); tx.appendChild(h("i", "mts", kit.meta(m))); mc.appendChild(tx);
+    const rx = h("div", "rxs"); mc.appendChild(rx); kit.reg(m.id, row, rx);
+    row.classList.toggle("dl", !!m.dl); E.els[m.id] = row;
+    row.onclick = m.dl ? null : () => roomSheet(m);
   }
-  function reactDraw(mid) {
-    const el = E.els[mid]; if (!el) return; const box = el.querySelector(".rxs"); if (!box) return; box.textContent = "";
-    const r = E.react[mid] || {};
-    Object.keys(r).forEach(emo => {
-      const s = r[emo]; if (!s.size) return;
-      const c = h("button", "rx" + (E.me && s.has(E.me) ? " me" : ""), emo + " " + s.size); c.type = "button"; c.title = [...s].join(", ");
-      c.onclick = e => { e.stopPropagation(); sendRaw(PX + "R|" + mid + "|" + emo) }; box.appendChild(c);
-    });
+  function roomChanged(m) { const row = E.els[m.id]; kit.msgs[m.id] = { ...(kit.msgs[m.id] || {}), ...m }; if (row) roomFill(row, kit.msgs[m.id]) }
+  function roomSheet(m) {
+    const rm = E.room, mod = rm && rm.canMod, acts = [[T("↩ Ответить", "↩ Reply", "↩ Відповісти"), () => { E.reply = m; E.edit = null; replyPaint(); try { g("rmIn").focus() } catch (e) { } }]];
+    if (m.body) acts.push([T("Скопировать", "Copy", "Копіювати"), () => { try { navigator.clipboard.writeText(m.body) } catch (e) { } }]);
+    if (m.mine && m.body) acts.push([T("✎ Изменить", "✎ Edit", "✎ Змінити"), () => { E.edit = m; E.reply = null; replyPaint(); const i = g("rmIn"); i.value = m.body; try { i.focus() } catch (e) { } }]);
+    if (mod) acts.push([rm.pin && rm.pin.id === m.id ? T("📌 Открепить", "📌 Unpin", "📌 Відкріпити") : T("📌 Закрепить", "📌 Pin", "📌 Закріпити"), () => post("/api/echo/room/pin", { room: rm.id, id: rm.pin && rm.pin.id === m.id ? 0 : m.id }).then(() => { E.busy = false; roomPoll(false) }).catch(e => setHint("rmSt", e.message, true))]);
+    const ow = ((rm && rm.members) || []).find(x => x.owner);
+    if (m.mine || (mod && !(ow && ow.name === m.who))) acts.push([T("🗑 Удалить", "🗑 Delete", "🗑 Видалити"), () => post("/api/echo/room/del", { room: rm.id, id: m.id }).then(() => { E.busy = false; roomPoll(false) }).catch(e => setHint("rmSt", e.message, true)), true]);
+    kit.sheet(g("o17"), m, acts);
   }
-  function select(id) {
-    if (E.sel === id) { E.sel = null } else E.sel = id;
-    Object.keys(E.els).forEach(k => E.els[k].classList.toggle("sel", String(k) === String(E.sel)));
-    barPaint();
-  }
-  function barPaint() {
-    const b = g("rmBar"); if (!b) return; b.textContent = ""; b.hidden = !E.sel; if (!E.sel) return;
-    EMO.forEach(e => b.appendChild(btn("rxb", e, () => { sendRaw(PX + "R|" + E.sel + "|" + e); select(E.sel) })));
-    b.appendChild(btn("rxb rxr", "↩ " + T("Ответить", "Reply", "Відповісти"), () => { E.reply = E.sel; select(E.sel); replyPaint(); const i = g("rmIn"); try { i.focus() } catch (e) { } }));
+  async function roomReact(id, emo) {
+    const rm = E.room; if (!rm) return;
+    try { await post("/api/echo/room/react", { room: rm.id, id, emo }); E.busy = false; roomPoll(false) } catch (e) { setHint("rmSt", e.message, true) }
   }
   function replyPaint() {
-    const r = g("rmRp"), inp = g("rmIn"); if (!r) return; r.textContent = "";
-    const q = E.reply && E.msgs[E.reply]; r.hidden = !q; if (!q) { E.reply = null; inp.maxLength = 120; return }
-    inp.maxLength = 120 - (PX + "Q|" + E.reply + "|").length;
-    r.appendChild(h("span", "", "↩ " + q.who + ": " + q.text.slice(0, 50)));
-    r.appendChild(btn("ecx", "{close}", () => { E.reply = null; replyPaint() }));
+    const r = g("rmRp"), q = E.edit || E.reply; if (!r) return; r.textContent = ""; r.hidden = !q;
+    if (!q) { if (E.editWas) g("rmIn").value = ""; E.editWas = false; return }
+    E.editWas = !!E.edit;
+    r.appendChild(h("span", "", (E.edit ? "✎ " + T("Изменить: ", "Edit: ", "Змінити: ") : "↩ " + q.who + ": ") + String(q.body || "📷").slice(0, 50)));
+    r.appendChild(btn("ecx", "{close}", () => { E.reply = E.edit = null; replyPaint() }));
   }
   async function sendRaw(text) {
     const rm = E.room; if (!rm) return;
@@ -367,13 +362,17 @@
     if (E.busy || document.hidden) return;
     E.busy = true;
     try {
-      const r = await cloudRequest("/api/echo/room/msgs?room=" + encodeURIComponent(rm.id) + "&after=" + E.last);
+      const r = await cloudRequest("/api/echo/room/msgs?room=" + encodeURIComponent(rm.id) + "&after=" + E.last + "&since=" + (first ? 0 : E.since));
       if (E.room !== rm) return;
-      rm.name = r.room.name; rm.mine = r.room.mine; rm.members = r.members; { const me = r.members.find(x => x.me); if (me) E.me = me.name }
+      rm.name = r.room.name; rm.mine = r.room.mine; rm.canMod = r.room.mod; rm.about = r.room.about; rm.pin = r.room.pin; rm.members = r.members; E.since = r.now || 0; { const me = r.members.find(x => x.me); if (me) E.me = me.name }
       g("rmT").textContent = "# " + rm.name; IC.t(g("rmS"), "{people}" + r.members.map(x => x.name).slice(0, 4).join(", ") + (r.members.length > 4 ? " +" + (r.members.length - 4) : ""));
       const l = g("rmL"), stick = first || l.scrollHeight - l.scrollTop - l.clientHeight < 80;
       E.live = !first; r.messages.forEach(m => { E.last = Math.max(E.last, m.id); roomAdd(m) }); E.live = false;
-      if (!l.children.length) l.appendChild(h("div", "chem", T("Здесь пока тихо. Напиши первым", "It's quiet here. Write first", "Тут поки тихо. Напиши першим")));
+      (r.changed || []).forEach(roomChanged); if (r.react) kit.setReact(r.react);
+      { const pn = g("rmPin"), ab = g("rmAb"); pn.hidden = !rm.pin; if (rm.pin) { pn.textContent = ""; pn.appendChild(h("span", "", "📌 " + rm.pin.who + ": " + rm.pin.text)); pn.onclick = () => kit.jump(rm.pin.id) }
+        ab.hidden = !rm.about; ab.textContent = rm.about || ""; }
+      { let ty = l.querySelector(".chty"); if (r.typing && r.typing.length && !ty) { ty = h("div", "chty"); l.appendChild(ty) } else if ((!r.typing || !r.typing.length) && ty) { ty.remove(); ty = null } if (ty) { ty.textContent = r.typing.join(", ") + T(" печатает…", " is typing…", " друкує…"); l.appendChild(ty) } }
+      if (!l.querySelector(".msg") && !l.querySelector(".race") && !l.querySelector(".chem")) l.appendChild(h("div", "chem", T("Здесь пока тихо. Напиши первым", "It's quiet here. Write first", "Тут поки тихо. Напиши першим")));
       else if (r.messages.length && l.querySelector(".chem")) l.querySelector(".chem").remove();
       if (stick) l.scrollTop = l.scrollHeight;
       if (window.EchoCall) EchoCall.banner(rm.id, g("rmCall"), () => roomOpen(rm.id, rm.name), rm.name);
@@ -383,11 +382,14 @@
       setHint("rmSt", (e && e.message) || "", true);
     } finally { E.busy = false }
   }
-  async function roomSend() {
-    const rm = E.room, inp = g("rmIn"), text = inp.value.trim(); if (!rm || !text) return;
-    const wire = E.reply && E.msgs[E.reply] ? PX + "Q|" + E.reply + "|" + text : text;
-    inp.value = ""; inp.focus();
-    try { await post("/api/echo/room/send", { room: rm.id, text: wire }); E.reply = null; replyPaint(); E.busy = false; roomPoll(false) } catch (e) { inp.value = text; setHint("rmSt", e.message, true) }
+  async function roomSend(sticker, img) {
+    const rm = E.room, inp = g("rmIn"), text = typeof sticker === "string" ? sticker : inp.value.trim(); if (!rm || (!text && !img)) return;
+    const was = inp.value; if (typeof sticker !== "string") { inp.value = ""; if (!img) inp.focus() }
+    try {
+      if (E.edit) { await post("/api/echo/room/edit", { room: rm.id, id: E.edit.id, text }); E.edit = null; E.editWas = false; replyPaint() }
+      else { await post("/api/echo/room/send", { room: rm.id, text, img: img || undefined, reply: E.reply ? E.reply.id : undefined }); E.reply = null; replyPaint() }
+      E.busy = false; await roomPoll(false); const l = g("rmL"); l.scrollTop = l.scrollHeight;
+    } catch (e) { if (typeof sticker !== "string") inp.value = was; setHint("rmSt", e.message, true) }
   }
 
   /* меню комнаты */
@@ -404,10 +406,16 @@
     }
     if (E.panel === "mem") {
       (rm.members || []).forEach(x => {
-        const r = h("div", "ecmem"); { const sp = h("span", "", (x.owner ? "{crown}" : "") + x.name + (x.me ? " {check}" : "")), te = window.TagUI && TagUI.el(x.tag); if (te) sp.appendChild(te); if (!x.me) { sp.classList.add("tap"); sp.onclick = () => whoOpen(x.name) } r.appendChild(sp) }
-        if (rm.mine && !x.me) r.appendChild(btn("ecx", "{close}", async () => { try { await post("/api/echo/room/kick", { room: rm.id, code: x.name }); roomPoll(false); E.panel = ""; m.hidden = true } catch (e) { setHint("rmSt", e.message, true) } }));
+        const r = h("div", "ecmem"); { const sp = h("span", "", (x.owner ? "{crown}" : x.mod ? "⭐" : "") + x.name + (x.me ? " {check}" : "")), te = window.TagUI && TagUI.el(x.tag); if (te) sp.appendChild(te); if (!x.me) { sp.classList.add("tap"); sp.onclick = () => whoOpen(x.name) } r.appendChild(sp) }
+        if (rm.mine && !x.me) r.appendChild(btn("ecx", x.mod ? "⭐" : "☆", async () => { try { await post("/api/echo/room/mod", { room: rm.id, code: x.name, on: !x.mod }); E.panel = ""; m.hidden = true; roomPoll(false) } catch (e) { setHint("rmSt", e.message, true) } }));
+        if (rm.canMod && !x.me && !x.owner && (rm.mine || !x.mod)) r.appendChild(btn("ecx", "{close}", async () => { try { await post("/api/echo/room/kick", { room: rm.id, code: x.name }); roomPoll(false); E.panel = ""; m.hidden = true } catch (e) { setHint("rmSt", e.message, true) } }));
         m.appendChild(r);
       });
+      m.appendChild(btn("btn a", "←", () => { E.panel = ""; menuPaint() })); return;
+    }
+    if (E.panel === "about") {
+      const inp = h("input", "ecin"); inp.type = "text"; inp.maxLength = 120; inp.value = rm.about || ""; inp.placeholder = T("О чём эта комната", "What this room is about", "Про що ця кімната");
+      m.appendChild(inp); m.appendChild(btn("btn", T("СОХРАНИТЬ", "SAVE", "ЗБЕРЕГТИ"), async () => { try { await post("/api/echo/room/about", { room: rm.id, about: inp.value }); E.panel = ""; m.hidden = true; E.busy = false; roomPoll(false) } catch (e) { setHint("rmSt", e.message, true) } }));
       m.appendChild(btn("btn a", "←", () => { E.panel = ""; menuPaint() })); return;
     }
     if (E.panel === "race") {
@@ -416,6 +424,7 @@
     }
     m.appendChild(btn("btn", "{flag}" + T("НАЧАТЬ ЗАЕЗД", "START A RACE", "ПОЧАТИ ЗАЇЗД"), () => { E.panel = "race"; menuPaint() }));
     m.appendChild(btn("btn a", "＋ " + T("ПРИГЛАСИТЬ ДРУГА", "INVITE A FRIEND", "ЗАПРОСИТИ ДРУГА"), () => { E.panel = "inv"; menuPaint() }));
+    if (rm.canMod) m.appendChild(btn("btn a", "✎ " + T("ОПИСАНИЕ КОМНАТЫ", "ROOM DESCRIPTION", "ОПИС КІМНАТИ"), () => { E.panel = "about"; menuPaint() }));
     m.appendChild(btn("btn a", "{people}" + T("УЧАСТНИКИ", "MEMBERS", "УЧАСНИКИ"), () => { E.panel = "mem"; menuPaint() }));
     m.appendChild(btn("btn a", E.sure === 1 ? T("ТОЧНО ПОЖАЛОВАТЬСЯ?", "REALLY REPORT?", "ТОЧНО СКАРЖИТИСЬ?") : T("ПОЖАЛОВАТЬСЯ", "REPORT", "СКАРЖИТИСЬ"), async () => {
       if (E.sure !== 1) { E.sure = 1; menuPaint(); return }
