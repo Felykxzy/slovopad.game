@@ -1,12 +1,12 @@
 {
-  "version": "3.23.0",
+  "version": "3.23.1",
   "notes": [
-    "iPhone: плашка «СЛОВОПАД» в зоне острова, видна при «удобном доступе»"
+    "Плашка в зоне острова теперь появляется и в приложении"
   ],
   "notes_en": [
-    "iPhone: a SLOVOPAD badge in the Dynamic Island area, visible in Reachability"
+    "The Dynamic Island badge now also appears in the app"
   ],
   "notes_uk": [
-    "iPhone: плашка «СЛОВОПАД» у зоні острова, видно під час «зручного доступу»"
+    "Плашка в зоні острова тепер з'являється і в застосунку"
   ]
 }
