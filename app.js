@@ -126,7 +126,7 @@ const shI=id=>SHOP.find(x=>x[0]===id);
 function shc(a){const x=shI(EQ.s)||SHOP[0];return x[4]==="rainbow"?"hsla("+((gt*60)%360|0)+",100%,65%,"+a+")":"rgba("+x[4]+","+a+")"}
 function bgd(){return(shI(EQ.b)||shI("b0"))[4]}
 let shTab="s";
-function shUI(){$("shopB").textContent="🛍 "+L3("МАГАЗИН","SHOP","МАГАЗИН")+" · "+coG()+" ✨";$("tgB").title=L3("TELEGRAM автора","Author's Telegram","TELEGRAM автора");$("tgB").hidden=!TGK}
+function shUI(){$("shopB").textContent="🛍 "+L3("МАГАЗИН","SHOP","МАГАЗИН");$("tgB").title=L3("TELEGRAM автора","Author's Telegram","TELEGRAM автора");$("tgB").hidden=!TGK}
 const rnd=(k,q)=>{const x=Math.sin(k*127.1+q*311.7)*43758.5453;return x-Math.floor(x)};
 function shFx(c,id,x1,x2,y,t){const w=x2-x1;c.save();
 if(id==="s1"){for(let k=0;k<12;k++){const x=x1+(k+.5)/12*w,h=5+9*Math.abs(Math.sin(t*7+k*1.9));c.fillStyle="rgba(255,"+(110+rnd(k,1)*110|0)+",50,.8)";c.beginPath();c.moveTo(x-3,y);c.quadraticCurveTo(x+rnd(k,2)*2-1,y-h*.6,x,y-h);c.quadraticCurveTo(x+2,y-h*.5,x+3,y);c.fill()}}
@@ -557,7 +557,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");glassSet((e.clientX/innerWidth-.5)/.55,(e.clientY/innerHeight-.5)/.5)},{passive:true});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="3.20.0";let upLater=false;
+const VER="3.20.1";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if($("spl")||state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
