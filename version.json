@@ -1,12 +1,12 @@
 {
-  "version": "3.21.2",
+  "version": "3.21.3",
   "notes": [
-    "Звонок в Эхо: камера на iPhone без чёрного прямоугольника"
+    "Звонок в Эхо: поворот камеры без тёмной картинки"
   ],
   "notes_en": [
-    "Echo call: camera on iPhone no longer shows a black box"
+    "Echo call: switching cameras no longer gives a dark picture"
   ],
   "notes_uk": [
-    "Дзвінок в Ехо: камера на iPhone без чорного прямокутника"
+    "Дзвінок в Ехо: поворот камери без темної картинки"
   ]
 }

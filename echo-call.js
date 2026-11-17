@@ -238,7 +238,7 @@
     const base = { width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform)) ? 30 : 60 } };
     let s;
     if (C.devId) { try { s = await navigator.mediaDevices.getUserMedia({ video: { ...base, deviceId: { exact: C.devId } }, audio: false }) } catch (e) { C.devId = "" } }
-    if (!s) s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: C.facing, ...base }, audio: false });
+    if (!s) { try { s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: C.facing }, ...base }, audio: false }) } catch (e) { s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: C.facing, ...base }, audio: false }) } }
     await camList();
     C.cam = s.getVideoTracks()[0]; try { C.cam.contentHint = "motion" } catch (e) { } C.tile._rp = paintSelf; showSelf();
     Object.values(C.peers).forEach(attachLocal);
@@ -280,9 +280,13 @@
       hint(""); paintSelf(); Object.values(C.peers).forEach(sendState);
     } catch (e) { C.camOn = false; hint(T("Нет доступа к камере. Разреши её в настройках браузера.", "No camera access. Allow it in browser settings.", "Немає доступу до камери. Дозволь її в налаштуваннях браузера."), true); paintSelf() }
   }
+  // Поворот камеры (передняя ↔ задняя). Старую камеру отпускаем и ждём, иначе на iPhone картинка тёмная или замирает
   async function flip() {
-    if (!C.camOn) return; C.facing = C.facing === "user" ? "environment" : "user";
-    try { if (C.cam) { C.cam.stop(); C.cam = null } await camStart(); paintSelf() } catch (e) { C.facing = C.facing === "user" ? "environment" : "user"; try { await camStart() } catch (x) { C.camOn = false; paintSelf() } }
+    if (!C.camOn || C.flipping) return; C.flipping = true;
+    const prev = C.facing, od = C.devId; C.facing = prev === "user" ? "environment" : "user"; C.devId = "";
+    const swap = async () => { if (C.cam) { try { C.cam.stop() } catch (e) { } C.cam = null } if (C.tile) C.tile._v.srcObject = null; await new Promise(r => setTimeout(r, 300)); await camStart(); paintSelf() };
+    try { await swap() } catch (e) { C.facing = prev; C.devId = od; try { await swap() } catch (x) { C.camOn = false; paintSelf() } }
+    finally { C.flipping = false }
   }
 
   /* ---------- вход и выход ---------- */
