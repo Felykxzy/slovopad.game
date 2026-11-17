@@ -1,12 +1,12 @@
 {
-  "version": "3.21.0",
+  "version": "3.21.1",
   "notes": [
-    "ЭХО: ответы, реакции, правка и удаление сообщений, картинки и стикеры, «печатает…» и «прочитано», закреп и @ник в комнатах"
+    "Телефон лёжа: меню и игра удобнее, чат Эхо лучше помещается на экран"
   ],
   "notes_en": [
-    "ECHO: replies, reactions, edit and delete, pictures and stickers, typing and read marks, pins and @mentions in rooms"
+    "Landscape phones: better menu and game layout, Echo chat fits the screen"
   ],
   "notes_uk": [
-    "ЕХО: відповіді, реакції, правка й видалення, картинки та стікери, «друкує…» і «прочитано», закріплення й @нік у кімнатах"
+    "Телефон лежачи: зручніші меню та гра, чат Ехо краще вміщається на екран"
   ]
 }

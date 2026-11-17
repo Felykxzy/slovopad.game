@@ -45,7 +45,7 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
 
   await new Promise(r => srv.listen(0, r)); const base = 'http://localhost:' + srv.address().port;
   const b = await chromium.launch();
-  const p = await b.newPage({ viewport: { width: 430, height: 900 }, deviceScaleFactor: 2 }); const errs = []; p.on('pageerror', e => errs.push(e.message));
+  const p = await b.newPage({ viewport: { width: +process.env.W || 430, height: +process.env.H || 900 }, deviceScaleFactor: 1, isMobile: !!process.env.W, hasTouch: !!process.env.W }); const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.addInitScript(a => { localStorage.setItem('tutDone', '1'); localStorage.setItem('slovopadCloudToken', a.t); localStorage.setItem('slovopadId', JSON.stringify({ username: 'Alice', spCode: a.c })) }, { t: A.token, c: A.code });
   await p.route(/workers\.dev/, async r => { const u = new URL(r.request().url()); const body = r.request().postData(); const res = await worker.fetch(new Request('https://api.test' + u.pathname + u.search, { method: r.request().method(), headers: { ...r.request().headers(), 'cf-connecting-ip': '10.2.2.2' }, body: body || undefined }), env); r.fulfill({ status: res.status, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: await res.text() }) });
   await p.route(/telegram\.org|github\.io/, r => r.abort());
