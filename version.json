@@ -1,12 +1,12 @@
 {
-  "version": "3.21.1",
+  "version": "3.21.2",
   "notes": [
-    "Телефон лёжа: меню и игра удобнее, чат Эхо лучше помещается на экран"
+    "Звонок в Эхо: камера на iPhone без чёрного прямоугольника"
   ],
   "notes_en": [
-    "Landscape phones: better menu and game layout, Echo chat fits the screen"
+    "Echo call: camera on iPhone no longer shows a black box"
   ],
   "notes_uk": [
-    "Телефон лежачи: зручніші меню та гра, чат Ехо краще вміщається на екран"
+    "Дзвінок в Ехо: камера на iPhone без чорного прямокутника"
   ]
 }

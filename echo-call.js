@@ -88,6 +88,7 @@
     const av = h("div", "cav"), c = h("i", "", (name || "?").slice(0, 1).toUpperCase()); c.style.background = "linear-gradient(135deg,hsl(" + hue(name) + " 85% 62%),hsl(" + ((hue(name) + 50) % 360) + " 80% 48%))"; av.appendChild(c);
     const nm = h("div", "cnm", self ? name + " · " + T("ты", "you", "ти") : name), st = h("div", "cst");
     t.appendChild(v); t.appendChild(av); t.appendChild(nm); t.appendChild(st); t._v = v; t._st = st; t.classList.add("nocam");
+    v.addEventListener("playing", () => { t._live = true; if (t._rp) t._rp() }); v.addEventListener("emptied", () => { t._live = false; if (t._rp) t._rp() });
     return t;
   }
   function layout() {
@@ -99,11 +100,11 @@
     let w = G.querySelector(".cwait"); if (!names.length && !w) { w = h("div", "cwait"); w.appendChild(h("i", "")); w.appendChild(h("span", "", T("Ждём друзей…", "Waiting for friends…", "Чекаємо друзів…"))); G.appendChild(w) } else if (names.length && w) w.remove();
   }
   function paintTile(P) {
-    const t = P.tile; if (!t) return; t.classList.toggle("nocam", !P.cam); t.classList.toggle("scr", !!(P.cam && P.scr));
+    const t = P.tile; if (!t) return; t.classList.toggle("nocam", !(P.cam && t._live)); t.classList.toggle("scr", !!(P.cam && P.scr));
     IC.t(t._st, P.mic === false ? "{mic-off}" : "");
   }
   function paintSelf() {
-    if (!C.tile) return; C.tile.classList.toggle("nocam", !C.camOn); C.tile.classList.toggle("flip", C.facing === "user" && !C.scr); C.tile.classList.toggle("scr", !!C.scr); g("clScr").classList.toggle("on", !!C.scr);
+    if (!C.tile) return; C.tile.classList.toggle("nocam", !(C.camOn && C.tile._live)); C.tile.classList.toggle("flip", C.facing === "user" && !C.scr); C.tile.classList.toggle("scr", !!C.scr); g("clScr").classList.toggle("on", !!C.scr);
     IC.t(C.tile._st, C.micOn ? "" : "{mic-off}");
     g("clMic").classList.toggle("off", !C.micOn); IC.t(g("clMic"), C.micOn ? "{mic}" : "{mic-off}"); IC.t(g("clCam"), C.camOn ? "{cam}" : "{cam-off}");
     g("clCam").classList.toggle("on", C.camOn); g("clFlw").hidden = !C.camOn || !!C.scr; camUi();
@@ -155,7 +156,7 @@
   function ensurePeer(name) {
     if (C.peers[name]) return C.peers[name];
     const pc = new RTCPeerConnection({ iceServers: C.ice }), P = { name, pc, pend: [], stream: new MediaStream(), cam: false, mic: true, tile: makeTile(name, false), dc: null, made: Date.now() };
-    C.peers[name] = P; P.tile._v.srcObject = P.stream; g("clG").appendChild(P.tile); layout();
+    C.peers[name] = P; P.tile._rp = () => paintTile(P); P.tile._v.srcObject = P.stream; g("clG").appendChild(P.tile); layout();
     pc.onicecandidate = e => { if (e.candidate) queueCand(P, e.candidate.toJSON ? e.candidate.toJSON() : e.candidate) };
     pc.ontrack = e => {
       if (!P.stream.getTracks().includes(e.track)) P.stream.addTrack(e.track);
@@ -234,13 +235,19 @@
   function toggleMic() { C.micOn = !C.micOn; sfx(C.micOn ? "unmute" : "mute"); if (C.mic) C.mic.enabled = C.micOn; paintSelf(); Object.values(C.peers).forEach(sendState) }
   async function camStart() {
     if (C.devId === undefined) { try { C.devId = localStorage.getItem("callCamId") || "" } catch (e) { C.devId = "" } }
-    const base = { width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: 60 } };
+    const base = { width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform)) ? 30 : 60 } };
     let s;
     if (C.devId) { try { s = await navigator.mediaDevices.getUserMedia({ video: { ...base, deviceId: { exact: C.devId } }, audio: false }) } catch (e) { C.devId = "" } }
     if (!s) s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: C.facing, ...base }, audio: false });
     await camList();
-    C.cam = s.getVideoTracks()[0]; try { C.cam.contentHint = "motion" } catch (e) { } C.tile._v.srcObject = new MediaStream([C.cam]); try { C.tile._v.play().catch(() => { }) } catch (e) { }
+    C.cam = s.getVideoTracks()[0]; try { C.cam.contentHint = "motion" } catch (e) { } C.tile._rp = paintSelf; showSelf();
     Object.values(C.peers).forEach(attachLocal);
+  }
+  // показываем своё видео; если кадры не пошли (бывает на iPhone) — переподключаем картинку до трёх раз
+  function showSelf(n) {
+    const v = C.tile && C.tile._v; if (!v || !C.cam) return; n = n || 0;
+    v.srcObject = null; v.srcObject = new MediaStream([C.cam]); v.muted = true; try { v.play().catch(() => { }) } catch (e) { }
+    setTimeout(() => { if (C.cam && C.tile && C.tile._v === v && !C.tile._live && n < 3) showSelf(n + 1) }, 1500);
   }
   function camStop() {
     if (C.cam) { try { C.cam.stop() } catch (e) { } C.cam = null }
