@@ -1230,3 +1230,8 @@ html.beta #o1 .mb #tp svg,html.beta #o1 .mb #tp .ic{width:34px;height:34px}
 }
 .fd .mt i{font-size:10.5px}
 #cz{height:30px}
+
+/* панель звонка не вылезает за экран на узких телефонах */
+.cbar{max-width:calc(100% - 16px);box-sizing:border-box;gap:clamp(6px,2.2vw,16px);padding:12px clamp(10px,3vw,22px) 8px}
+.cb{width:clamp(46px,14.5vw,60px);height:clamp(46px,14.5vw,60px)}
+.cbw{min-width:0}.cbw span{white-space:nowrap}

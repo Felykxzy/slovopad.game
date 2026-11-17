@@ -1,12 +1,12 @@
 {
-  "version": "3.21.3",
+  "version": "3.21.4",
   "notes": [
-    "Звонок в Эхо: поворот камеры без тёмной картинки"
+    "Звонок в Эхо: панель кнопок помещается на узких телефонах"
   ],
   "notes_en": [
-    "Echo call: switching cameras no longer gives a dark picture"
+    "Echo call: the button bar now fits narrow phones"
   ],
   "notes_uk": [
-    "Дзвінок в Ехо: поворот камери без темної картинки"
+    "Дзвінок в Ехо: панель кнопок вміщається на вузьких телефонах"
   ]
 }
