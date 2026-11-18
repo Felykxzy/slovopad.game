@@ -557,7 +557,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");glassSet((e.clientX/innerWidth-.5)/.55,(e.clientY/innerHeight-.5)/.5)},{passive:true});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="3.23.2";let upLater=false;
+const VER="3.23.3";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if($("spl")||state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
@@ -743,3 +743,10 @@ if(!p){p=document.createElement("div");p.id="isl";p.setAttribute("aria-hidden","
 p.style.display=innerWidth>innerHeight?"none":"flex";window.__isl={top:top};
 p.style.top=Math.round(top/2-13)+"px"}catch(e){}};
 place();addEventListener("load",place);addEventListener("resize",place);addEventListener("orientationchange",()=>setTimeout(place,300));addEventListener("pageshow",place);[400,1200,3000].forEach(t=>setTimeout(place,t))}catch(e){}})();
+
+/* Настройки: ручное обновление и строка для проверки (версия, верхний отступ, есть ли плашка у острова) */
+(function(){const b=$("bUpd"),d=$("dg");if(!b||!d)return;
+const diag=()=>{try{const i=window.__isl;d.textContent="v"+VER+" · "+(/iPhone/.test(navigator.userAgent)?"iPhone":/iPad/.test(navigator.userAgent)?"iPad":"устройство")+" · отступ "+(i?Math.round(i.top):"?")+" · плашка "+(document.getElementById("isl")?"есть":"нет")}catch(e){}};
+diag();new MutationObserver(diag).observe($("o4"),{attributes:true,attributeFilter:["class"]});
+b.onclick=async()=>{b.disabled=true;const t=b.textContent;b.textContent="…";try{upLater=false;try{sessionStorage.removeItem("upTry")}catch(e){}const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});const j=await r.json();$("o4").classList.remove("s");upShow("new",j);if(j.version===VER){$("upt").textContent=tx("ПЕРЕЗАГРУЗИТЬ ИГРУ");$("upl").innerHTML=""}}catch(e){d.textContent="Нет связи с сервером"}b.disabled=false;b.textContent=t};
+})();
