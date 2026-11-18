@@ -1,12 +1,18 @@
 {
-  "version": "4.1.0",
+  "version": "4.2.0",
   "notes": [
-    "Разбор ошибок после игры: на каких буквах путаешься и какие слова не успел, с короткой тренировкой (включается в настройках)"
+    "Бусты в магазине: заморозка, замедление, взрыв и жизнь (кнопки вверху экрана в игре)",
+    "Нажми на «СЕРИЯ»: задание дня и награды за дни подряд",
+    "Больше звуков в меню"
   ],
   "notes_en": [
-    "Mistake review after a game: which letters you mix up and which words you missed, with a short training round (can be turned off in Settings)"
+    "Boosts in the shop: freeze, slow-mo, blast and extra life (buttons at the top during a game)",
+    "Tap STREAK: daily task and rewards for days in a row",
+    "More menu sounds"
   ],
   "notes_uk": [
-    "Розбір помилок після гри: на яких літерах плутаєшся і які слова не встиг, із коротким тренуванням (вмикається в налаштуваннях)"
+    "Бусти в магазині: заморозка, уповільнення, вибух і життя (кнопки вгорі екрана в грі)",
+    "Натисни «СЕРІЯ»: завдання дня і нагороди за дні поспіль",
+    "Більше звуків у меню"
   ]
 }

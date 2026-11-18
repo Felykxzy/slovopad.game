@@ -1261,3 +1261,31 @@ html.lite.beta #o1 #qp,html.lite.beta #o1 #echoB,html.lite.beta #o1 #hwB,html.li
 @media (max-height:640px){#o3{overflow-y:auto;justify-content:flex-start;gap:12px}#o3>*{flex-shrink:0}#o3>:first-child{margin-top:auto}#o3>:last-child{margin-bottom:auto}}
 /* В горизонтальном положении три кнопки стоят в ряд */
 @media (max-height:520px) and (orientation:landscape){#o3{display:grid;grid-template-columns:repeat(3,auto);justify-content:center;align-content:center;gap:8px 12px;padding-top:10px;padding-bottom:10px}#o3>h2,#o3>.st,#o3>.sub,#o3>#oAn{grid-column:1/-1;justify-self:center;margin:0}#o3 .st b{font-size:24px}#o3>.btn{margin:0}}
+
+/* Бусты в игре */
+#bst{display:flex;justify-content:center;gap:10px;min-height:50px;padding:2px 0 4px;z-index:3;flex:none}
+#bst[hidden]{display:none}
+.bsb{position:relative;width:46px;height:46px;border-radius:50%;border:1px solid rgba(255,255,255,.28);background:rgba(10,14,40,.62);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center;touch-action:manipulation;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.bsb:active{transform:scale(.9)}.bsb b{position:absolute;right:-3px;bottom:-3px;min-width:18px;height:18px;border-radius:9px;background:var(--ac,#5ef2ff);color:#041018;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+#fw::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .35s;z-index:2}
+#fw.frz::after{opacity:1;background:radial-gradient(120% 90% at 50% 40%,rgba(122,240,255,0) 40%,rgba(122,240,255,.34) 100%),linear-gradient(180deg,rgba(122,240,255,.1),rgba(122,240,255,0))}
+#fw.slw:not(.frz)::after{opacity:1;background:radial-gradient(120% 90% at 50% 40%,rgba(180,140,255,0) 45%,rgba(180,140,255,.28) 100%)}
+/* Магазин: бусты */
+.bsc{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:22px;border:1px solid rgba(255,255,255,.16);background:rgba(8,10,30,.7)}
+.bsi{flex:none;width:52px;height:52px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;background:rgba(255,255,255,.07)}
+.bst2{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;text-align:left}.bst2 b{font-size:13px;letter-spacing:.14em}.bst2 small{font-size:12px;opacity:.65;line-height:1.35}
+.bsc .shHb{flex:none;white-space:nowrap;padding:10px 14px}
+/* Серия и задание дня */
+.hs i.dq{box-shadow:0 0 0 2px rgba(94,242,255,.55),0 0 16px rgba(94,242,255,.5)}.hs i{cursor:pointer}
+#dyC{width:min(94%,460px);display:flex;flex-direction:column;gap:12px;padding-bottom:calc(24px + var(--sab,0px))}
+.dyc{padding:16px;border-radius:24px;border:1px solid rgba(255,255,255,.16);background:rgba(8,10,30,.7);display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center}
+.dyh{background:linear-gradient(180deg,rgba(255,150,60,.16),rgba(8,10,30,.7))}
+.dyf{font-size:40px;line-height:1}.dyn{font-size:54px;line-height:1;color:#ffb25c}.dyl{font-size:12px;letter-spacing:.2em;opacity:.7}
+.dyw{display:flex;gap:6px;margin-top:4px}.dyd{width:38px;padding:6px 0;border-radius:14px;background:rgba(255,255,255,.06);display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;letter-spacing:.08em;opacity:.65}.dyd i{font-style:normal;font-size:15px}.dyd.on{opacity:1;background:rgba(255,160,70,.2)}.dyd.td{outline:1px solid var(--ac,#5ef2ff)}
+.dyk{font-size:11px;letter-spacing:.22em;font-weight:700;opacity:.75}.dyx{font-size:17px;font-weight:700}
+.dyp{width:100%;height:10px;border-radius:5px;background:rgba(255,255,255,.1);overflow:hidden}.dyp i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#5ef2ff,#ff4fd8);transition:width .4s}
+.dys{font-size:12px;opacity:.7;letter-spacing:.1em}
+.dyc .shHb{width:100%}
+.dym{display:flex;gap:8px;width:100%}.dyr{flex:1;padding:10px 4px;border-radius:16px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:2px;opacity:.6;font:inherit}.dyr b{font-size:20px}.dyr small{font-size:10px;letter-spacing:.1em}.dyr span{font-size:12px;margin-top:2px}
+.dyr.can{opacity:1;border-color:var(--ac,#5ef2ff);box-shadow:0 0 18px rgba(94,242,255,.35)}.dyr.got{opacity:.9;border-color:rgba(120,255,160,.5)}
+@media (max-height:520px) and (orientation:landscape){#bst{min-height:40px;padding:0 0 2px}.bsb{width:36px;height:36px;font-size:17px}}
