@@ -557,7 +557,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");glassSet((e.clientX/innerWidth-.5)/.55,(e.clientY/innerHeight-.5)/.5)},{passive:true});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="3.23.7";let upLater=false;
+const VER="3.23.8";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if($("spl")||state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
@@ -734,26 +734,9 @@ document.addEventListener("click",()=>{if(CFG.gls!==0)glassReady()},{passive:tru
 document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");document.documentElement.style.setProperty("--gx",(e.clientX/innerWidth*80+10).toFixed(1))},{passive:true});
 glassApply();i18nInit();i18nApply();menu();hud();upCheck();requestAnimationFrame(t=>{last=t;loop(t)});
 
-/* Плашка «СЛОВОПАД» в зоне «острова» на iPhone (приложение/PWA): прячется за самим островом, а когда тянешь экран вниз («удобный доступ») — видна.
-   В Safari и Telegram верхний отступ равен нулю, поэтому плашка там сама не появляется. Отступ в оболочке бывает нулевым в первые мгновения — проверяем несколько раз. */
-(function(){try{const force=/[?&]island\b/.test(location.search);if(!/iPhone/.test(navigator.userAgent)&&!force)return;
-const place=()=>{try{const pr=document.createElement("div");pr.style.cssText="position:fixed;left:0;top:0;height:env(safe-area-inset-top);width:1px;visibility:hidden";document.body.appendChild(pr);let top=pr.getBoundingClientRect().height;pr.remove();if(force&&!top)top=59;
-if(top<44&&window.__reachNative&&window.__islTop)top=window.__islTop;if(top>=44)window.__islTop=top;let p=document.getElementById("isl");window.__isl={top:top};if(top<44){if(p)p.remove();return}
-if(!p){p=document.createElement("div");p.id="isl";p.setAttribute("aria-hidden","true");p.innerHTML="<i style=\"font-style:normal;font-size:13px\">⌁</i>СЛОВОПАД";p.style.cssText="position:fixed;left:50%;margin-left:-55px;width:110px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:5px;z-index:2147483000;pointer-events:none;font:800 11px/1 -apple-system,system-ui,sans-serif;letter-spacing:.09em;color:#0a0c28;background:linear-gradient(110deg,#5ef2ff,#a78bfa 55%,#ff4fd8);box-shadow:0 0 14px rgba(94,242,255,.45)";document.body.appendChild(p)}
-p.style.display=innerWidth>innerHeight||(window.__reachNative&&!document.documentElement.classList.contains("reach"))?"none":"flex";window.__isl={top:top};
-p.style.top=(top<52?3:Math.round(top/2-13))+"px";p.style.width=top<52?"96px":"110px";p.style.marginLeft=top<52?"-48px":"-55px";p.style.height=top<52?"24px":"28px"}catch(e){}};
-place();addEventListener("load",place);addEventListener("resize",place);addEventListener("orientationchange",()=>setTimeout(place,300));addEventListener("pageshow",place);addEventListener("reachchg",place);[400,1200,3000].forEach(t=>setTimeout(place,t))}catch(e){}})();
-
-/* Настройки: ручное обновление и строка для проверки (версия, верхний отступ, есть ли плашка у острова) */
+/* Настройки: ручное обновление и строка с версией */
 (function(){const b=$("bUpd"),d=$("dg");if(!b||!d)return;
-const diag=()=>{try{const i=window.__isl;d.textContent="v"+VER+" · "+(/iPhone/.test(navigator.userAgent)?"iPhone":/iPad/.test(navigator.userAgent)?"iPad":"устройство")+" · отступ "+(i?Math.round(i.top):"?")+" · плашка "+(document.getElementById("isl")?"есть":"нет")+(window.__reachNative?" · прилож. новое"+(window.__rv?" · "+window.__rv:""):" · прилож. старое")+(window.__wv?" · веб "+window.__wv.join("/"):"")}catch(e){}};
+const diag=()=>{try{d.textContent="v"+VER+" · "+(/iPhone/.test(navigator.userAgent)?"iPhone":/iPad/.test(navigator.userAgent)?"iPad":"устройство")}catch(e){}};
 diag();new MutationObserver(diag).observe($("o4"),{attributes:true,attributeFilter:["class"]});
 b.onclick=async()=>{b.disabled=true;const t=b.textContent;b.textContent="…";try{upLater=false;try{sessionStorage.removeItem("upTry")}catch(e){}const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});const j=await r.json();$("o4").classList.remove("s");upShow("new",j);if(j.version===VER){$("upt").textContent=tx("ПЕРЕЗАГРУЗИТЬ ИГРУ");$("upl").innerHTML=""}}catch(e){d.textContent="Нет связи с сервером"}b.disabled=false;b.textContent=t};
 })();
-
-/* Признак «экран опущен вниз» из самой страницы: у касания координата на экране (screenY) может отличаться от координаты в окне (clientY) */
-(function(){try{if(!/iPhone/.test(navigator.userAgent))return;const w=window.__wv=[0,0,0,0];const root=document.documentElement;
-const set=on=>{if(root.classList.contains("reach")!==on){root.classList.toggle("reach",on);dispatchEvent(new Event("reachchg"))}};
-const probe=e=>{try{const t=(e.touches&&e.touches[0])||e;const d=Math.round((t.screenY||0)-(t.clientY||0));w[0]=Math.max(w[0],d);w[1]=Math.max(w[1],Math.round(window.screenY||0));w[2]=Math.max(w[2],Math.round(window.screenTop||0));w[3]=Math.max(w[3],Math.round((window.outerHeight||0)-innerHeight));
-if(window.__reachNative)set(d>40||w[1]>40&&window.screenY>40)}catch(x){}};
-addEventListener("touchstart",probe,{passive:true,capture:true});addEventListener("touchmove",probe,{passive:true,capture:true});addEventListener("pointerdown",probe,{passive:true,capture:true})}catch(e){}})();

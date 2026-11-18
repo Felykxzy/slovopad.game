@@ -1,12 +1,12 @@
 {
-  "version": "3.23.7",
+  "version": "3.23.8",
   "notes": [
-    "Ещё один способ определить опущенный экран в приложении iPhone"
+    "Убрана плашка у выреза iPhone"
   ],
   "notes_en": [
-    "Another way to detect a pulled-down screen in the iPhone app"
+    "Removed the top pill on iPhone"
   ],
   "notes_uk": [
-    "Ще один спосіб визначити опущений екран у застосунку iPhone"
+    "Прибрано плашку біля вирізу iPhone"
   ]
 }
