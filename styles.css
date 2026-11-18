@@ -1248,3 +1248,16 @@ html.lite.beta #o1 #qp,html.lite.beta #o1 #echoB,html.lite.beta #o1 #hwB,html.li
 
 /* плашка в зоне «острова» (см. app.js) */
 @media (orientation:landscape){}
+
+/* Разбор ошибок на экране конца игры */
+#oAn{width:min(420px,100%);padding:12px 14px;border-radius:18px;border:1px solid rgba(94,242,255,.22);background:rgba(94,242,255,.06);display:flex;flex-direction:column;gap:8px;text-align:left}
+#oAn[hidden]{display:none}
+#oAn .anh{font-size:11px;letter-spacing:.2em;opacity:.75;font-weight:700}
+#oAn .anr{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:13px;line-height:1.4}
+#oAn .anr span{opacity:.6;flex:none}#oAn .anr b{font-weight:700;text-align:right;letter-spacing:.06em;word-break:break-word}
+#oAn .anb{margin-top:2px;padding:10px 14px;font-size:12px;letter-spacing:.14em}
+@media (max-height:520px) and (orientation:landscape){#oAn{padding:8px 12px;gap:4px}#oAn .anr{font-size:12px}}
+/* Экран конца игры: на низких экранах прокручивается, чтобы кнопки не обрезались */
+@media (max-height:640px){#o3{overflow-y:auto;justify-content:flex-start;gap:12px}#o3>*{flex-shrink:0}#o3>:first-child{margin-top:auto}#o3>:last-child{margin-bottom:auto}}
+/* В горизонтальном положении три кнопки стоят в ряд */
+@media (max-height:520px) and (orientation:landscape){#o3{display:grid;grid-template-columns:repeat(3,auto);justify-content:center;align-content:center;gap:8px 12px;padding-top:10px;padding-bottom:10px}#o3>h2,#o3>.st,#o3>.sub,#o3>#oAn{grid-column:1/-1;justify-self:center;margin:0}#o3 .st b{font-size:24px}#o3>.btn{margin:0}}
