@@ -1180,7 +1180,7 @@ html.beta #o1 .mb .btn.a svg,html.beta #o1 .mb .btn.a .ic{width:20px;height:20px
 html.beta #o1 #qp{left:1%;top:6%}html.beta #o1 #echoB{right:1%;top:6%}html.beta #o1 #hwB{left:11%;bottom:2%}html.beta #o1 #shopB{right:11%;bottom:2%}
 html.beta #o1 .mb #tp{--d:min(40vw,156px);left:calc(50% - var(--d)/2);top:calc(50% - var(--d)/2);width:var(--d);height:var(--d);padding:0;border:0;font-size:11px;letter-spacing:.16em;color:#0e0f48;font-weight:800;background:radial-gradient(circle at 35% 28%,#9ff,#6a8bff 55%,#a24bff);box-shadow:0 0 56px rgba(94,242,255,.55),0 0 110px rgba(167,139,250,.38),inset 0 2px 3px rgba(255,255,255,.7)}
 html.beta #o1 .mb #tp svg,html.beta #o1 .mb #tp .ic{width:34px;height:34px}
-@media (min-width:760px){html.beta .mb{width:360px;height:300px}}
+@media (min-width:760px){html.beta #o1 .mb{width:360px;height:300px}}
 
 /* Эхо 3.21: ответы, картинки, стикеры, меню сообщения, «печатает», «@ник» */
 .mt{white-space:pre-wrap}.mt.big{font-size:44px;line-height:1.15;display:block}
