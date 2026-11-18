@@ -1,12 +1,12 @@
 {
-  "version": "3.23.4",
+  "version": "3.23.5",
   "notes": [
-    "Плашка у выреза теперь и на iPhone с «чёлкой»"
+    "Плашка у выреза видна только при опускании экрана (новое приложение)"
   ],
   "notes_en": [
-    "The top pill now also shows on notch iPhones"
+    "The top pill shows only when the screen is pulled down (new app)"
   ],
   "notes_uk": [
-    "Плашка біля вирізу тепер і на iPhone з «чубчиком»"
+    "Плашка біля вирізу видна лише коли екран опущено (новий застосунок)"
   ]
 }

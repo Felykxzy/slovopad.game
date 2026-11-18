@@ -557,7 +557,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");glassSet((e.clientX/innerWidth-.5)/.55,(e.clientY/innerHeight-.5)/.5)},{passive:true});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="3.23.4";let upLater=false;
+const VER="3.23.5";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if($("spl")||state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
@@ -738,11 +738,11 @@ glassApply();i18nInit();i18nApply();menu();hud();upCheck();requestAnimationFrame
    В Safari и Telegram верхний отступ равен нулю, поэтому плашка там сама не появляется. Отступ в оболочке бывает нулевым в первые мгновения — проверяем несколько раз. */
 (function(){try{const force=/[?&]island\b/.test(location.search);if(!/iPhone/.test(navigator.userAgent)&&!force)return;
 const place=()=>{try{const pr=document.createElement("div");pr.style.cssText="position:fixed;left:0;top:0;height:env(safe-area-inset-top);width:1px;visibility:hidden";document.body.appendChild(pr);let top=pr.getBoundingClientRect().height;pr.remove();if(force&&!top)top=59;
-let p=document.getElementById("isl");window.__isl={top:top};if(top<44){if(p)p.remove();return}
+if(top<44&&window.__reachNative&&window.__islTop)top=window.__islTop;if(top>=44)window.__islTop=top;let p=document.getElementById("isl");window.__isl={top:top};if(top<44){if(p)p.remove();return}
 if(!p){p=document.createElement("div");p.id="isl";p.setAttribute("aria-hidden","true");p.innerHTML="<i style=\"font-style:normal;font-size:13px\">⌁</i>СЛОВОПАД";p.style.cssText="position:fixed;left:50%;margin-left:-55px;width:110px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:5px;z-index:2147483000;pointer-events:none;font:800 11px/1 -apple-system,system-ui,sans-serif;letter-spacing:.09em;color:#0a0c28;background:linear-gradient(110deg,#5ef2ff,#a78bfa 55%,#ff4fd8);box-shadow:0 0 14px rgba(94,242,255,.45)";document.body.appendChild(p)}
-p.style.display=innerWidth>innerHeight?"none":"flex";window.__isl={top:top};
+p.style.display=innerWidth>innerHeight||(window.__reachNative&&!document.documentElement.classList.contains("reach"))?"none":"flex";window.__isl={top:top};
 p.style.top=(top<52?3:Math.round(top/2-13))+"px";p.style.width=top<52?"96px":"110px";p.style.marginLeft=top<52?"-48px":"-55px";p.style.height=top<52?"24px":"28px"}catch(e){}};
-place();addEventListener("load",place);addEventListener("resize",place);addEventListener("orientationchange",()=>setTimeout(place,300));addEventListener("pageshow",place);[400,1200,3000].forEach(t=>setTimeout(place,t))}catch(e){}})();
+place();addEventListener("load",place);addEventListener("resize",place);addEventListener("orientationchange",()=>setTimeout(place,300));addEventListener("pageshow",place);addEventListener("reachchg",place);[400,1200,3000].forEach(t=>setTimeout(place,t))}catch(e){}})();
 
 /* Настройки: ручное обновление и строка для проверки (версия, верхний отступ, есть ли плашка у острова) */
 (function(){const b=$("bUpd"),d=$("dg");if(!b||!d)return;

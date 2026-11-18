@@ -12,6 +12,8 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
 
     override func loadView() {
         let cfg = WKWebViewConfiguration()
+        // Сообщаем игре, что приложение само скажет, когда экран опущен вниз (плашка у острова)
+        cfg.userContentController.addUserScript(WKUserScript(source: "window.__reachNative=1;", injectionTime: .atDocumentStart, forMainFrameOnly: true))
         cfg.allowsInlineMediaPlayback = true
         cfg.mediaTypesRequiringUserActionForPlayback = []
         cfg.websiteDataStore = .default()
@@ -35,8 +37,46 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
         checkShell()
     }
 
+    // MARK: - Экран опущен вниз (Reachability)
+
+    private var link: CADisplayLink?
+    private var reach: Bool? = nil
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if link == nil {
+            let l = CADisplayLink(target: self, selector: #selector(tick))
+            l.preferredFramesPerSecond = 15
+            l.add(to: .main, forMode: .common)
+            link = l
+        }
+    }
+
+    /// Когда пользователь тянет экран вниз, окно приложения сдвигается. Считаем это и сообщаем игре.
+    @objc private func tick() {
+        guard let win = view.window else { return }
+        let onScreen = view.convert(view.bounds, to: win.screen.coordinateSpace).minY
+        let shifted = max(onScreen, win.frame.minY, win.layer.presentation()?.frame.minY ?? 0) > 40
+        let portrait = view.bounds.height > view.bounds.width
+        let noInset = portrait && view.safeAreaInsets.top < 1
+        let on = shifted || noInset
+        if reach != on {
+            reach = on
+            pushReach()
+        }
+    }
+
+    private func pushReach() {
+        let on = (reach ?? false) ? "true" : "false"
+        web.evaluateJavaScript("document.documentElement.classList.toggle('reach',\(on));window.dispatchEvent(new Event('reachchg'))", completionHandler: nil)
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        pushReach()
+    }
+
     /// Версия самой оболочки приложения (не игры: игра обновляется сама). Увеличивай, когда меняешь Swift-код.
-    private static let shellVersion = 1
+    private static let shellVersion = 2
 
     /// Раз в запуск спрашивает shell.json и, если оболочка устарела, показывает окно «Вышла новая версия приложения».
     private func checkShell() {
