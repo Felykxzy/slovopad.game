@@ -1,12 +1,12 @@
 {
-  "version": "3.23.1",
+  "version": "3.23.2",
   "notes": [
-    "Плашка в зоне острова теперь появляется и в приложении"
+    "Плашка в зоне острова: надёжнее появляется в приложении"
   ],
   "notes_en": [
-    "The Dynamic Island badge now also appears in the app"
+    "The Dynamic Island badge now appears more reliably in the app"
   ],
   "notes_uk": [
-    "Плашка в зоні острова тепер з'являється і в застосунку"
+    "Плашка в зоні острова надійніше з'являється в застосунку"
   ]
 }
