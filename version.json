@@ -1,12 +1,12 @@
 {
-  "version": "3.23.3",
+  "version": "3.23.4",
   "notes": [
-    "Настройки: кнопка «Обновить игру» и строка для проверки"
+    "Плашка у выреза теперь и на iPhone с «чёлкой»"
   ],
   "notes_en": [
-    "Settings: an Update game button and a diagnostics line"
+    "The top pill now also shows on notch iPhones"
   ],
   "notes_uk": [
-    "Налаштування: кнопка «Оновити гру» і рядок для перевірки"
+    "Плашка біля вирізу тепер і на iPhone з «чубчиком»"
   ]
 }
