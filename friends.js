@@ -11,7 +11,8 @@
   let backFn = null, openFrom = null;
   const REACTS = ["🔥", "👏", "😂", "😎", "💪", "🎯", "❤️", "👋", "🤯", "🥳"];
   const chat = { p: null, last: 0, since: 0, timer: 0, blocked: false, busy: false, sure: 0, reply: null, edit: null, typedAt: 0 };
-  const kit = EchoKit.create({ me: () => { try { return (sidInfo() || {}).username || "" } catch (e) { return "" } }, ticks: true, img: id => cloudRequest("/api/chat/img?with=" + encodeURIComponent(chat.p.spCode) + "&id=" + id).then(r => r.img), react: (id, emo) => chatReact(id, emo) });
+  try { g("chL").addEventListener("scroll", () => { const l = g("chL"); chat.atB = l.scrollHeight - l.scrollTop - l.clientHeight < 80 }, { passive: true }) } catch (e) { }
+  const kit = EchoKit.create({ me: () => { try { return (sidInfo() || {}).username || "" } catch (e) { return "" } }, ticks: true, onsize: () => { const l = g("chL"); if (l && chat.atB !== false) l.scrollTop = l.scrollHeight }, img: id => cloudRequest("/api/chat/img?with=" + encodeURIComponent(chat.p.spCode) + "&id=" + id).then(r => r.img), react: (id, emo) => chatReact(id, emo) });
 
   function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
   function btn(cls, text, fn) { const b = h("button", cls, text); b.type = "button"; b.onclick = fn; return b; }
@@ -328,7 +329,7 @@
     if (m.body || m.dl) { const t = kit.text(m); b.appendChild(t); if (t.classList.contains("big")) b.classList.add("stk") }
     box.appendChild(b); box.appendChild(h("i", "cht", kit.meta(m)));
     const rx = h("div", "rxs"); box.appendChild(rx); kit.reg(m.id, box, rx);
-    if (!m.dl) b.onclick = () => chatSheet(m);
+    if (!m.dl) kit.hold(b, () => chatSheet(m));
   }
   function chatSheet(m) {
     const acts = [[T("↩ Ответить", "↩ Reply", "↩ Відповісти"), () => { chat.reply = m; chat.edit = null; chatBar(); try { g("chIn").focus() } catch (e) { } }]];

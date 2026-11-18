@@ -14,7 +14,8 @@
   const setHint = (id, msg, bad) => { const e = g(id); if (e) { e.textContent = msg || ""; e.classList.toggle("bad", !!bad) } };
 
   /* ---------- протокол: служебные сообщения в комнате (сервер хранит их как обычный текст) ---------- */
-  const kit = EchoKit.create({ me: () => E.me || "", img: id => cloudRequest("/api/echo/room/img?room=" + encodeURIComponent(E.room.id) + "&id=" + id).then(r => r.img), react: (id, emo) => roomReact(id, emo) });
+  try { g("rmL").addEventListener("scroll", () => { const l = g("rmL"); E.atB = l.scrollHeight - l.scrollTop - l.clientHeight < 80 }, { passive: true }) } catch (e) { }
+  const kit = EchoKit.create({ me: () => E.me || "", onsize: () => { const l = g("rmL"); if (l && E.atB !== false) l.scrollTop = l.scrollHeight }, img: id => cloudRequest("/api/echo/room/img?room=" + encodeURIComponent(E.room.id) + "&id=" + id).then(r => r.img), react: (id, emo) => roomReact(id, emo) });
   const PX = "§", EMO = ["👍", "❤️", "😂", "🔥", "😮"];
   function parse(body) {
     body = String(body || "");
@@ -268,7 +269,7 @@
     const dn = dayName(m.t); if (dn !== E.day) { E.day = dn; l.appendChild(h("div", "dday", dn)); lastMsg = null }
     if (p.t === "K") { raceAdd(m, p); lastMsg = null; return }
     const same = lastMsg && lastMsg.who === m.who && m.t - lastMsg.t < 300000;
-    const row = h("div", "msg" + (same ? " cont" : "") + (m.mine ? " mine" : "")); row.dataset.id = m.id; E.els[m.id] = row;
+    const row = h("div", "msg" + (same ? " cont" : "") + (m.mine ? " mine" : "") + (E.live ? " nw" : "")); row.dataset.id = m.id; E.els[m.id] = row;
     const av = h("div", "mav", same ? "" : first(m.who)); if (!same) { av.style.background = tint(m.who); if (!m.mine) { av.classList.add("tap"); av.onclick = e => { e.stopPropagation(); whoOpen(m.who) } } } row.appendChild(av);
     const body = h("div", "mbody");
     if (!same && !m.mine) { const hd = h("div", "mhead"); const nm = h("b", "mnm", m.who); nm.style.color = "hsl(" + hue(m.who) + " 90% 74%)"; nm.classList.add("tap"); nm.onclick = e => { e.stopPropagation(); whoOpen(m.who) }; hd.appendChild(nm); { const mb = ((E.room && E.room.members) || []).find(x => x.name === m.who), te = window.TagUI && mb && TagUI.el(mb.tag); if (te) hd.appendChild(te) } body.appendChild(hd) }
@@ -287,7 +288,7 @@
     const tx = h("div", "mtx"); if (m.body || m.dl) tx.appendChild(kit.text(m)); tx.appendChild(h("i", "mts", kit.meta(m))); mc.appendChild(tx);
     const rx = h("div", "rxs"); mc.appendChild(rx); kit.reg(m.id, row, rx);
     row.classList.toggle("dl", !!m.dl); E.els[m.id] = row;
-    row.onclick = m.dl ? null : () => roomSheet(m);
+    row.onclick = null; if (!m.dl) kit.hold(row, () => roomSheet(m));
   }
   function roomChanged(m) { const row = E.els[m.id]; kit.msgs[m.id] = { ...(kit.msgs[m.id] || {}), ...m }; if (row) roomFill(row, kit.msgs[m.id]) }
   function roomSheet(m) {

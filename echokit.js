@@ -49,7 +49,7 @@
     K.media = m => {
       if (!m.im) return null;
       const box = h("div", "mimg"), ph = h("div", "mimgp", "📷"); box.appendChild(ph);
-      const show = src => { if (!src) { ph.textContent = T("Картинка устарела", "Image expired", "Картинка застаріла"); return } const i = h("img"); i.src = src; i.alt = ""; i.onclick = e => { e.stopPropagation(); viewer(src) }; box.textContent = ""; box.appendChild(i) };
+      const show = src => { if (!src) { ph.textContent = T("Картинка устарела", "Image expired", "Картинка застаріла"); return } const i = h("img"); i.src = src; i.alt = ""; i.onclick = e => { e.stopPropagation(); viewer(src) }; box.textContent = ""; i.draggable = false; i.onload = () => { if (cfg.onsize) cfg.onsize() }; box.appendChild(i) };
       if (K.imgs[m.id]) show(K.imgs[m.id]);
       else Promise.resolve(cfg.img(m.id)).then(s => { K.imgs[m.id] = s || ""; show(s) }).catch(() => { ph.textContent = "⚠" });
       return box;
@@ -83,6 +83,17 @@
         const c = h("button", "rxc" + (who.indexOf(me) >= 0 ? " me" : ""), emo + " " + who.length); c.type = "button"; c.title = who.join(", ");
         c.onclick = e => { e.stopPropagation(); if (cfg.react) cfg.react(id, emo) }; box.appendChild(c);
       });
+    };
+    // долгое нажатие (или правая кнопка) в любом месте сообщения, в том числе на фото, открывает меню; короткое — тоже
+    let lpAt = 0;
+    K.hold = (el, open) => {
+      let tm = 0, sx = 0, sy = 0; const stop = () => { clearTimeout(tm); tm = 0 };
+      el.onpointerdown = e => { sx = e.clientX; sy = e.clientY; stop(); tm = setTimeout(() => { tm = 0; lpAt = Date.now(); try { navigator.vibrate && navigator.vibrate(12) } catch (x) { } open() }, 420) };
+      el.onpointermove = e => { if (tm && (Math.abs(e.clientX - sx) > 8 || Math.abs(e.clientY - sy) > 8)) stop() };
+      el.onpointerup = el.onpointercancel = el.onpointerleave = stop;
+      el.oncontextmenu = e => { e.preventDefault(); if (Date.now() - lpAt > 600) { lpAt = Date.now(); open() } };
+      if (!el.__hold) { el.__hold = 1; el.addEventListener("click", ev => { if (Date.now() - lpAt < 600) { ev.stopPropagation(); ev.preventDefault() } }, true) }
+      el.onclick = open;
     };
     K.jump = id => { const t = K.els[id]; if (t) { t.scrollIntoView({ block: "center", behavior: "smooth" }); t.classList.add("flash"); setTimeout(() => t.classList.remove("flash"), 1200) } };
     // меню сообщения: реакции сверху и действия списком (acts = [[подпись, действие, опасное?]])

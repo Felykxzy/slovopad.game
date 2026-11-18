@@ -846,7 +846,7 @@ body.eco #fg .fd.cur .ic,body.eco #fg .fd.cur .fr::after,body.eco #fg .fd.cur .w
 .orb.on::before{animation:pill .3s ease-out both}
 .orb .bdg,.ecb,.frtab .bdg{animation:bdgPop .38s cubic-bezier(.2,.9,.3,1.4) both}
 #echoBd:not([hidden]){animation:bdgBeat 2.4s ease-in-out infinite}
-.msg{animation:msgIn .3s cubic-bezier(.2,.8,.3,1) both}
+.msg.nw{animation:msgIn .3s cubic-bezier(.2,.8,.3,1) both}
 .chmenu:not([hidden]),.ecset:not([hidden]),.aiset:not([hidden]){animation:menuIn .24s cubic-bezier(.2,.8,.3,1) both}
 .ecrow{transition:transform .15s,background .2s}
 .ecrow:active{transform:scale(.975)}
@@ -1189,7 +1189,7 @@ html.beta #o1 .mb #tp svg,html.beta #o1 .mb #tp .ic{width:34px;height:34px}
 .chm.dl .chb{background:rgba(255,255,255,.05);border-style:dashed}
 .chb{cursor:pointer}.chb .mq{margin:0 0 6px;max-width:100%;min-width:140px}
 .mimg{margin:0 0 4px;border-radius:14px;overflow:hidden;min-width:90px}
-.mimg img{display:block;max-width:min(240px,64vw);max-height:280px;border-radius:14px;cursor:zoom-in}
+.mimg img{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;display:block;max-width:min(240px,64vw);max-height:280px;border-radius:14px;cursor:zoom-in}
 .mimgp{padding:22px 30px;text-align:center;font-size:24px;opacity:.5;background:rgba(255,255,255,.06);border-radius:14px}
 .men{color:var(--ac);font-weight:700}.men.me{background:rgba(255,79,216,.28);color:#fff;border-radius:6px;padding:0 4px}
 .chm .rxs{margin-top:2px}.chm.me .rxs{justify-content:flex-end}
@@ -1289,3 +1289,7 @@ html.lite.beta #o1 #qp,html.lite.beta #o1 #echoB,html.lite.beta #o1 #hwB,html.li
 .dym{display:flex;gap:8px;width:100%}.dyr{flex:1;padding:10px 4px;border-radius:16px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:2px;opacity:.6;font:inherit}.dyr b{font-size:20px}.dyr small{font-size:10px;letter-spacing:.1em}.dyr span{font-size:12px;margin-top:2px}
 .dyr.can{opacity:1;border-color:var(--ac,#5ef2ff);box-shadow:0 0 18px rgba(94,242,255,.35)}.dyr.got{opacity:.9;border-color:rgba(120,255,160,.5)}
 @media (max-height:520px) and (orientation:landscape){#bst{min-height:40px;padding:0 0 2px}.bsb{width:36px;height:36px;font-size:17px}}
+
+/* Эхо: плавнее прокрутка, нет системного меню по долгому нажатию на сообщение */
+#chL,#rmL{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.chb,.msg .mbody{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation}
