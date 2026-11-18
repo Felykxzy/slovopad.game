@@ -52,23 +52,35 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
         }
     }
 
-    /// Когда пользователь тянет экран вниз, окно приложения сдвигается. Считаем это и сообщаем игре.
+    private var best: [Double] = [0, 0, 0, 0, 999, 999, 0]
+    private var lastDebug = ""
+
+    /// Когда пользователь тянет экран вниз, окно приложения сдвигается. Смотрим несколько признаков сразу и сообщаем игре.
     @objc private func tick() {
         guard let win = view.window else { return }
-        let onScreen = view.convert(view.bounds, to: win.screen.coordinateSpace).minY
-        let shifted = max(onScreen, win.frame.minY, win.layer.presentation()?.frame.minY ?? 0) > 40
+        let scr = win.screen
+        let s1 = Double(view.convert(view.bounds, to: scr.coordinateSpace).minY)
+        let s2 = Double(win.frame.minY)
+        let s3 = Double(win.layer.presentation()?.frame.minY ?? 0)
+        let s4 = Double(win.windowScene?.statusBarManager?.statusBarFrame.minY ?? 0)
+        let s5 = Double(view.safeAreaInsets.top)
+        let s6 = Double(win.safeAreaInsets.top)
+        let s7 = Double(scr.bounds.height - win.bounds.height)
+        let vals = [s1, s2, s3, s4, s5, s6, s7]
+        for k in 0..<7 { best[k] = k == 4 || k == 5 ? min(best[k], vals[k]) : max(best[k], vals[k]) }
         let portrait = view.bounds.height > view.bounds.width
-        let noInset = portrait && view.safeAreaInsets.top < 1
-        let on = shifted || noInset
-        if reach != on {
+        let on = s1 > 40 || s2 > 40 || s3 > 40 || s4 > 10 || s7 > 100 || (portrait && (s5 < 1 || s6 < 1))
+        let dbg = best.map { String(Int($0.rounded())) }.joined(separator: "/")
+        if reach != on || dbg != lastDebug {
             reach = on
+            lastDebug = dbg
             pushReach()
         }
     }
 
     private func pushReach() {
         let on = (reach ?? false) ? "true" : "false"
-        web.evaluateJavaScript("document.documentElement.classList.toggle('reach',\(on));window.dispatchEvent(new Event('reachchg'))", completionHandler: nil)
+        web.evaluateJavaScript("window.__rv='\(lastDebug)';document.documentElement.classList.toggle('reach',\(on));window.dispatchEvent(new Event('reachchg'))", completionHandler: nil)
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -76,7 +88,7 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
     }
 
     /// Версия самой оболочки приложения (не игры: игра обновляется сама). Увеличивай, когда меняешь Swift-код.
-    private static let shellVersion = 2
+    private static let shellVersion = 3
 
     /// Раз в запуск спрашивает shell.json и, если оболочка устарела, показывает окно «Вышла новая версия приложения».
     private func checkShell() {

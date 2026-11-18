@@ -1,12 +1,12 @@
 {
-  "version": "3.23.5",
+  "version": "3.23.6",
   "notes": [
-    "Плашка у выреза видна только при опускании экрана (новое приложение)"
+    "Точнее определяем опущенный экран в приложении iPhone"
   ],
   "notes_en": [
-    "The top pill shows only when the screen is pulled down (new app)"
+    "More reliable pulled-down detection in the iPhone app"
   ],
   "notes_uk": [
-    "Плашка біля вирізу видна лише коли екран опущено (новий застосунок)"
+    "Точніше визначаємо опущений екран у застосунку iPhone"
   ]
 }
