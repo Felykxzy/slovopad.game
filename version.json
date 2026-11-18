@@ -1,15 +1,12 @@
 {
-  "version": "4.2.2",
+  "version": "4.2.3",
   "notes": [
-    "ЭХО: меню сообщения (в том числе «Удалить») открывается долгим нажатием на любое место сообщения, и на фото тоже",
-    "ЭХО: чат стал плавнее при прокрутке и при появлении фото"
+    "Исправлена ошибка в комнатах ЭХО после обновления («kit.hold is not a function»)"
   ],
   "notes_en": [
-    "ECHO: the message menu (including Delete) opens with a long press anywhere on a message, photos too",
-    "ECHO: chat scrolls and loads photos more smoothly"
+    "Fixed an error in ECHO rooms after the update (\"kit.hold is not a function\")"
   ],
   "notes_uk": [
-    "ЕХО: меню повідомлення (зокрема «Видалити») відкривається довгим натисканням на будь-яке місце повідомлення, і на фото теж",
-    "ЕХО: чат став плавнішим під час прокручування та появи фото"
+    "Виправлено помилку в кімнатах ЕХО після оновлення («kit.hold is not a function»)"
   ]
 }

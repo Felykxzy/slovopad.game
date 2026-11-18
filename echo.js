@@ -288,7 +288,7 @@
     const tx = h("div", "mtx"); if (m.body || m.dl) tx.appendChild(kit.text(m)); tx.appendChild(h("i", "mts", kit.meta(m))); mc.appendChild(tx);
     const rx = h("div", "rxs"); mc.appendChild(rx); kit.reg(m.id, row, rx);
     row.classList.toggle("dl", !!m.dl); E.els[m.id] = row;
-    row.onclick = null; if (!m.dl) kit.hold(row, () => roomSheet(m));
+    row.onclick = null; if (!m.dl) (kit.hold ? kit.hold(row, () => roomSheet(m)) : (row.onclick = () => roomSheet(m)));
   }
   function roomChanged(m) { const row = E.els[m.id]; kit.msgs[m.id] = { ...(kit.msgs[m.id] || {}), ...m }; if (row) roomFill(row, kit.msgs[m.id]) }
   function roomSheet(m) {

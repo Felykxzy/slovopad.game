@@ -329,7 +329,7 @@
     if (m.body || m.dl) { const t = kit.text(m); b.appendChild(t); if (t.classList.contains("big")) b.classList.add("stk") }
     box.appendChild(b); box.appendChild(h("i", "cht", kit.meta(m)));
     const rx = h("div", "rxs"); box.appendChild(rx); kit.reg(m.id, box, rx);
-    if (!m.dl) kit.hold(b, () => chatSheet(m));
+    if (!m.dl) (kit.hold ? kit.hold(b, () => chatSheet(m)) : (b.onclick = () => chatSheet(m)));
   }
   function chatSheet(m) {
     const acts = [[T("↩ Ответить", "↩ Reply", "↩ Відповісти"), () => { chat.reply = m; chat.edit = null; chatBar(); try { g("chIn").focus() } catch (e) { } }]];
