@@ -1,12 +1,12 @@
 {
-  "version": "3.23.6",
+  "version": "3.23.7",
   "notes": [
-    "Точнее определяем опущенный экран в приложении iPhone"
+    "Ещё один способ определить опущенный экран в приложении iPhone"
   ],
   "notes_en": [
-    "More reliable pulled-down detection in the iPhone app"
+    "Another way to detect a pulled-down screen in the iPhone app"
   ],
   "notes_uk": [
-    "Точніше визначаємо опущений екран у застосунку iPhone"
+    "Ще один спосіб визначити опущений екран у застосунку iPhone"
   ]
 }
