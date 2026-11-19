@@ -133,6 +133,10 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
   await p.waitForTimeout(700);
   ok(await p.evaluate(() => document.querySelectorAll('#o17 .mav.hasph').length > 0), 'в комнате у сообщений Bobby видна его фото-аватарка');
   await p.screenshot({ path: shots + '/room-avatars.png' });
+  await p.evaluate(() => { const m = [...document.querySelectorAll('#o17 .mav.tap')].find(x => x.classList.contains('hasph')); if (m) m.click() }); await p.waitForTimeout(1200);
+  ok(await p.evaluate(() => !!document.querySelector('#ewho .fav.hasph')), 'в карточке игрока (по нажатию на ник) видно фото, а не эмодзи');
+  await p.screenshot({ path: shots + '/who-photo.png' });
+  await p.evaluate(() => document.getElementById('ewho') && document.getElementById('ewho').remove());
   if (process.env.W) {
     const cdp = await p.context().newCDPSession(p);
     const sw = async (x0, x1) => { const pt = x => [{ x, y: 420, id: 1 }]; await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: pt(x0) }); for (let i = 1; i <= 8; i++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: pt(x0 + (x1 - x0) * i / 8) }); await p.waitForTimeout(12) } await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await p.waitForTimeout(500) };
