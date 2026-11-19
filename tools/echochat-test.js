@@ -13,7 +13,7 @@ let fails = 0;
 const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fails++; };
 (async () => {
   const { DatabaseSync } = require('node:sqlite'), db = new DatabaseSync(':memory:');
-  const stmt = (sql, a = []) => ({ bind: (...x) => stmt(sql, x), first: async () => db.prepare(sql).get(...a) || null, all: async () => ({ results: db.prepare(sql).all(...a) }), run: async () => { const r = db.prepare(sql).run(...a); return { meta: { last_row_id: Number(r.lastInsertRowid) } } } });
+  const stmt = (sql, a = []) => ({ bind: (...x) => stmt(sql, x), first: async () => db.prepare(sql).get(...a) || null, all: async () => ({ results: db.prepare(sql).all(...a) }), run: async () => { const r = db.prepare(sql).run(...a); return { meta: { last_row_id: Number(r.lastInsertRowid), changes: Number(r.changes) } } } });
   const worker = (await import(require('url').pathToFileURL(path.join(root, 'backend/worker.js')).href)).default;
   const env = { DB: { prepare: s => stmt(s) }, JWT_SECRET: 'x'.repeat(32) };
   let ip = 0;
@@ -49,7 +49,7 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
 
   await new Promise(r => srv.listen(0, r)); const base = 'http://localhost:' + srv.address().port;
   const b = await chromium.launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] });
-  const p = await b.newPage({ viewport: { width: +process.env.W || 430, height: +process.env.H || 900 }, deviceScaleFactor: 1, isMobile: !!process.env.W, hasTouch: !!process.env.W }); const errs = []; p.on('pageerror', e => errs.push(e.message));
+  const p = await b.newPage({ viewport: { width: +process.env.W || 430, height: +process.env.H || 900 }, deviceScaleFactor: 1, isMobile: !!process.env.W, hasTouch: !!process.env.W }); const errs = []; if (process.env.DBG) p.on('console', m => console.log('PAGE:', m.text())); p.on('pageerror', e => errs.push(e.message));
   await p.addInitScript(a => { localStorage.setItem('tutDone', '1'); localStorage.setItem('slovopadCloudToken', a.t); localStorage.setItem('slovopadId', JSON.stringify({ username: 'Alice', spCode: a.c })) }, { t: A.token, c: A.code });
   await p.route(/workers\.dev/, async r => { const u = new URL(r.request().url()); const body = r.request().postData(); const res = await worker.fetch(new Request('https://api.test' + u.pathname + u.search, { method: r.request().method(), headers: { ...r.request().headers(), 'cf-connecting-ip': '10.2.2.2' }, body: body || undefined }), env); r.fulfill({ status: res.status, contentType: res.headers.get('content-type') || 'application/json', headers: { 'access-control-allow-origin': '*' }, body: Buffer.from(await res.arrayBuffer()) }) });
   await p.route(/telegram\.org|github\.io/, r => r.abort());
@@ -177,6 +177,35 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
     const got = await p.evaluate(() => JSON.parse(localStorage.getItem('bst') || '{}'));
     ok(got.f === 4 && got.h === 2, 'подаренные бусты упали в инвентарь игрока (' + JSON.stringify(got) + ')');
     ok(await p.evaluate(() => /❄️/.test(document.body.innerText)), 'игрок видит уведомление о подарке');
+  }
+  {
+    console.log('Сезон');
+    for (const X of [A, B, C]) await api('/api/sync', { profile: {}, data: {}, totalWords: 100, bestScore: 900 }, X.token);
+    ok((await api('/api/season/score', { score: 300 }, B.token)).rank === 1, 'сезон: Bobby первый со 300');
+    ok((await api('/api/season/score', { score: 200 }, A.token)).rank === 2, 'сезон: Alice вторая с 200');
+    await api('/api/season/score', { score: 100 }, C.token);
+    ok((await api('/api/season/score', { score: 50 }, A.token)).score === 200, 'сезон: меньший результат не затирает лучший');
+    ok((await api('/api/season/score', { score: 999999 }, C.token)).error, 'сезон: подделка очков отклонена');
+    const top = await api('/api/season', null, A.token);
+    ok(top.top.map(x => x.username).join() === 'Bobby,Alice,Carol' && top.me.rank === 2 && !top.prev, 'сезон: таблица верна');
+    const d = new Date(), pm = d.getUTCMonth() ? d.getUTCFullYear() + '-' + String(d.getUTCMonth()).padStart(2, '0') : (d.getUTCFullYear() - 1) + '-12';
+    db.prepare('INSERT INTO sp_season (m,uid,score,t) VALUES (?,?,?,?)').run(pm, db.prepare("SELECT id FROM users WHERE username='Alice'").get().id, 777, 1);
+    ok((await api('/api/season', null, A.token)).prev.coins === 300, 'сезон: за прошлый месяц Alice положено 300 монет');
+    await p.evaluate(() => { localStorage.setItem('co', '0') });
+    const c0 = await p.evaluate(() => coG());
+    await p.evaluate(() => SlovopadSeason.open()); await p.waitForTimeout(1800);
+    const c1 = await p.evaluate(() => coG());
+    ok(c1 - c0 === 300, 'сезон: награда 300 монет начислена (' + c0 + '→' + c1 + ')');
+    ok(await p.evaluate(() => document.getElementById('o21').classList.contains('s') && /СЕЗОН/.test(document.getElementById('seT').textContent)), 'сезон: экран открылся');
+    ok(await p.evaluate(() => document.querySelectorAll('#o21 .serow').length === 3 && !!document.querySelector('#o21 .sebd')), 'сезон: три строки таблицы и значок');
+    ok((await api('/api/season/claim', {}, A.token)).done, 'сезон: награду второй раз не выдают');
+    await p.waitForTimeout(500); await p.screenshot({ path: shots + '/season.png' });
+    ok(await p.evaluate(() => !!document.getElementById('seB')), 'сезон: кнопка есть в меню');
+    await p.evaluate(() => { document.querySelector('#o21 #seBk').click() });
+    await p.evaluate(() => { const t = SlovopadSeason.monthTheme(); window.__st = t.id });
+    await p.evaluate(() => { pickTheme(SlovopadSeason.monthTheme()) }); await p.waitForTimeout(400);
+    await p.evaluate(() => { score = 120; state = 'play'; over(false) }); await p.waitForTimeout(900);
+    ok((await api('/api/season', null, A.token)).me.score >= 200, 'сезон: игра в тему месяца не сломала таблицу');
   }
   ok(errs.length === 0, 'нет ошибок в консоли' + (errs.length ? ': ' + errs[0] : ''));
   await b.close(); srv.close(); console.log(fails ? '\nПровалов: ' + fails : '\nВсё хорошо'); process.exit(fails ? 1 : 0);

@@ -1,12 +1,12 @@
 {
-  "version": "4.6.0",
+  "version": "4.7.0",
   "notes": [
-    "Меню сообщения как в Телеграме: размытый фон, сообщение приподнято, реакции сверху. Чат выезжает справа"
+    "Сезон: тема месяца для всех, таблица лидеров месяца, награды (монеты и значок)"
   ],
   "notes_en": [
-    "Telegram-style message menu: blurred background, lifted message, reactions on top. Chats slide in from the right"
+    "Season: a theme of the month for everyone, a monthly leaderboard, prizes (coins and a badge)"
   ],
   "notes_uk": [
-    "Меню повідомлення як у Телеграмі: розмитий фон, повідомлення піднято, реакції зверху. Чат виїжджає справа"
+    "Сезон: тема місяця для всіх, таблиця лідерів місяця, нагороди (монети і значок)"
   ]
 }

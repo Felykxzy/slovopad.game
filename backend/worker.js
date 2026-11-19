@@ -153,6 +153,9 @@ async function ensureSchema(env) {
     ]) { try { await env.DB.prepare(q).run(); } catch (_) {} }
     await env.DB.prepare("CREATE TABLE IF NOT EXISTS sp_react (sc TEXT NOT NULL, mid INTEGER NOT NULL, uid TEXT NOT NULL, emo TEXT NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (sc,mid,uid))").run();
     await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_react_t_idx ON sp_react(sc,t)').run();
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_season (m TEXT NOT NULL, uid TEXT NOT NULL, score INTEGER NOT NULL DEFAULT 0, t INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (m,uid))').run();
+    await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_season_s_idx ON sp_season(m,score)').run();
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_season_claim (m TEXT NOT NULL, uid TEXT NOT NULL, rk INTEGER NOT NULL, coins INTEGER NOT NULL, badge TEXT NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (m,uid))').run();
     await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_typing (sc TEXT NOT NULL, uid TEXT NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (sc,uid))').run();
   } catch (e) { console.error('friends schema', e); }
   schemaReady = true;
@@ -1265,6 +1268,49 @@ export default {
       }
 
       /* ---------- друзья ---------- */
+      /* сезон: тема месяца одна для всех, таблица лидеров месяца, награды за прошлый месяц */
+      if (url.pathname.startsWith('/api/season')) {
+        const user = await userFrom(request, env);
+        if (!user) return reply({ error: 'Нужно войти в аккаунт.' }, 401);
+        if (!await allow(env, 'se:' + user.id, 120, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+        const d = new Date(), mk = (y, m) => y + '-' + String(m + 1).padStart(2, '0');
+        const cur = mk(d.getUTCFullYear(), d.getUTCMonth()), prev = d.getUTCMonth() ? mk(d.getUTCFullYear(), d.getUTCMonth() - 1) : mk(d.getUTCFullYear() - 1, 11);
+        const rankOf = async (m, score) => 1 + ((await env.DB.prepare('SELECT COUNT(*) c FROM sp_season WHERE m=? AND score>?').bind(m, score).first()) || {}).c;
+        const prize = rk => rk === 1 ? { coins: 300, badge: 'gold' } : rk === 2 ? { coins: 200, badge: 'silver' } : rk === 3 ? { coins: 150, badge: 'bronze' } : rk <= 10 ? { coins: 75, badge: 'top10' } : { coins: 25, badge: 'play' };
+        if (url.pathname === '/api/season/score' && request.method === 'POST') {
+          const body = (await request.json().catch(() => null)) || {};
+          const score = Math.floor(Number(body.score));
+          if (!Number.isFinite(score) || score <= 0) return reply({ error: 'Нет очков.' }, 400);
+          const cap = (user.total_words || 0) * MAX_PTS_PER_WORD + MAX_PTS_PER_WORD;
+          if (score > cap || score > 1000000) return reply({ error: 'Слишком много очков.' }, 400);
+          await env.DB.prepare('INSERT INTO sp_season (m,uid,score,t) VALUES (?,?,?,?) ON CONFLICT(m,uid) DO UPDATE SET score=MAX(score,excluded.score), t=excluded.t').bind(cur, user.id, score, Date.now()).run();
+          const me = await env.DB.prepare('SELECT score FROM sp_season WHERE m=? AND uid=?').bind(cur, user.id).first();
+          return reply({ ok: true, score: me.score, rank: await rankOf(cur, me.score) });
+        }
+        if (url.pathname === '/api/season/claim' && request.method === 'POST') {
+          const mine = await env.DB.prepare('SELECT score FROM sp_season WHERE m=? AND uid=?').bind(prev, user.id).first();
+          if (!mine) return reply({ ok: true, none: true });
+          const done = await env.DB.prepare('SELECT 1 x FROM sp_season_claim WHERE m=? AND uid=?').bind(prev, user.id).first();
+          if (done) return reply({ ok: true, done: true });
+          const rk = await rankOf(prev, mine.score), pz = prize(rk);
+          const ins = await env.DB.prepare('INSERT OR IGNORE INTO sp_season_claim (m,uid,rk,coins,badge,t) VALUES (?,?,?,?,?,?)').bind(prev, user.id, rk, pz.coins, pz.badge, Date.now()).run();
+          if (!(ins.meta && ins.meta.changes)) return reply({ ok: true, done: true });
+          return reply({ ok: true, month: prev, rank: rk, coins: pz.coins, badge: pz.badge });
+        }
+        if (url.pathname === '/api/season' && request.method === 'GET') {
+          const rows = (await env.DB.prepare('SELECT s.score, u.username, u.sp_code, u.profile_json FROM sp_season s JOIN users u ON u.id=s.uid WHERE s.m=? ORDER BY s.score DESC, s.t ASC LIMIT 20').bind(cur).all()).results || [];
+          const top = rows.map(r => ({ username: r.username, avatar: ((parse(r.profile_json, {}).pf) || {}).a || '', score: r.score }));
+          const mine = await env.DB.prepare('SELECT score FROM sp_season WHERE m=? AND uid=?').bind(cur, user.id).first();
+          const size = ((await env.DB.prepare('SELECT COUNT(*) c FROM sp_season WHERE m=?').bind(cur).first()) || {}).c || 0;
+          const pm = await env.DB.prepare('SELECT score FROM sp_season WHERE m=? AND uid=?').bind(prev, user.id).first();
+          const claimed = !!(await env.DB.prepare('SELECT 1 x FROM sp_season_claim WHERE m=? AND uid=?').bind(prev, user.id).first());
+          const badges = (await env.DB.prepare('SELECT m,rk,badge FROM sp_season_claim WHERE uid=? ORDER BY m DESC LIMIT 24').bind(user.id).all()).results || [];
+          const pr = pm ? await rankOf(prev, pm.score) : 0;
+          return reply({ month: cur, top, size, me: mine ? { score: mine.score, rank: await rankOf(cur, mine.score) } : null, prev: pm ? { month: prev, rank: pr, claimed, ...prize(pr) } : null, badges, endsAt: Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1) });
+        }
+        return reply({ error: 'Не найдено.' }, 404);
+      }
+
       if (url.pathname.startsWith('/api/friends') || url.pathname.startsWith('/api/challenge') || url.pathname.startsWith('/api/chat') || url.pathname.startsWith('/api/echo') || url.pathname.startsWith('/api/tg') || url.pathname === '/api/ping') {
         const user = await userFrom(request, env);
         if (!user) return reply({ error: 'Нужно войти в аккаунт.' }, 401);
