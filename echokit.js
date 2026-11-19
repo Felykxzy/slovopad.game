@@ -126,10 +126,32 @@
     // меню сообщения: реакции сверху и действия списком (acts = [[подпись, действие, опасное?]])
     K.sheet = (host, m, acts) => {
       const old = host.querySelector(".eksh"); if (old) old.remove();
-      const w = h("div", "eksh"), c = h("div", "eskc"); w.appendChild(c); w.onclick = e => { if (e.target === w) w.remove() };
-      if (!m.dl) { const row = h("div", "esre"); EMO.forEach(e => { const b = h("button", "", e); b.type = "button"; b.onclick = () => { w.remove(); if (cfg.react) cfg.react(m.id, e) }; row.appendChild(b) }); c.appendChild(row) }
-      acts.forEach(([t, f, bad]) => { const b = h("button", "esa" + (bad ? " bad" : ""), t); b.type = "button"; b.onclick = () => { w.remove(); f() }; c.appendChild(b) });
-      host.appendChild(w);
+      const w = h("div", "eksh"), c = h("div", "eskc"); let row = null, gone = false;
+      const close = () => { if (gone) return; gone = true; w.classList.add("out"); setTimeout(() => w.remove(), 160) };
+      w.onclick = e => { if (e.target === w) close() };
+      if (!m.dl) { row = h("div", "esre"); EMO.forEach((e, k) => { const b = h("button", "", e); b.type = "button"; b.style.animationDelay = (k * 24) + "ms"; b.onclick = () => { close(); if (cfg.react) cfg.react(m.id, e) }; row.appendChild(b) }); w.appendChild(row) }
+      acts.forEach(([t, f, bad]) => { const b = h("button", "esa" + (bad ? " bad" : ""), t); b.type = "button"; b.onclick = () => { close(); f() }; c.appendChild(b) });
+      w.appendChild(c); host.appendChild(w);
+      // как в Телеграме: сообщение «приподнимается» на размытом фоне, реакции над ним, меню под ним
+      try {
+        const el = K.els && K.els[m.id], hr = host.getBoundingClientRect();
+        if (el && hr.height > 0) {
+          const r = el.getBoundingClientRect(), mine = el.classList.contains("mine"), top = r.top - hr.top, rh = row ? row.offsetHeight + 8 : 0, ch = c.offsetHeight + 10;
+          if (r.height + rh + ch < hr.height - 24) {
+            const cl = el.cloneNode(true); cl.querySelectorAll("[id]").forEach(x => x.removeAttribute("id")); cl.classList.remove("sel", "flash", "nw");
+            cl.classList.add("eslift"); cl.style.cssText = "left:" + (r.left - hr.left) + "px;top:" + top + "px;width:" + r.width + "px;height:" + r.height + "px";
+            w.insertBefore(cl, w.firstChild);
+            let y = top - rh; const lo = 10 + (parseFloat(getComputedStyle(host).paddingTop) > 20 ? 20 : 0), hi = hr.height - 12 - ch - r.height - rh;
+            let dy = 0; if (y < lo) dy = lo - y; else if (y > hi) dy = hi - y;
+            if (dy) { cl.style.top = (top + dy) + "px"; y += dy }
+            const side = mine ? "right:" + Math.max(10, hr.right - r.right + 6) + "px" : "left:" + Math.max(10, r.left - hr.left + 6) + "px";
+            if (row) { row.style.cssText = "top:" + y + "px;" + side; row.classList.add("fl") }
+            c.style.cssText = "top:" + (y + rh + r.height + 10) + "px;" + side; c.classList.add("fl"); c.style.transformOrigin = mine ? "top right" : "top left";
+            if (row) row.style.transformOrigin = mine ? "bottom right" : "bottom left";
+            w.classList.add("lift");
+          }
+        }
+      } catch (e) { }
     };
     // панель стикеров над полем ввода
     K.stickers = (box, send) => {

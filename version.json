@@ -1,12 +1,12 @@
 {
-  "version": "4.5.0",
+  "version": "4.6.0",
   "notes": [
-    "Профиль игрока: потяни вниз или нажми на аватарку, и фото раскроется на всю ширину"
+    "Меню сообщения как в Телеграме: размытый фон, сообщение приподнято, реакции сверху. Чат выезжает справа"
   ],
   "notes_en": [
-    "Player profile: pull down or tap the avatar to expand the photo to full width"
+    "Telegram-style message menu: blurred background, lifted message, reactions on top. Chats slide in from the right"
   ],
   "notes_uk": [
-    "Профіль гравця: потягни вниз або натисни на аватарку, і фото розгорнеться на всю ширину"
+    "Меню повідомлення як у Телеграмі: розмитий фон, повідомлення піднято, реакції зверху. Чат виїжджає справа"
   ]
 }

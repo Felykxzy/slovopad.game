@@ -82,6 +82,8 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
     await p.mouse.move(cx, cy); await p.mouse.down(); await p.waitForTimeout(650); await p.mouse.up(); await p.waitForTimeout(250);
     ok(await p.evaluate(() => !!document.querySelector('#o15 .eksh .esre')), 'долгое нажатие по фото открывает меню');
     ok(await p.evaluate(() => !document.querySelector('.ekview')), 'фото во весь экран при этом не открылось');
+    await p.waitForTimeout(300); await p.screenshot({ path: shots + '/menu-lift.png' });
+    ok(await p.evaluate(() => !!document.querySelector('#o15 .eksh.lift .eslift') && !!document.querySelector('#o15 .eksh .esre.fl')), 'сообщение приподнято, реакции над ним');
     await p.evaluate(() => document.querySelector('#o15 .eksh').click()); await p.waitForTimeout(200); }
   ok(await p.evaluate(() => !!document.querySelector('#chL .mt.big')), 'смайлик показан крупно (стикер)');
   ok(await p.evaluate(() => !!document.querySelector('#chL .rxc')), 'реакция видна');
