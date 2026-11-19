@@ -1,12 +1,12 @@
 {
-  "version": "4.4.4",
+  "version": "4.4.5",
   "notes": [
-    "У всех игроков видна фото-аватарка: в списках ЭХО и друзей, в чатах, в комнатах и в профиле"
+    "В личном чате можно открыть профиль игрока: нажми на его аватарку или имя вверху"
   ],
   "notes_en": [
-    "Everyone's photo avatar is now visible: in the ECHO and friends lists, chats, rooms and profiles"
+    "In a private chat you can open the player's profile: tap their avatar or name at the top"
   ],
   "notes_uk": [
-    "У всіх гравців видно фото-аватарку: у списках ЕХО та друзів, у чатах, у кімнатах і в профілі"
+    "У приватному чаті можна відкрити профіль гравця: натисни на його аватарку або ім’я вгорі"
   ]
 }

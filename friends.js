@@ -62,7 +62,12 @@
     g("frBk").onclick = () => { pick = null; if (openFrom) { const f = openFrom; openFrom = null; f(); return } ov("o1"); };
     if (EchoKit.swipeBack) { EchoKit.swipeBack(g("o15"), () => g("chBk").click()); EchoKit.swipeBack(g("o13"), () => g("frBk").click()); EchoKit.swipeBack(g("o14"), () => g("fpBk").click()) }
     g("fpBk").onclick = () => { if (backChat) { backChat = false; ov("o15"); return } render(); ov("o13"); };
-    g("chFrt").onclick = g("chAv").onclick = () => { if (chat.p) { backChat = true; profile(chat.p.spCode) } };
+    g("chFrt").onclick = g("chAv").onclick = async () => {
+      if (!chat.p) return; const code = chat.p.spCode;
+      if (!data || !data.friends.some(f => f.spCode === code)) { g("chSt").textContent = T("Открываю профиль…", "Opening profile…", "Відкриваю профіль…"); await load(true); g("chSt").textContent = "" }
+      if (!data || !data.friends.some(f => f.spCode === code)) { g("chSt").textContent = T("Профиль не загрузился. Проверь интернет и нажми ещё раз.", "Profile did not load. Check your connection and tap again.", "Профіль не завантажився. Перевір інтернет і натисни ще раз."); return }
+      backChat = true; profile(code);
+    };
     g("frAdd").onclick = addFriend;
     g("frIn").addEventListener("keydown", e => { if (e.key === "Enter") addFriend(); });
     const fb = g("frB"); if (fb) fb.onclick = () => open();
@@ -358,7 +363,7 @@
   function chatTicks() { Object.keys(kit.els).forEach(id => { const m = kit.msgs[id]; if (m && m.mine) { const t = kit.els[id].querySelector(".cht"); if (t) t.textContent = kit.meta(m) } }) }
   async function chatPoll(first) {
     if (!chat.p) return;
-    if (!g("o15").classList.contains("s")) { clearInterval(chat.timer); chat.timer = 0; chat.p = null; return }
+    if (!g("o15").classList.contains("s") && !backChat) { clearInterval(chat.timer); chat.timer = 0; chat.p = null; return }
     if (chat.busy || document.hidden) return;
     chat.busy = true; const who = chat.p;
     try {

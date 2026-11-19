@@ -60,6 +60,15 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
   await p.evaluate(b => SlovopadFriends.chatOpen({ username: 'Bobby', spCode: b, online: true }), B.code); await p.waitForTimeout(1500);
   const t = await p.evaluate(() => document.getElementById('chL').innerText);
   ok(await p.evaluate(() => !!document.querySelector('#chAv .fav.hasph')), 'в шапке чата видна фото-аватарка Bobby');
+  await p.click('#chAv'); await p.waitForTimeout(1200);
+  ok(await p.evaluate(() => document.getElementById('o14').classList.contains('s') && /Bobby/.test(document.getElementById('fpH').innerText)), 'нажатие на аватарку в шапке чата открывает профиль Bobby');
+  ok(await p.evaluate(() => !!document.querySelector('#fpH .fav.hasph')), 'в профиле видно фото');
+  await p.screenshot({ path: shots + '/chat-profile.png' });
+  await p.click('#fpBk'); await p.waitForTimeout(500);
+  ok(await p.evaluate(() => document.getElementById('o15').classList.contains('s')), 'из профиля «назад» возвращает в чат');
+  await p.click('#chT'); await p.waitForTimeout(1000);
+  ok(await p.evaluate(() => document.getElementById('o14').classList.contains('s')), 'нажатие на имя в шапке тоже открывает профиль');
+  await p.click('#fpBk'); await p.waitForTimeout(500);
   ok(/Привет! Го сыграем/.test(t), 'сообщения видны'); ok(/ответ тебе/.test(t), 'есть ответ');
   ok(await p.evaluate(() => !!document.querySelector('#chL .mq')), 'у ответа есть цитата');
   ok(await p.evaluate(() => !!document.querySelector('#chL .mimg img')), 'картинка загрузилась');
@@ -71,6 +80,7 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
     await p.evaluate(() => document.querySelector('#o15 .eksh').click()); await p.waitForTimeout(200); }
   ok(await p.evaluate(() => !!document.querySelector('#chL .mt.big')), 'смайлик показан крупно (стикер)');
   ok(await p.evaluate(() => !!document.querySelector('#chL .rxc')), 'реакция видна');
+  await api('/api/chat/typing', { to: A.code }, B.token); await p.waitForTimeout(4500);
   ok(await p.evaluate(() => !!document.querySelector('#chL .chty')), '«печатает…» видно');
   ok(await p.evaluate(() => /✓✓/.test(document.getElementById('chL').innerText)), 'отметка «прочитано» видна');
   await p.screenshot({ path: shots + '/dm1.png' });
