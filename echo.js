@@ -131,7 +131,7 @@
     paintHead(g("ecP16"), "{echo}" + T("ЭХО", "ECHO", "ЕХО"), T("ЛИЧНЫЕ · КОМНАТЫ", "DIRECT · ROOMS", "ОСОБИСТІ · КІМНАТИ"));
     paintHead(g("ecP13"), "{people}" + T("ДРУЗЬЯ", "FRIENDS", "ДРУЗІ"), T("ЗАПРОСЫ · ТОП · ВЫЗОВЫ", "REQUESTS · TOP · CHALLENGES", "ЗАПИТИ · ТОП · ВИКЛИКИ"));
   }
-  function avatar(txt, on, bg) { const a = h("div", "fav" + (on ? " on" : ""), txt); a.style.width = a.style.height = "42px"; a.style.fontSize = "20px"; if (bg) a.style.background = bg; return a }
+  function avatar(txt, on, bg, user) { const a = h("div", "fav" + (on ? " on" : ""), txt); a.style.width = a.style.height = "42px"; a.style.fontSize = "20px"; if (bg) a.style.background = bg; if (user) try { spPhoto(a, user) } catch (e) { } return a }
 
   /* ---------- главный экран ---------- */
   function section(l, text) { l.appendChild(h("div", "ecsec", text)) }
@@ -154,7 +154,7 @@
     const onl = E.friends.filter(f => f.online), off = E.friends.filter(f => !f.online);
     const row = f => {
       const r = h("button", "ecrow"); r.type = "button";
-      r.appendChild(avatar(f.avatar || first(f.username), f.online, f.avatar ? null : tint(f.username)));
+      r.appendChild(avatar(f.avatar || first(f.username), f.online, f.avatar ? null : tint(f.username), f.username));
       const t = h("div", "ect"); t.appendChild(h("b", f.unread ? "ecnew" : "", f.username)); { const te = window.TagUI && TagUI.el(f.tag); if (te) t.firstChild.appendChild(te) } t.appendChild(h("span", "", f.unread ? T("новых: ", "new: ", "нових: ") + f.unread : f.online ? T("в сети", "online", "у мережі") : T("не в сети", "offline", "не в мережі"))); r.appendChild(t);
       if (f.unread) r.appendChild(badgeEl(f.unread));
       r.onclick = () => { const F = window.SlovopadFriends; if (F && F.chatOpen) { F.setBack(hubOpen); F.chatOpen(f) } };
@@ -243,7 +243,7 @@
     const o = g("o17"); let w = g("ewho"); if (w) w.remove();
     w = h("div", "ewho"); w.id = "ewho"; w.onclick = e => { if (e.target === w) w.remove() };
     const c = h("div", "ewc"); w.appendChild(c);
-    const av = h("div", "fav"); av.style.width = av.style.height = "96px"; av.style.fontSize = "48px"; av.textContent = d.avatar || d.username.charAt(0).toUpperCase(); if (d.online) av.classList.add("on");
+    const av = h("div", "fav"); av.style.width = av.style.height = "96px"; av.style.fontSize = "48px"; av.textContent = d.avatar || d.username.charAt(0).toUpperCase(); try { spPhoto(av, d.username) } catch (e) { } if (d.online) av.classList.add("on");
     const nm = h("div", "ewn", d.username); { const te = window.TagUI && TagUI.el(d.tag); if (te) nm.appendChild(te) }
     const st = d.online ? T("в сети", "online", "в мережі") : (d.seen ? T("был(а) недавно", "seen recently", "був(ла) нещодавно") : "");
     c.append(av, nm, h("div", "ews", st || " "), h("div", "ewc2", d.spCode));
@@ -274,7 +274,7 @@
     if (p.t === "K") { raceAdd(m, p); lastMsg = null; return }
     const same = lastMsg && lastMsg.who === m.who && m.t - lastMsg.t < 300000;
     const row = h("div", "msg" + (same ? " cont" : "") + (m.mine ? " mine" : "") + (E.live ? " nw" : "")); row.dataset.id = m.id; E.els[m.id] = row;
-    const av = h("div", "mav", same ? "" : first(m.who)); if (!same) { av.style.background = tint(m.who); if (!m.mine) { av.classList.add("tap"); av.onclick = e => { e.stopPropagation(); whoOpen(m.who) } } } row.appendChild(av);
+    const av = h("div", "mav", same ? "" : first(m.who)); if (!same) { av.style.background = tint(m.who); try { if (m.mine && PF && PF.p) { avSet(av, "", PF.p); av.classList.add("hasph") } else spPhoto(av, m.who) } catch (e) { } if (!m.mine) { av.classList.add("tap"); av.onclick = e => { e.stopPropagation(); whoOpen(m.who) } } } row.appendChild(av);
     const body = h("div", "mbody");
     if (!same && !m.mine) { const hd = h("div", "mhead"); const nm = h("b", "mnm", m.who); nm.style.color = "hsl(" + hue(m.who) + " 90% 74%)"; nm.classList.add("tap"); nm.onclick = e => { e.stopPropagation(); whoOpen(m.who) }; hd.appendChild(nm); { const mb = ((E.room && E.room.members) || []).find(x => x.name === m.who), te = window.TagUI && mb && TagUI.el(mb.tag); if (te) hd.appendChild(te) } body.appendChild(hd) }
     if (p.t === "Q") { const o = kit.msgs[p.mid]; m = { ...m, body: p.text, rp: { id: +p.mid, who: o ? o.who : "", text: o ? String(o.body || "").slice(0, 60) : "", dl: !o } } }

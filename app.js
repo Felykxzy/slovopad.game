@@ -534,6 +534,10 @@ let PF_FRESH=false;try{PF_FRESH=!localStorage.getItem("pf")}catch(e){}
 let PF={n:"",a:"🧑‍🚀",p:"",g:0,h:0,m:0,c:0,t:0,w:0};
 try{Object.assign(PF,JSON.parse(localStorage.getItem("pf")||"{}"));PF.p=localStorage.getItem("pfp")||""}catch(e){}
 function pfSave(){try{localStorage.setItem("pf",JSON.stringify(Object.assign({},PF,{p:undefined})))}catch(e){}}
+const phC={};
+function spPhoto(el,user){if(!el||!user)return;const k=String(user).toLowerCase(),c=phC[k];if(c===0&&Date.now()-(phC[k+"|t"]||0)<300000)return;
+const url=CLOUD_URL+"/api/avatar?u="+encodeURIComponent(user),put=()=>{el.textContent="";el.style.backgroundImage='url("'+url+'")';el.classList.add("hasph")};
+if(c===1){put();return}const im=new Image();im.onload=()=>{phC[k]=1;put()};im.onerror=()=>{phC[k]=0;phC[k+"|t"]=Date.now()};im.src=url}
 function avSet(el,a,p){if(p){el.textContent="";el.style.backgroundImage='url("'+p+'")'}else{el.style.backgroundImage="";el.textContent=a}}
 function pfUI(){avSet($("pcA"),PF.a,PF.p);$("pcN").textContent=PF.n||tx("ПРОФИЛЬ");const h=$("hi");h.textContent="";if(PF.n){h.append(tx("ПРИВЕТ")+", ");const b=document.createElement("b");b.textContent=PF.n;h.append(b);{const tg=window.TagUI&&TagUI.mine();if(tg){h.append(" ");h.append(TagUI.el(tg))}}h.append(" 👋");h.classList.add("s")}else h.classList.remove("s")}
 function tfmt(s){const m=Math.round(s/60);return m<60?m+" "+tx("мин"):(m/60|0)+" "+tx("ч")+" "+m%60+" "+tx("м")}

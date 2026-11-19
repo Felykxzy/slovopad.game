@@ -985,6 +985,17 @@ export default {
       }
       if (!env.DB) return reply({ error: 'К серверу не привязана база данных (binding DB).' }, 500);
 
+      /* фото-аватарка игрока: видна всем, как и ник. Отдаём картинкой, браузер хранит её 10 минут */
+      if (url.pathname === '/api/avatar' && request.method === 'GET') {
+        const nope = () => new Response('', { status: 404, headers: { 'cache-control': 'public, max-age=300', 'access-control-allow-origin': '*' } });
+        const u = String(url.searchParams.get('u') || '').trim().slice(0, 40); if (!u) return nope();
+        if (!await allow(env, 'av:' + await ipHash(request, env), 600, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+        const row = await env.DB.prepare("SELECT json_extract(profile_json,'$.pfp') AS p FROM users WHERE username=? COLLATE NOCASE").bind(u).first();
+        const m = row && typeof row.p === 'string' ? /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+\/=]+)$/.exec(row.p) : null; if (!m) return nope();
+        const bin = Uint8Array.from(atob(m[2]), c => c.charCodeAt(0));
+        return new Response(bin, { headers: { 'content-type': 'image/' + m[1], 'cache-control': 'public, max-age=600', 'access-control-allow-origin': '*' } });
+      }
+
       /* состояние игры: включена или на техработах (его спрашивает каждая открытая игра) */
       if (url.pathname === '/api/status' && request.method === 'GET') return reply(publicState(await settings(env)));
 

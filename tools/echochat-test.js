@@ -51,12 +51,15 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
   const b = await chromium.launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] });
   const p = await b.newPage({ viewport: { width: +process.env.W || 430, height: +process.env.H || 900 }, deviceScaleFactor: 1, isMobile: !!process.env.W, hasTouch: !!process.env.W }); const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.addInitScript(a => { localStorage.setItem('tutDone', '1'); localStorage.setItem('slovopadCloudToken', a.t); localStorage.setItem('slovopadId', JSON.stringify({ username: 'Alice', spCode: a.c })) }, { t: A.token, c: A.code });
-  await p.route(/workers\.dev/, async r => { const u = new URL(r.request().url()); const body = r.request().postData(); const res = await worker.fetch(new Request('https://api.test' + u.pathname + u.search, { method: r.request().method(), headers: { ...r.request().headers(), 'cf-connecting-ip': '10.2.2.2' }, body: body || undefined }), env); r.fulfill({ status: res.status, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: await res.text() }) });
+  await p.route(/workers\.dev/, async r => { const u = new URL(r.request().url()); const body = r.request().postData(); const res = await worker.fetch(new Request('https://api.test' + u.pathname + u.search, { method: r.request().method(), headers: { ...r.request().headers(), 'cf-connecting-ip': '10.2.2.2' }, body: body || undefined }), env); r.fulfill({ status: res.status, contentType: res.headers.get('content-type') || 'application/json', headers: { 'access-control-allow-origin': '*' }, body: Buffer.from(await res.arrayBuffer()) }) });
   await p.route(/telegram\.org|github\.io/, r => r.abort());
   await p.goto(base + '/index.html'); await p.waitForFunction(() => !document.getElementById('spl'), null, { timeout: 15000 }).catch(() => { });
+  const photo = await p.evaluate(() => { const c = document.createElement('canvas'); c.width = c.height = 160; const x = c.getContext('2d'); x.fillStyle = '#e0408a'; x.fillRect(0, 0, 160, 160); x.fillStyle = '#ffd166'; x.beginPath(); x.arc(80, 80, 50, 0, 6.3); x.fill(); return c.toDataURL('image/jpeg', .8) });
+  await api('/api/sync', { profile: { pf: { a: '🧑' }, pfp: photo }, data: {}, totalWords: 5, bestScore: 10 }, B.token);
   console.log('Личный чат');
   await p.evaluate(b => SlovopadFriends.chatOpen({ username: 'Bobby', spCode: b, online: true }), B.code); await p.waitForTimeout(1500);
   const t = await p.evaluate(() => document.getElementById('chL').innerText);
+  ok(await p.evaluate(() => !!document.querySelector('#chAv .fav.hasph')), 'в шапке чата видна фото-аватарка Bobby');
   ok(/Привет! Го сыграем/.test(t), 'сообщения видны'); ok(/ответ тебе/.test(t), 'есть ответ');
   ok(await p.evaluate(() => !!document.querySelector('#chL .mq')), 'у ответа есть цитата');
   ok(await p.evaluate(() => !!document.querySelector('#chL .mimg img')), 'картинка загрузилась');
@@ -127,6 +130,9 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
   await p.evaluate(() => document.getElementById('rmMn').click()); await p.waitForTimeout(300);
   await p.evaluate(() => [...document.querySelectorAll('#rmMenu button')].find(x => /УЧАСТНИКИ|MEMBERS/.test(x.textContent)).click()); await p.waitForTimeout(300);
   await p.screenshot({ path: shots + '/room3.png' });
+  await p.waitForTimeout(700);
+  ok(await p.evaluate(() => document.querySelectorAll('#o17 .mav.hasph').length > 0), 'в комнате у сообщений Bobby видна его фото-аватарка');
+  await p.screenshot({ path: shots + '/room-avatars.png' });
   if (process.env.W) {
     const cdp = await p.context().newCDPSession(p);
     const sw = async (x0, x1) => { const pt = x => [{ x, y: 420, id: 1 }]; await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: pt(x0) }); for (let i = 1; i <= 8; i++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: pt(x0 + (x1 - x0) * i / 8) }); await p.waitForTimeout(12) } await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await p.waitForTimeout(500) };
@@ -134,6 +140,7 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
     await p.evaluate(() => SlovopadEcho.open()); await p.waitForTimeout(900);
     const on = id => p.evaluate(i => document.getElementById(i).classList.contains('s'), id);
     ok(await on('o16'), 'открыт экран ЭХО');
+    await p.waitForTimeout(600); await p.screenshot({ path: shots + '/hub-avatars.png' });
     await sw(120, 170); ok(await on('o16'), 'короткий свайп экран ЭХО не закрывает');
     await sw(40, 340);
     ok(!(await on('o16')) && await on('o1'), 'свайп вправо с экрана ЭХО ведёт в главное меню игры');

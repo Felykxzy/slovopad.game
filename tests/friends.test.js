@@ -22,7 +22,7 @@ async function setup() {
     return { status: r.status, data: await r.json() };
   };
   const reg = async name => { const r = await raw('/api/register', { username: name, password: 'password123' }, null, '10.0.0.' + (++ip)); assert.equal(r.status, 200, JSON.stringify(r.data)); return { token: r.data.token, code: r.data.spCode || r.data.sp_code, name }; };
-  return { raw, reg, env };
+  return { raw, reg, env, worker };
 }
 
 test('friend request needs confirmation, then both see each other', async t => {
@@ -302,4 +302,21 @@ test('Вход через Telegram: без токена бота выключе�
   assert.equal(viaTg.status, 200); assert.equal(viaTg.data.username, 'Alice');
   assert.equal((await s.raw('/api/tg/bind', { off: true }, a.token)).data.bound, false);
   assert.equal((await s.raw('/api/tg/login', { initData: mkInit(999) })).data.needNick, true);
+});
+
+test('фото-аватарка: видна всем картинкой, чужого и пустого нет', async t => {
+  const s = await setup(); if (!s) return t.skip('нет node:sqlite');
+  const a = await s.reg('Alice'); await s.reg('Bobby');
+  const jpg = Buffer.from('/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACv/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==', 'base64');
+  assert.equal((await s.raw('/api/sync', { profile: { pf: { a: '🧑' }, pfp: 'data:image/jpeg;base64,' + jpg.toString('base64') }, data: {}, totalWords: 5, bestScore: 10 }, a.token)).status, 200);
+  const get = u => s.worker.fetch(new Request('https://api.test/api/avatar?u=' + encodeURIComponent(u), { headers: { 'cf-connecting-ip': '7.7.7.7' } }), s.env);
+  const ok = await get('alice');
+  assert.equal(ok.status, 200); assert.equal(ok.headers.get('content-type'), 'image/jpeg');
+  assert.equal(Buffer.from(await ok.arrayBuffer()).equals(jpg), true, 'отдаётся то же фото');
+  assert.equal((await get('Bobby')).status, 404, 'у игрока без фото — 404');
+  assert.equal((await get('nobody')).status, 404);
+  assert.equal((await get('')).status, 404);
+  assert.match((await get('Bobby')).headers.get('cache-control'), /max-age/);
+  assert.equal((await s.raw('/api/sync', { profile: { pfp: 'data:text/html;base64,PGI+' }, data: {}, totalWords: 5, bestScore: 10 }, a.token)).status, 200);
+  assert.equal((await get('Alice')).status, 404, 'не картинка не отдаётся');
 });

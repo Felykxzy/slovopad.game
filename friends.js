@@ -34,6 +34,7 @@
   function avatar(p, size) {
     const a = h("div", "fav"); a.style.width = a.style.height = size + "px"; a.style.fontSize = Math.round(size * .5) + "px";
     a.textContent = p.avatar || (p.username || "?").charAt(0).toUpperCase();
+    try { if (p.me && PF && PF.p) avSet(a, "", PF.p), a.classList.add("hasph"); else if (p.username) spPhoto(a, p.username) } catch (e) { }
     if (p.online) a.classList.add("on");
     return a;
   }
