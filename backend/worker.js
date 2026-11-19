@@ -577,7 +577,8 @@ async function vOverview(box) {
   var d = await act("overview"); if (!d) return; state = d.state; drawPill();
   var g = h("div", "grid"), cards = [
     ["Игроков", d.users, "a"], ["Сейчас в игре", d.now5, "g"], ["За сутки", d.day, ""], ["За неделю", d.week, ""],
-    ["Пар друзей", d.pairs, "m"], ["Сообщений за сутки", d.msgs, ""], ["Комнат", d.rooms, ""], ["Слов набрано", d.words, "a"],
+    ["Пар друзей", d.pairs, "m"], ["Сообщений за сутки", d.msgs, ""], ["Писали за сутки", d.chatters, "g"], ["Личных за сутки", d.dm, ""], ["В комнатах за сутки", d.rm, ""],
+    ["Комнат", d.rooms, ""], ["Активных комнат", d.roomsOn, ""], ["Голосовых за сутки", d.voice, "m"], ["Фото за сутки", d.photos, ""], ["Слов набрано", d.words, "a"],
     ["Жалоб", d.reports, d.reports ? "r" : ""], ["Заблокировано", d.banned, d.banned ? "r" : ""], ["Подарков в пути", d.pending, ""]
   ];
   cards.forEach(function (c, i) { var s = h("div", "stat " + c[2]); s.style.animationDelay = (i * 30) + "ms"; s.appendChild(h("b", "", fmt(c[1]))); s.appendChild(h("span", "", c[0].toUpperCase())); g.appendChild(s); });
@@ -836,6 +837,12 @@ async function manageDo(env, body) {
       week: await cnt('SELECT COUNT(*) AS n FROM users WHERE updated_at>?', iso(now - 7 * DAY)),
       pairs: await cnt("SELECT COUNT(*) AS n FROM sp_friends WHERE state='accepted'"),
       msgs: await cnt('SELECT COUNT(*) AS n FROM sp_msgs WHERE t>?', now - DAY) + await cnt('SELECT COUNT(*) AS n FROM sp_room_msgs WHERE t>?', now - DAY),
+      dm: await cnt('SELECT COUNT(*) AS n FROM sp_msgs WHERE t>?', now - DAY),
+      rm: await cnt('SELECT COUNT(*) AS n FROM sp_room_msgs WHERE t>?', now - DAY),
+      chatters: await cnt('SELECT COUNT(*) AS n FROM (SELECT a AS u FROM sp_msgs WHERE t>? UNION SELECT uid FROM sp_room_msgs WHERE t>?)', now - DAY, now - DAY),
+      roomsOn: await cnt('SELECT COUNT(DISTINCT room) AS n FROM sp_room_msgs WHERE t>?', now - DAY),
+      voice: await cnt("SELECT COUNT(*) AS n FROM sp_msgs WHERE t>? AND substr(img,1,11)='data:audio/'", now - DAY) + await cnt("SELECT COUNT(*) AS n FROM sp_room_msgs WHERE t>? AND substr(img,1,11)='data:audio/'", now - DAY),
+      photos: await cnt("SELECT COUNT(*) AS n FROM sp_msgs WHERE t>? AND substr(img,1,11)='data:image/'", now - DAY) + await cnt("SELECT COUNT(*) AS n FROM sp_room_msgs WHERE t>? AND substr(img,1,11)='data:image/'", now - DAY),
       rooms: await cnt('SELECT COUNT(*) AS n FROM sp_rooms'),
       reports: await cnt('SELECT COUNT(*) AS n FROM sp_reports'),
       banned: await cnt('SELECT COUNT(*) AS n FROM sp_bans'),
