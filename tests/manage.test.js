@@ -116,3 +116,11 @@ test('управление: неверный токен — 404, перебор 
   let last; for (let i = 0; i < 10; i++) last = await s.call('/api/ctl', { token: 'x' + i, action: 'players' });
   assert.equal(last.status, 429);
 });
+
+test('управление: список выдачи совпадает с магазином игры (id, названия, цены)', async t => {
+  const s = await setup(); if (!s) return t.skip('нет node:sqlite');
+  const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '../app.js'), 'utf8');
+  const shop = eval(src.match(/const SHOP=(\[\[.*?\]\]);/s)[1]).map(x => [x[0], x[3][0], x[2]]);
+  const cat = (await s.adm('catalog')).data.items;
+  assert.deepEqual(cat, shop, 'в панели выдачи должны быть все щиты и фоны магазина, с теми же названиями и ценами');
+});
