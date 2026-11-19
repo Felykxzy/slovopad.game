@@ -59,7 +59,7 @@
     after.parentNode.insertBefore(o, after.nextSibling); o.parentNode.insertBefore(p, o.nextSibling); p.parentNode.insertBefore(c15, p.nextSibling);
     chatWire();
     g("frBk").onclick = () => { pick = null; if (openFrom) { const f = openFrom; openFrom = null; f(); return } ov("o1"); };
-    if (EchoKit.swipeBack) EchoKit.swipeBack(g("o15"), () => g("chBk").click());
+    if (EchoKit.swipeBack) { EchoKit.swipeBack(g("o15"), () => g("chBk").click()); EchoKit.swipeBack(g("o13"), () => g("frBk").click()); EchoKit.swipeBack(g("o14"), () => g("fpBk").click()) }
     g("fpBk").onclick = () => { if (backChat) { backChat = false; ov("o15"); return } render(); ov("o13"); };
     g("chFrt").onclick = g("chAv").onclick = () => { if (chat.p) { backChat = true; profile(chat.p.spCode) } };
     g("frAdd").onclick = addFriend;

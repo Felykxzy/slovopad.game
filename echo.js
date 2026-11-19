@@ -80,6 +80,7 @@
     });
     eo.forEach(e => mo.observe(e, { attributes: true, attributeFilter: ["class"] }));
     g("rmBk").onclick = roomClose;
+    if (EchoKit.swipeBack) EchoKit.swipeBack(g("o16"), hubOut);
     if (EchoKit.swipeBack) EchoKit.swipeBack(g("o17"), roomClose);
     g("rmSn").onclick = () => roomSend();
     g("rmStk").onclick = () => { const r = g("rmSk"); if (r.hidden) kit.stickers(r, x => roomSend(x)); r.hidden = !r.hidden };
@@ -118,9 +119,10 @@
     add("ai", "{bot}", T("ИИ-помощник", "AI assistant", "ШІ-помічник"), () => { if (window.EchoAI) window.EchoAI.open(hubOpen) });
     add("bell", "{bell}", T("Уведомления", "Notifications", "Сповіщення"), () => { E.panel = E.panel === "tg" ? "" : "tg"; hubOpen(); if (E.panel) loadTg() });
   }
+  function hubOut() { clearInterval(E.hub); E.hub = 0; ov("o1") }
   function paintHead(box, title, sub) {
     if (!box) return; box.textContent = "";
-    box.appendChild(btn("ib", "{back}", () => { clearInterval(E.hub); E.hub = 0; ov("o1") }));
+    box.appendChild(btn("ib", "{back}", hubOut));
     const t = h("div", "frt"); t.appendChild(h("h2", "", title)); t.appendChild(h("div", "sub", sub)); box.appendChild(t);
   }
   function labels() {

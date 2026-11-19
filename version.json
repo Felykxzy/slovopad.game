@@ -1,12 +1,12 @@
 {
-  "version": "4.4.0",
+  "version": "4.4.1",
   "notes": [
-    "ЭХО: голосовые сообщения в личных чатах и комнатах (до 30 секунд, хранятся 3 дня)"
+    "ЭХО: свайп вправо с главного экрана ЭХО и со списка друзей ведёт в главное меню игры"
   ],
   "notes_en": [
-    "ECHO: voice messages in chats and rooms (up to 30 seconds, kept for 3 days)"
+    "ECHO: swipe right from the ECHO home screen and the friends list goes back to the game menu"
   ],
   "notes_uk": [
-    "ЕХО: голосові повідомлення в особистих чатах і кімнатах (до 30 секунд, зберігаються 3 дні)"
+    "ЕХО: свайп вправо з головного екрана ЕХО та зі списку друзів веде в головне меню гри"
   ]
 }

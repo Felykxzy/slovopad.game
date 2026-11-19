@@ -127,6 +127,18 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
   await p.evaluate(() => document.getElementById('rmMn').click()); await p.waitForTimeout(300);
   await p.evaluate(() => [...document.querySelectorAll('#rmMenu button')].find(x => /УЧАСТНИКИ|MEMBERS/.test(x.textContent)).click()); await p.waitForTimeout(300);
   await p.screenshot({ path: shots + '/room3.png' });
+  if (process.env.W) {
+    const cdp = await p.context().newCDPSession(p);
+    const sw = async (x0, x1) => { const pt = x => [{ x, y: 420, id: 1 }]; await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: pt(x0) }); for (let i = 1; i <= 8; i++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: pt(x0 + (x1 - x0) * i / 8) }); await p.waitForTimeout(12) } await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await p.waitForTimeout(500) };
+    await p.evaluate(() => document.getElementById('rmBk').click()); await p.waitForTimeout(300);
+    await p.evaluate(() => SlovopadEcho.open()); await p.waitForTimeout(900);
+    const on = id => p.evaluate(i => document.getElementById(i).classList.contains('s'), id);
+    ok(await on('o16'), 'открыт экран ЭХО');
+    await sw(120, 170); ok(await on('o16'), 'короткий свайп экран ЭХО не закрывает');
+    await sw(40, 340);
+    ok(!(await on('o16')) && await on('o1'), 'свайп вправо с экрана ЭХО ведёт в главное меню игры');
+    await p.screenshot({ path: shots + '/hub-swipe-menu.png' });
+  }
   ok(errs.length === 0, 'нет ошибок в консоли' + (errs.length ? ': ' + errs[0] : ''));
   await b.close(); srv.close(); console.log(fails ? '\nПровалов: ' + fails : '\nВсё хорошо'); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1) });

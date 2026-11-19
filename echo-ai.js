@@ -107,6 +107,7 @@
     const after = g("o17") || g("o15");
     after.parentNode.insertBefore(o, after.nextSibling);
     g("aiBk").onclick = close;
+    if (window.EchoKit && EchoKit.swipeBack) EchoKit.swipeBack(o, () => g("aiBk").click());
     g("aiSet").onclick = () => { panel = !panel; sure = false; paintPanel() };
     g("aiSn").onclick = send;
     g("aiIn").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); send() } });
