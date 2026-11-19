@@ -1,12 +1,12 @@
 {
-  "version": "4.7.0",
+  "version": "4.7.1",
   "notes": [
-    "Сезон: тема месяца для всех, таблица лидеров месяца, награды (монеты и значок)"
+    "Исправлено: меню своего сообщения в личном чате уезжало за край экрана"
   ],
   "notes_en": [
-    "Season: a theme of the month for everyone, a monthly leaderboard, prizes (coins and a badge)"
+    "Fixed: the menu of your own message in a private chat went off the screen edge"
   ],
   "notes_uk": [
-    "Сезон: тема місяця для всіх, таблиця лідерів місяця, нагороди (монети і значок)"
+    "Виправлено: меню власного повідомлення в приватному чаті виїжджало за край екрана"
   ]
 }

@@ -91,6 +91,12 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
   ok(await p.evaluate(() => !!document.querySelector('#chL .chty')), '«печатает…» видно');
   ok(await p.evaluate(() => /✓✓/.test(document.getElementById('chL').innerText)), 'отметка «прочитано» видна');
   await p.screenshot({ path: shots + '/dm1.png' });
+  { const bb = await p.locator('#chL .chm.me .chb').first().boundingBox();
+    await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await p.mouse.down(); await p.waitForTimeout(650); await p.mouse.up(); await p.waitForTimeout(500);
+    const inside = await p.evaluate(() => { const W = innerWidth; return [...document.querySelectorAll('#o15 .eksh .esre, #o15 .eksh .eskc')].every(x => { const r = x.getBoundingClientRect(); return r.left >= 0 && r.right <= W }) });
+    if (!inside) console.log(await p.evaluate(() => JSON.stringify([...document.querySelectorAll('#o15 .eksh .esre, #o15 .eksh .eskc')].map(x => [x.className, x.getBoundingClientRect().left, x.getBoundingClientRect().right, x.style.cssText, innerWidth, document.querySelector('#o15 .eksh').clientWidth]))));
+    ok(inside, 'меню своего сообщения целиком на экране'); await p.screenshot({ path: shots + '/menu-mine.png' });
+    await p.evaluate(() => document.querySelector('#o15 .eksh').click()); await p.waitForTimeout(300); }
   await p.evaluate(() => document.querySelector('#chL .chm.me .chb').click()); await p.waitForTimeout(300);
   ok(await p.evaluate(() => !!document.querySelector('#o15 .eksh .esa')), 'меню сообщения открывается');
   await p.screenshot({ path: shots + '/dm2.png' });

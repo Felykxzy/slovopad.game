@@ -136,7 +136,7 @@
       try {
         const el = K.els && K.els[m.id], hr = host.getBoundingClientRect();
         if (el && hr.height > 0) {
-          const r = el.getBoundingClientRect(), mine = el.classList.contains("mine"), top = r.top - hr.top, rh = row ? row.offsetHeight + 8 : 0, ch = c.offsetHeight + 10;
+          const r = el.getBoundingClientRect(), mine = el.classList.contains("mine") || el.classList.contains("me"), top = r.top - hr.top, rh = row ? row.offsetHeight + 8 : 0, ch = c.offsetHeight + 10;
           if (r.height + rh + ch < hr.height - 24) {
             const cl = el.cloneNode(true); cl.querySelectorAll("[id]").forEach(x => x.removeAttribute("id")); cl.classList.remove("sel", "flash", "nw");
             cl.classList.add("eslift"); cl.style.cssText = "left:" + (r.left - hr.left) + "px;top:" + top + "px;width:" + r.width + "px;height:" + r.height + "px";
@@ -149,6 +149,8 @@
             c.style.cssText = "top:" + (y + rh + r.height + 10) + "px;" + side; c.classList.add("fl"); c.style.transformOrigin = mine ? "top right" : "top left";
             if (row) row.style.transformOrigin = mine ? "bottom right" : "bottom left";
             w.classList.add("lift");
+            // не даём меню и реакциям уехать за край экрана
+            [row, c].forEach(x => { if (!x) return; const pw = w.clientWidth, ww = x.offsetWidth; let l = x.offsetLeft; if (l + ww > pw - 8) l = pw - 8 - ww; if (l < 8) l = 8; x.style.left = l + "px"; x.style.right = "auto" });
           }
         }
       } catch (e) { }
