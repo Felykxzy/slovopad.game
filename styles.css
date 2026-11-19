@@ -43,7 +43,7 @@ h2{margin:0;font-size:15px;letter-spacing:.4em;font-weight:600;color:var(--ac)}
 .fd .s2{left:22px;right:22px;top:4px;transform:rotate(2.5deg);background:linear-gradient(180deg,#fff,#dfe4fb);opacity:.95}
 .fd .fr{position:absolute;left:0;right:0;bottom:0;height:78%;border-radius:14px 14px 18px 18px;border-top:1px solid rgba(255,255,255,.45);background-size:cover,cover;background-position:center;box-shadow:0 -6px 16px rgba(0,0,0,.25),0 10px 26px rgba(var(--c),.28),inset 0 1px 0 rgba(255,255,255,.18);padding:12px 14px;display:flex;flex-direction:column;justify-content:flex-end;gap:7px;overflow:hidden;backdrop-filter:blur(2px)}
 .fd .fr:before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,.16),rgba(255,255,255,0) 40%);pointer-events:none}
-.fd .ic{position:absolute;right:10px;top:6px;font-size:40px;line-height:1;filter:drop-shadow(0 4px 8px rgba(0,0,0,.45))}
+.fd .fr>.ic{position:absolute;right:10px;top:6px;font-size:40px;line-height:1;filter:drop-shadow(0 4px 8px rgba(0,0,0,.45))}
 .fd b{display:block;font-size:15px;letter-spacing:.18em;font-weight:800;text-shadow:0 2px 8px rgba(0,0,0,.5)}
 .fd .mt{display:flex;gap:6px;flex-wrap:wrap}
 .fd .mt i{font-style:normal;font-size:9.5px;letter-spacing:.14em;font-weight:700;padding:4px 8px;border-radius:20px;background:rgba(5,6,15,.55);border:1px solid rgba(var(--c),.55);color:#fff}
@@ -137,7 +137,7 @@ body.eco .btn,body.eco .ib,body.eco .hs i{-webkit-backdrop-filter:none;backdrop-
 #fg .fd{animation:none;opacity:var(--o,1);transform:scale(var(--s,1));transition:transform .15s,opacity .15s;flex:0 0 100%;max-width:300px;height:clamp(300px,52dvh,430px)}
 #fg .fd:active{transform:scale(calc(var(--s,1)*.97))}
 #fg .fd .fr{height:100%;border-radius:30px;border:1px solid rgba(var(--c),.6);padding:20px;gap:10px;box-shadow:0 0 34px rgba(var(--c),.35),inset 0 1px 0 rgba(255,255,255,.25)}
-#fg .fd .ic{font-size:52px;right:18px;top:16px}
+#fg .fd .fr>.ic{font-size:52px;right:18px;top:16px}
 #fg .fd b{font-size:24px;letter-spacing:.14em}
 .wp{position:absolute;font-size:11px;letter-spacing:.2em;font-weight:800;padding:8px 14px;border-radius:20px;background:rgba(5,6,15,.55);border:1px solid rgba(var(--c),.7);color:#fff;animation:bob 3.6s ease-in-out infinite}
 .w1{left:16px;top:26%}.w2{left:38%;top:42%;animation-delay:-1.2s}.w3{left:14%;top:58%;animation-delay:-2.2s}
@@ -689,7 +689,7 @@ body.hold .btn::after,body.hold .ib::after{display:none}
 #fg .fd .fr{overflow:hidden;background-blend-mode:normal;box-shadow:0 0 0 1px rgba(var(--c),.25),0 18px 44px rgba(0,0,0,.5),0 0 40px rgba(var(--c),.4),inset 0 1px 0 rgba(255,255,255,.3)}
 #fg .fd .fr::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.14) 48%,transparent 60%);transform:translateX(-120%);animation:glr 5.5s ease-in-out infinite}
 @keyframes glr{0%,55%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
-#fg .fd .ic{font-size:62px;right:16px;top:12px;filter:drop-shadow(0 8px 14px rgba(var(--c),.7));animation:ifl 4.2s ease-in-out infinite}
+#fg .fd .fr>.ic{font-size:62px;right:16px;top:12px;filter:drop-shadow(0 8px 14px rgba(var(--c),.7));animation:ifl 4.2s ease-in-out infinite}
 @keyframes ifl{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-8px) rotate(5deg)}}
 .nx{display:block;height:6px;border-radius:5px;background:rgba(255,255,255,.14);overflow:hidden;margin-top:-2px}
 .nx i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,rgba(var(--c),.95),#fff);box-shadow:0 0 10px rgba(var(--c),.8)}
@@ -708,13 +708,13 @@ body.hold .btn::after,body.hold .ib::after{display:none}
 @keyframes tps{0%,50%{background-position:0 0,200% 0,0 0}100%{background-position:0 0,-100% 0,0 0}}
 @keyframes tpg{0%,100%{box-shadow:inset 0 1px 1px rgba(255,255,255,.55),0 0 18px rgba(94,242,255,.28),0 10px 26px rgba(0,0,0,.4)}50%{box-shadow:inset 0 1px 1px rgba(255,255,255,.55),0 0 34px rgba(255,79,216,.45),0 10px 26px rgba(0,0,0,.4)}}
 /* блик на полоске ранга убран: на iPhone он ломал отрисовку рамки ранга */
-body.eco #o1::before,body.eco #tbg b,body.eco #fg .fd .fr::after,body.eco #fg .fd .ic{animation:none}
-@media (prefers-reduced-motion:reduce){#o1::before,#tbg b,#fg .fd .fr::after,#fg .fd .ic,#tp{animation:none}#o1.s .mb .btn{animation:none}}
+body.eco #o1::before,body.eco #tbg b,body.eco #fg .fd .fr::after,body.eco #fg .fd .fr>.ic{animation:none}
+@media (prefers-reduced-motion:reduce){#o1::before,#tbg b,#fg .fd .fr::after,#fg .fd .fr>.ic,#tp{animation:none}#o1.s .mb .btn{animation:none}}
 /* «Тематики» на низких экранах: карточка по высоте экрана, слова не лезут на название */
 #fg .fd{height:clamp(190px,calc(100dvh - 340px),430px)}
-@media (max-height:700px){#fg .fd .w3{display:none}#fg .fd .w2{top:44%}#fg .fd .ic{font-size:50px}#fg .fd b{font-size:21px}#fg .fd .fr{padding:16px}}
+@media (max-height:700px){#fg .fd .w3{display:none}#fg .fd .w2{top:44%}#fg .fd .fr>.ic{font-size:50px}#fg .fd b{font-size:21px}#fg .fd .fr{padding:16px}}
 @media (max-height:600px){#fg .fd .w2{display:none}#fg .fd b{font-size:19px}#fg .fd .stz{font-size:18px}}
-@media (max-height:520px) and (orientation:landscape){#o5{gap:4px;padding-top:calc(6px + var(--sat))}#o5 h2{font-size:15px;margin:0}#lgh{display:none}#fg{padding:4px 22vw 6px}#fg .fd{height:clamp(120px,calc(100dvh - 170px),230px);max-width:360px}#fg .fd .wp{display:none}#fg .fd .ic{font-size:40px}#dt button{width:28px;height:28px;font-size:14px}#dt button.on{width:34px;height:34px;font-size:17px}#o5 .mb .btn{padding:9px 8px}}
+@media (max-height:520px) and (orientation:landscape){#o5{gap:4px;padding-top:calc(6px + var(--sat))}#o5 h2{font-size:15px;margin:0}#lgh{display:none}#fg{padding:4px 22vw 6px}#fg .fd{height:clamp(120px,calc(100dvh - 170px),230px);max-width:360px}#fg .fd .wp{display:none}#fg .fd .fr>.ic{font-size:40px}#dt button{width:28px;height:28px;font-size:14px}#dt button.on{width:34px;height:34px;font-size:17px}#o5 .mb .btn{padding:9px 8px}}
 /* карусель «Тематики»: плавнее — без 3D-наклона, анимации только у выбранной карточки */
 #fg{perspective:none;overflow-y:hidden;overscroll-behavior:contain;touch-action:pan-x}
 #o5{overflow:hidden;overscroll-behavior:none;touch-action:pan-x}
@@ -722,18 +722,18 @@ body.eco #o1::before,body.eco #tbg b,body.eco #fg .fd .fr::after,body.eco #fg .f
 #fg .fd{transform:perspective(900px) rotateY(var(--r,0deg)) scale(var(--s,1));transform-origin:50% 50%;backface-visibility:hidden;will-change:transform,opacity;contain:layout style}
 #fg .fd:active{transform:perspective(900px) rotateY(var(--r,0deg)) scale(calc(var(--s,1)*.97))}
 #fg .fd .fr{box-shadow:0 0 0 1px rgba(var(--c),.25),0 10px 22px rgba(0,0,0,.45),0 0 22px rgba(var(--c),.32),inset 0 1px 0 rgba(255,255,255,.3)}
-#fg .fd .ic{animation:none;filter:drop-shadow(0 4px 8px rgba(var(--c),.6))}
+#fg .fd .fr>.ic{animation:none;filter:drop-shadow(0 4px 8px rgba(var(--c),.6))}
 #fg .fd .fr::after{animation:none}
 #fg .fd .wp{animation:none}
-#fg .fd.cur .ic{animation:ifl 4.2s ease-in-out infinite}
+#fg .fd.cur .fr>.ic{animation:ifl 4.2s ease-in-out infinite}
 #fg .fd.cur .fr::after{animation:glr 5.5s ease-in-out infinite}
 #fg .fd.cur .wp{animation:bob 3.6s ease-in-out infinite}
 #fg .fd.cur .w2{animation-delay:-1.2s}#fg .fd.cur .w3{animation-delay:-2.2s}
 #o1:not(.s)::before,#o5:not(.s) #tbg b{animation-play-state:paused}
 /* карточка ранга: своя стабильная графическая подложка, чтобы рамка и текст не пропадали после возврата из «Тематик» */
 .rkb{transform:translateZ(0);-webkit-backface-visibility:hidden;backface-visibility:hidden;isolation:isolate}
-body.eco #fg .fd.cur .ic,body.eco #fg .fd.cur .fr::after,body.eco #fg .fd.cur .wp{animation:none}
-@media (prefers-reduced-motion:reduce){#fg .fd.cur .ic,#fg .fd.cur .fr::after,#fg .fd.cur .wp{animation:none}}
+body.eco #fg .fd.cur .fr>.ic,body.eco #fg .fd.cur .fr::after,body.eco #fg .fd.cur .wp{animation:none}
+@media (prefers-reduced-motion:reduce){#fg .fd.cur .fr>.ic,#fg .fd.cur .fr::after,#fg .fd.cur .wp{animation:none}}
 /* главное меню: не двигается и стоит ровно по центру */
 #o1{overflow:hidden;touch-action:none;overscroll-behavior:none;justify-content:center;padding:calc(66px + var(--sat)) 16px calc(66px + var(--sab))}
 #o1 .hero{margin-top:0}

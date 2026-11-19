@@ -1,12 +1,12 @@
 {
-  "version": "4.4.2",
+  "version": "4.4.3",
   "notes": [
-    "Подарки от создателя теперь могут включать бусты: они сразу попадают в твой запас"
+    "Вернулись звёздочки на карточках тематик (они слипались в одну большую в углу карточки)"
   ],
   "notes_en": [
-    "Gifts from the creator can now include boosts: they go straight into your stock"
+    "The stars on the theme cards are back (they were stacking into one big star in the corner)"
   ],
   "notes_uk": [
-    "Подарунки від творця тепер можуть містити бусти: вони одразу потрапляють у твій запас"
+    "Повернулися зірочки на картках тематик (вони злипалися в одну велику в кутку картки)"
   ]
 }
