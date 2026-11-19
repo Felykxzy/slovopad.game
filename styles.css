@@ -1293,3 +1293,17 @@ html.lite.beta #o1 #qp,html.lite.beta #o1 #echoB,html.lite.beta #o1 #hwB,html.li
 /* Эхо: плавнее прокрутка, нет системного меню по долгому нажатию на сообщение */
 #chL,#rmL{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .chb,.msg .mbody{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+
+/* Эхо: голосовые сообщения */
+.chbar{position:relative}
+.mvo{display:flex;align-items:center;gap:10px;min-width:190px;padding:2px 0 4px}
+.mvb{flex:none;width:38px;height:38px;border-radius:50%;border:0;color:#fff;font-size:14px;background:linear-gradient(135deg,var(--c1,#4fd6ff),var(--c2,#b86bff));box-shadow:0 4px 12px rgba(0,0,0,.3);cursor:pointer}
+.mvbar{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.18);overflow:hidden;cursor:pointer}
+.mvbar i{display:block;height:100%;width:0;border-radius:3px;background:#fff}
+.mvt{flex:none;font-size:13px;opacity:.85;font-variant-numeric:tabular-nums;min-width:34px;text-align:right}
+.ekrec{position:absolute;inset:0;z-index:2;display:flex;align-items:center;gap:12px;padding:6px 6px 6px 18px;border-radius:26px;background:#1d1233}
+.ekdot{width:12px;height:12px;border-radius:50%;background:#ff4d6d;animation:ekp 1s ease-in-out infinite}
+.ekt{flex:1;font-size:17px;font-variant-numeric:tabular-nums}
+.ekno{flex:none}.ekok{flex:none;width:52px;height:46px;padding:0}
+@keyframes ekp{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.ekdot{animation:none}}

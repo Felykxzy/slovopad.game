@@ -120,7 +120,7 @@
     "🧭": ["compass"], "🌐": ["globe"], "🛍": ["bag"], "🦉": ["owl"], "👑": ["crown", "gold"], "🏅": ["medal", "gold"], "❔": ["question"], "❓": ["question"],
     "→": ["arrow-r"], "←": ["back"], "✓": ["check"], "✔": ["check"], "✕": ["close"], "▶": ["play"], "⏸": ["pause"], "★": ["star", "gold"], "☆": ["star-o", "gold"],
     "⚠": ["warn", "orange"], "✎": ["edit"], "👁": ["eye"], "✋": ["hand"], "👋": ["hand"], "⇄": ["swap"], "↩": ["reply"], "➤": ["send"],
-    "🔊": ["speaker"], "🔉": ["speaker-low"], "🔇": ["speaker-off"], "📳": ["vibrate"], "⏱": ["timer"], "🫧": ["bubbles"], "📷": ["photo"], "🔒": ["lock"],
+    "🔊": ["speaker"], "🔉": ["speaker-low"], "🔇": ["speaker-off"], "📳": ["vibrate"], "⏱": ["timer"], "🫧": ["bubbles"], "📷": ["photo"], "🎤": ["mic"], "🔒": ["lock"],
     "💡": ["idea", "gold"], "👥": ["people"], "🖼": ["image"], "🏷": ["tag"], "🌀": ["echo"], "⚙": ["sliders"], "📱": ["mobile"], "🗑": ["trash"],
     "📢": ["megaphone"], "🎁": ["gift", "pink"], "💬": ["chat"], "⚔": ["swords"], "🤝": ["people"], "🏙": ["city"], "🌍": ["globe"], "🐾": ["paw"],
     "🍕": ["pizza", "orange"], "⚽": ["ball"], "🌿": ["leaf", "green"], "🎲": ["dice"], "🌱": ["sprout", "green"], "📘": ["book"], "🏁": ["flag"]

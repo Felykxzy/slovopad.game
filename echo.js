@@ -55,7 +55,7 @@
       '<div class="chmenu" id="rmMenu" hidden></div><div class="pinb" id="rmPin" hidden></div><div class="rmabout" id="rmAb" hidden></div>' +
       '<div class="rmcall" id="rmCall" hidden></div><div class="chl ecfeed" id="rmL"></div><div class="hint" id="rmSt"></div>' +
       '<div class="rmbar" id="rmBar" hidden></div><div class="rmrp" id="rmRp" hidden></div>' +
-      '<div class="chrp stkp" id="rmSk" hidden></div><div class="chbar"><button class="ib chrx" id="rmStk" type="button" aria-label="stickers">😊</button><button class="ib chph" id="rmPh" type="button" aria-label="photo">📷</button><input id="rmIn" type="text" maxlength="120" autocomplete="off" enterkeyhint="send"><button class="btn chsn" id="rmSn" type="button" aria-label="send">'+IC.html("send")+'</button></div>';
+      '<div class="chrp stkp" id="rmSk" hidden></div><div class="chbar"><button class="ib chrx" id="rmStk" type="button" aria-label="stickers">😊</button><button class="ib chph" id="rmPh" type="button" aria-label="photo">📷</button><button class="ib chph chmc" id="rmMc" type="button" aria-label="voice">🎤</button><input id="rmIn" type="text" maxlength="120" autocomplete="off" enterkeyhint="send"><button class="btn chsn" id="rmSn" type="button" aria-label="send">'+IC.html("send")+'</button></div>';
     const after = g("o15") || g("o11");
     after.parentNode.insertBefore(hub, after.nextSibling); hub.parentNode.insertBefore(rm, hub.nextSibling);
     // экран друзей встраиваем в ту же рамку: рейка слева, его содержимое справа
@@ -83,6 +83,7 @@
     if (EchoKit.swipeBack) EchoKit.swipeBack(g("o17"), roomClose);
     g("rmSn").onclick = () => roomSend();
     g("rmStk").onclick = () => { const r = g("rmSk"); if (r.hidden) kit.stickers(r, x => roomSend(x)); r.hidden = !r.hidden };
+    g("rmMc").onclick = () => { if (!kit.rec) return; kit.rec(g("o17").querySelector(".chbar"), (e, au) => { if (e) { setHint("rmSt", e.message, true); return } roomSend(null, au) }) };
     g("rmPh").onclick = () => kit.pick((e, img) => { if (e) { setHint("rmSt", e.message, true); return } roomSend(null, img) });
     g("rmIn").addEventListener("input", () => { const n = Date.now(); if (!E.room || !g("rmIn").value || n - E.typedAt < 3000) return; E.typedAt = n; post("/api/echo/room/typing", { room: E.room.id }).catch(() => { }) });
     g("rmIn").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); roomSend() } });
@@ -309,7 +310,7 @@
     const r = g("rmRp"), q = E.edit || E.reply; if (!r) return; r.textContent = ""; r.hidden = !q;
     if (!q) { if (E.editWas) g("rmIn").value = ""; E.editWas = false; return }
     E.editWas = !!E.edit;
-    r.appendChild(h("span", "", (E.edit ? "✎ " + T("Изменить: ", "Edit: ", "Змінити: ") : "↩ " + q.who + ": ") + String(q.body || "📷").slice(0, 50)));
+    r.appendChild(h("span", "", (E.edit ? "✎ " + T("Изменить: ", "Edit: ", "Змінити: ") : "↩ " + q.who + ": ") + String(q.body || (q.au ? "🎤" : "📷")).slice(0, 50)));
     r.appendChild(btn("ecx", "{close}", () => { E.reply = E.edit = null; replyPaint() }));
   }
   async function sendRaw(text) {

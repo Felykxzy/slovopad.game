@@ -46,8 +46,35 @@
       q.onclick = e => { e.stopPropagation(); if (jump) jump(m.rp.id) };
       return q;
     };
+    // голосовое: кнопка ▶, полоска и время; звук скачиваем только когда нажали
+    const mmss = s => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+    let cur = null;
+    K.voice = m => {
+      const box = h("div", "mvo"), bt = h("button", "mvb", "▶"), bar = h("div", "mvbar"), fill = h("i"), tm = h("span", "mvt", mmss(m.au));
+      bt.type = "button"; bar.appendChild(fill); box.appendChild(bt); box.appendChild(bar); box.appendChild(tm);
+      let a = null;
+      const stopUI = () => { bt.textContent = "▶"; box.classList.remove("on") };
+      const play = async () => {
+        if (cur && cur !== a) { try { cur.pause() } catch (e) { } }
+        if (a && !a.paused) { a.pause(); return }
+        if (!a) {
+          bt.textContent = "…";
+          let src = K.imgs[m.id]; if (src === undefined) { src = await cfg.img(m.id) || ""; K.imgs[m.id] = src }
+          if (!src) { bt.textContent = "✕"; tm.textContent = T("устарело", "expired", "застаріло"); return }
+          a = new Audio(src); a.preload = "auto";
+          a.ontimeupdate = () => { fill.style.width = Math.min(100, a.currentTime / m.au * 100) + "%"; tm.textContent = mmss(Math.max(0, m.au - a.currentTime)) };
+          a.onended = () => { stopUI(); fill.style.width = "0"; tm.textContent = mmss(m.au); cur = null };
+          a.onpause = stopUI; a.onplay = () => { bt.textContent = "❚❚"; box.classList.add("on"); cur = a };
+        }
+        try { await a.play() } catch (e) { bt.textContent = "⚠" }
+      };
+      bt.onclick = e => { e.stopPropagation(); play() };
+      bar.onclick = e => { e.stopPropagation(); if (a && a.duration && isFinite(a.duration)) { const r = bar.getBoundingClientRect(); a.currentTime = a.duration * Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) } };
+      return box;
+    };
     K.media = m => {
       if (!m.im) return null;
+      if (m.au > 0) return K.voice(m);
       const box = h("div", "mimg"), ph = h("div", "mimgp", "📷"); box.appendChild(ph);
       const show = src => { if (!src) { ph.textContent = T("Картинка устарела", "Image expired", "Картинка застаріла"); return } const i = h("img"); i.src = src; i.alt = ""; i.onclick = e => { e.stopPropagation(); viewer(src) }; box.textContent = ""; i.draggable = false; i.onload = () => { if (cfg.onsize) cfg.onsize() }; box.appendChild(i) };
       if (K.imgs[m.id]) show(K.imgs[m.id]);
@@ -109,6 +136,33 @@
       box.textContent = ""; STK.forEach(s => { const b = h("button", "stk", s); b.type = "button"; b.onclick = () => { box.hidden = true; send(s) }; box.appendChild(b) });
     };
     // выбор картинки: прячем input[type=file], после выбора сжимаем и отдаём строку
+    // запись голоса: поверх строки ввода появляется полоска «● 0:07  ✕  ➤»; до 30 секунд
+    K.rec = (bar, done) => {
+      if (bar.querySelector(".ekrec")) return;
+      const md = navigator.mediaDevices;
+      if (!md || !window.MediaRecorder) { done(new Error(T("Запись голоса здесь не работает.", "Voice recording is not available here.", "Запис голосу тут не працює."))); return }
+      md.getUserMedia({ audio: true }).then(stream => {
+        const mt = ["audio/webm;codecs=opus", "audio/mp4", "audio/webm", "audio/ogg"].find(t => MediaRecorder.isTypeSupported(t)) || "";
+        let rec; try { rec = new MediaRecorder(stream, Object.assign(mt ? { mimeType: mt } : {}, { audioBitsPerSecond: 24000 })) } catch (e) { stream.getTracks().forEach(t => t.stop()); done(e); return }
+        const chunks = [], t0 = Date.now(); let send = false, dead = false;
+        const ui = h("div", "ekrec"), dot = h("i", "ekdot"), tm = h("span", "ekt", "0:00"), no = h("button", "ib ekno", "✕"), ok = h("button", "btn ekok", "➤");
+        no.type = ok.type = "button"; no.setAttribute("aria-label", "cancel"); ok.setAttribute("aria-label", "send");
+        [dot, tm, no, ok].forEach(x => ui.appendChild(x)); bar.appendChild(ui);
+        const tick = setInterval(() => { const s = (Date.now() - t0) / 1000; tm.textContent = mmss(s); if (s >= 30) fin(true) }, 250);
+        const fin = go => { if (dead) return; dead = true; send = go; clearInterval(tick); ui.remove(); try { rec.stop() } catch (e) { } stream.getTracks().forEach(t => t.stop()) };
+        no.onclick = () => fin(false); ok.onclick = () => fin(true);
+        rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data) };
+        rec.onstop = () => {
+          const sec = Math.round((Date.now() - t0) / 1000);
+          if (!send) return; if (sec < 1) { done(new Error(T("Слишком коротко. Зажми дольше.", "Too short.", "Занадто коротко."))); return }
+          const base = (rec.mimeType || mt || "audio/webm").split(";")[0].replace(/^audio\/(x-)?/, "audio/"), kind = /mp4|aac|m4a/.test(base) ? "mp4" : /ogg/.test(base) ? "ogg" : "webm";
+          const fr = new FileReader();
+          fr.onload = () => { const b64 = String(fr.result).split(",")[1] || ""; const url = "data:audio/" + kind + ";d=" + Math.min(59, Math.max(1, sec)) + ";base64," + b64; if (url.length > 400000) done(new Error(T("Голосовое слишком длинное.", "Voice message is too long.", "Голосове задовге."))); else done(null, url) };
+          fr.onerror = () => done(new Error("read")); fr.readAsDataURL(new Blob(chunks, { type: rec.mimeType || mt || "audio/webm" }));
+        };
+        rec.start(250);
+      }).catch(() => done(new Error(T("Нет доступа к микрофону. Разреши его в настройках.", "No microphone access. Allow it in settings.", "Немає доступу до мікрофона. Дозволь його в налаштуваннях."))));
+    };
     K.pick = done => {
       const i = h("input"); i.type = "file"; i.accept = "image/*"; i.style.display = "none";
       i.onchange = async () => { const f = i.files && i.files[0]; i.remove(); if (!f) return; try { done(null, await compress(f)) } catch (e) { done(e) } };

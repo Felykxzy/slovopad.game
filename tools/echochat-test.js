@@ -28,6 +28,10 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
   const first = (await api('/api/chat?with=' + B.code, null, A.token)).messages[0];
   await api('/api/chat/react', { to: B.code, id: first.id, emo: '🔥' }, A.token);
   await api('/api/chat/send', { to: A.code, text: '😂' }, B.token);
+  const aud = 'data:audio/webm;d=7;base64,GkXfo59ChoEBQveBAULygQRC84EIQoKEd2VibUKHgQRChYECGFOAZwEAAAAAAAHTEU2bdLpNu4tTq4QVSalmU6yBoU27i1OrhBZUrmtTrIHYTbuMU6uEElTDZ1OsggEXTbuMU6uEHFO7a1OsggHk';
+  ok((await api('/api/chat/send', { to: A.code, img: aud }, B.token)).ok !== false, 'сервер принял голосовое');
+  for (const bad of ['data:audio/webm;d=0;base64,AAAA', 'data:audio/webm;d=99;base64,AAAA', 'data:audio/webm;base64,AAAA', 'data:audio/x-evil;d=5;base64,AAAA', 'data:text/html;d=5;base64,AAAA'])
+    ok((await api('/api/chat/send', { to: A.code, img: bad }, B.token)).error, 'сервер отклонил плохое: ' + bad.slice(0, 30));
   await api('/api/chat/send', { to: A.code, text: 'ответ тебе', reply: first.id }, B.token);
   await api('/api/chat/typing', { to: A.code }, B.token);
   await api('/api/chat?with=' + A.code, null, B.token);   // Боб прочитал
@@ -44,7 +48,7 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
   await api('/api/echo/room/typing', { room: rid }, B.token);
 
   await new Promise(r => srv.listen(0, r)); const base = 'http://localhost:' + srv.address().port;
-  const b = await chromium.launch();
+  const b = await chromium.launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] });
   const p = await b.newPage({ viewport: { width: +process.env.W || 430, height: +process.env.H || 900 }, deviceScaleFactor: 1, isMobile: !!process.env.W, hasTouch: !!process.env.W }); const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.addInitScript(a => { localStorage.setItem('tutDone', '1'); localStorage.setItem('slovopadCloudToken', a.t); localStorage.setItem('slovopadId', JSON.stringify({ username: 'Alice', spCode: a.c })) }, { t: A.token, c: A.code });
   await p.route(/workers\.dev/, async r => { const u = new URL(r.request().url()); const body = r.request().postData(); const res = await worker.fetch(new Request('https://api.test' + u.pathname + u.search, { method: r.request().method(), headers: { ...r.request().headers(), 'cf-connecting-ip': '10.2.2.2' }, body: body || undefined }), env); r.fulfill({ status: res.status, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: await res.text() }) });
@@ -56,6 +60,7 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
   ok(/Привет! Го сыграем/.test(t), 'сообщения видны'); ok(/ответ тебе/.test(t), 'есть ответ');
   ok(await p.evaluate(() => !!document.querySelector('#chL .mq')), 'у ответа есть цитата');
   ok(await p.evaluate(() => !!document.querySelector('#chL .mimg img')), 'картинка загрузилась');
+  ok(await p.evaluate(() => { const v = document.querySelector('#chL .mvo .mvt'); return !!v && v.textContent === '0:07' }), 'голосовое показано с длиной 0:07');
   { const bb = await p.locator('#chL .mimg img').first().boundingBox(); const cx = bb.x + bb.width / 2, cy = bb.y + bb.height / 2;
     await p.mouse.move(cx, cy); await p.mouse.down(); await p.waitForTimeout(650); await p.mouse.up(); await p.waitForTimeout(250);
     ok(await p.evaluate(() => !!document.querySelector('#o15 .eksh .esre')), 'долгое нажатие по фото открывает меню');
@@ -76,6 +81,15 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
   await p.evaluate(() => [...document.querySelectorAll('#o15 .eksh .esa')].find(x => /Удалить/.test(x.textContent)).click()); await p.waitForTimeout(1200);
   ok(await p.evaluate(() => /Сообщение удалено/.test(document.getElementById('chL').innerText)), 'удаление работает');
   await p.click('#chRx'); await p.waitForTimeout(200); await p.screenshot({ path: shots + '/dm3.png' });
+  await p.evaluate(() => document.getElementById('chSk').hidden = true);
+  await p.click('#chMc'); await p.waitForTimeout(1700);
+  ok(await p.evaluate(() => !!document.querySelector('#o15 .ekrec')), 'запись пошла: видна полоска записи');
+  await p.screenshot({ path: shots + '/voice-rec.png' });
+  await p.click('#o15 .ekok'); await p.waitForTimeout(1800);
+  ok(await p.evaluate(() => document.querySelectorAll('#chL .mvo').length === 2), 'своё голосовое отправилось и появилось в чате');
+  await p.screenshot({ path: shots + '/voice-chat.png' });
+  await p.click('#chMc'); await p.waitForTimeout(500); await p.click('#o15 .ekno'); await p.waitForTimeout(400);
+  ok(await p.evaluate(() => !document.querySelector('#o15 .ekrec') && document.querySelectorAll('#chL .mvo').length === 2), 'отмена записи ничего не отправляет');
   if (process.env.W) {
     const cdp = await p.context().newCDPSession(p);
     const swipe = async (x0, y0, x1, y1, steps = 8, shot) => {

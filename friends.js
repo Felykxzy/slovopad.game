@@ -54,7 +54,7 @@
       '<div class="chl" id="chL"></div><div class="hint" id="chSt"></div>' +
       '<div class="chrp" id="chRp" hidden></div><div class="chrp stkp" id="chSk" hidden></div>' +
       '<div class="rmrp" id="chQp" hidden></div>' +
-      '<div class="chbar"><button class="ib chrx" id="chRx" type="button" aria-label="reactions">😊</button><button class="ib chph" id="chPh" type="button" aria-label="photo">📷</button><input id="chIn" type="text" maxlength="120" autocomplete="off" enterkeyhint="send"><button class="btn chsn" id="chSn" type="button">➤</button></div>';
+      '<div class="chbar"><button class="ib chrx" id="chRx" type="button" aria-label="reactions">😊</button><button class="ib chph" id="chPh" type="button" aria-label="photo">📷</button><button class="ib chph chmc" id="chMc" type="button" aria-label="voice">🎤</button><input id="chIn" type="text" maxlength="120" autocomplete="off" enterkeyhint="send"><button class="btn chsn" id="chSn" type="button">➤</button></div>';
     const after = g("o11");
     after.parentNode.insertBefore(o, after.nextSibling); o.parentNode.insertBefore(p, o.nextSibling); p.parentNode.insertBefore(c15, p.nextSibling);
     chatWire();
@@ -284,6 +284,7 @@
     g("chSn").onclick = chatSend;
     g("chIn").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); chatSend() } });
     g("chRx").onclick = () => { const r = g("chSk"); if (r.hidden) kit.stickers(r, x => chatSend(x)); r.hidden = !r.hidden; g("chMenu").hidden = true; g("chRp").hidden = true };
+    g("chMc").onclick = () => { if (!kit.rec) return; kit.rec(g("o15").querySelector(".chbar"), (e, au) => { if (e) { g("chSt").textContent = e.message; return } chatSend(null, au) }) };
     g("chPh").onclick = () => kit.pick((e, img) => { if (e) { g("chSt").textContent = e.message; return } chatSend(null, img) });
     g("chIn").addEventListener("input", () => { const n = Date.now(); if (!chat.p || n - chat.typedAt < 3000 || !g("chIn").value) return; chat.typedAt = n; post("/api/chat/typing", { to: chat.p.spCode }).catch(() => { }) });
     g("chMn").onclick = () => { g("chMenu").hidden = !g("chMenu").hidden; g("chRp").hidden = true; chatMenuLabels() };
@@ -343,7 +344,7 @@
     const r = g("chQp"), q = chat.edit || chat.reply; r.textContent = ""; r.hidden = !q;
     if (!q) { if (!g("chIn").disabled && chat.editWas) g("chIn").value = ""; chat.editWas = false; return }
     chat.editWas = !!chat.edit;
-    r.appendChild(h("span", "", (chat.edit ? "✎ " + T("Изменить: ", "Edit: ", "Змінити: ") : "↩ " + (q.mine ? T("Себе", "Yourself", "Себе") : chat.p.username) + ": ") + String(q.body || "📷").slice(0, 50)));
+    r.appendChild(h("span", "", (chat.edit ? "✎ " + T("Изменить: ", "Edit: ", "Змінити: ") : "↩ " + (q.mine ? T("Себе", "Yourself", "Себе") : chat.p.username) + ": ") + String(q.body || (q.au ? "🎤" : "📷")).slice(0, 50)));
     r.appendChild(btn("ecx", "✕", () => { chat.edit = chat.reply = null; chatBar() }));
   }
   function chatAdd(m) {
@@ -372,7 +373,7 @@
       else if (r.messages.length && l.querySelector(".chem")) l.querySelector(".chem").remove();
       let ty = l.querySelector(".chty"); if (r.typing && !ty) { ty = h("div", "chty", T("печатает…", "typing…", "друкує…")); l.appendChild(ty) } else if (!r.typing && ty) ty.remove(); else if (ty) l.appendChild(ty);
       if (stick) l.scrollTop = l.scrollHeight;
-      g("chIn").disabled = g("chSn").disabled = g("chRx").disabled = g("chPh").disabled = chat.blocked;
+      g("chIn").disabled = g("chSn").disabled = g("chRx").disabled = g("chPh").disabled = g("chMc").disabled = chat.blocked;
       g("chSt").textContent = chat.blocked ? T("Ты заблокировал этого игрока.", "You blocked this player.", "Ти заблокував цього гравця.") : "";
       who.unread = 0;
     } catch (e) { if (chat.p === who) g("chSt").textContent = e.message }

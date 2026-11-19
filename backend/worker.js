@@ -265,20 +265,24 @@ const MSG_MAX = 120, MSG_KEEP = 50;                         // длина соо
 const REACTS = ['🔥', '👏', '😂', '😎', '💪', '🎯', '❤️', '👋', '🤯', '🥳'];
 const CHAT_EMO = ['👍', '❤️', '😂', '🔥', '😮', '😢'];       // реакции на сообщение (одна на человека)
 const IMG_MAX = 140000, IMG_DAYS = 3;                       // картинка в чате: до ~100 КБ, хранится 3 дня
-const okImg = v => typeof v === 'string' && v.length <= IMG_MAX && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(v);
+const AUD_MAX = 420000;                                      // голосовое: до ~30 секунд, хранится столько же, сколько картинка
+const okImg = v => typeof v === 'string' && ((v.length <= IMG_MAX && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(v)) ||
+  (v.length <= AUD_MAX && /^data:audio\/(webm|mp4|ogg);d=(?:[1-9]|[1-5][0-9]);base64,[A-Za-z0-9+\/=]+$/.test(v)));
+const AU_SQL = "CASE WHEN substr(img,1,11)='data:audio/' THEN substr(img,1,34) ELSE '' END AS ia";
+const auSec = ia => { const m = /;d=(\d+);base64/.exec(ia || ''); return m ? +m[1] : 0 };
 const dmScope = (x, y) => 'd:' + [x, y].sort().join('+');
 // общая выборка сообщений чата (личного или комнаты): новые, изменённые, ответы-цитаты, реакции, «печатает»
 async function chatSync(env, o) {
   const room = !!o.room, S = room ? 'uid' : 'a';
-  const cols = 'id,' + S + ' AS s,' + (room ? "'text' AS kind" : 'kind') + ',body,t,rp,ed,dl,upd,(LENGTH(img)>0) AS im';
+  const cols = 'id,' + S + ' AS s,' + (room ? "'text' AS kind" : 'kind') + ',body,t,rp,ed,dl,upd,(LENGTH(img)>0) AS im,' + AU_SQL;
   const rows = (await env.DB.prepare('SELECT ' + cols + ' FROM ' + o.table + ' WHERE ' + o.where + ' AND id>? ORDER BY id ASC LIMIT 50').bind(...o.args, o.after).all()).results || [];
   const chg = o.since > 0 ? ((await env.DB.prepare('SELECT ' + cols + ' FROM ' + o.table + ' WHERE ' + o.where + ' AND id<=? AND upd>=? ORDER BY id DESC LIMIT 30').bind(...o.args, o.after, o.since).all()).results || []) : [];
   const want = [...new Set([...rows, ...chg].map(r => r.rp).filter(x => x > 0))].slice(0, 60), quote = new Map();
   if (want.length) {
-    const q = (await env.DB.prepare('SELECT id,' + S + ' AS s,body,dl,(LENGTH(img)>0) AS im FROM ' + o.table + ' WHERE ' + o.where + ' AND id IN (' + want.map(() => '?').join(',') + ')').bind(...o.args, ...want).all()).results || [];
-    for (const r of q) quote.set(r.id, { id: r.id, who: o.nameOf(r.s), text: r.dl ? '' : String(r.body || '').slice(0, 60) || (r.im ? '📷' : ''), dl: !!r.dl });
+    const q = (await env.DB.prepare('SELECT id,' + S + ' AS s,body,dl,(LENGTH(img)>0) AS im,' + AU_SQL + ' FROM ' + o.table + ' WHERE ' + o.where + ' AND id IN (' + want.map(() => '?').join(',') + ')').bind(...o.args, ...want).all()).results || [];
+    for (const r of q) quote.set(r.id, { id: r.id, who: o.nameOf(r.s), text: r.dl ? '' : String(r.body || '').slice(0, 60) || (r.ia ? '🎤' : r.im ? '📷' : ''), dl: !!r.dl });
   }
-  const shape = r => ({ id: r.id, mine: r.s === o.me, who: o.nameOf(r.s), kind: r.kind, body: r.dl ? '' : r.body, t: r.t, ed: !!r.ed, dl: !!r.dl, im: !r.dl && !!r.im, rp: r.rp > 0 ? (quote.get(r.rp) || { id: r.rp, who: '', text: '', dl: true }) : null });
+  const shape = r => ({ id: r.id, mine: r.s === o.me, who: o.nameOf(r.s), kind: r.kind, body: r.dl ? '' : r.body, t: r.t, ed: !!r.ed, dl: !!r.dl, im: !r.dl && !!r.im, au: r.dl ? 0 : auSec(r.ia), rp: r.rp > 0 ? (quote.get(r.rp) || { id: r.rp, who: '', text: '', dl: true }) : null });
   const lr = await env.DB.prepare('SELECT MAX(t) AS m FROM sp_react WHERE sc=?').bind(o.sc).first();
   let react = null;
   if (!o.since || (lr && lr.m >= o.since)) react = ((await env.DB.prepare("SELECT mid,uid,emo FROM sp_react WHERE sc=? AND emo<>'' ORDER BY mid DESC LIMIT 400").bind(o.sc).all()).results || []).map(r => [r.mid, r.emo, o.nameOf(r.uid)]);
@@ -1436,7 +1440,7 @@ export default {
             if (text === null) return reply({ error: 'Сообщение длиннее ' + MSG_MAX + ' символов.' }, 400);
             const img = body.img ? String(body.img) : '';
             if (img && !okImg(img)) return reply({ error: 'Картинка не подошла. Выбери другую.' }, 400);
-            if (img && !await allow(env, 'ei2:' + user.id, 12, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+            if (img && !await allow(env, 'ei2:' + user.id, 20, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
             if (!text && !img) return reply({ error: 'Пустое сообщение.' }, 400);
             let rp = Math.floor(Number(body.reply) || 0);
             if (rp > 0 && !await env.DB.prepare('SELECT 1 AS x FROM sp_room_msgs WHERE room=? AND id=?').bind(roomId, rp).first()) rp = 0;
@@ -1637,7 +1641,7 @@ export default {
               if ([...text].length > MSG_MAX) return reply({ error: 'Сообщение длиннее ' + MSG_MAX + ' символов.' }, 400);
               img = body.img ? String(body.img) : '';
               if (img && !okImg(img)) return reply({ error: 'Картинка не подошла. Выбери другую.' }, 400);
-              if (img && !await allow(env, 'ci2:' + user.id, 12, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+              if (img && !await allow(env, 'ci2:' + user.id, 20, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
               if (!text && !img) return reply({ error: 'Пустое сообщение.' }, 400);
               rp = Math.floor(Number(body.reply) || 0);
               if (rp > 0 && !await env.DB.prepare('SELECT 1 AS x FROM sp_msgs WHERE id=? AND ((a=? AND b=?) OR (a=? AND b=?))').bind(rp, user.id, other.id, other.id, user.id).first()) rp = 0;
