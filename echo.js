@@ -82,6 +82,8 @@
     g("rmBk").onclick = roomClose;
     if (EchoKit.swipeBack) EchoKit.swipeBack(g("o16"), hubOut);
     if (EchoKit.swipeBack) EchoKit.swipeBack(g("o17"), roomClose);
+    if (kit.downBtn && !E.dn) E.dn = kit.downBtn(g("rmL"), g("o17"));
+    if (EchoKit.swipeLeft) EchoKit.swipeLeft(g("rmL"), ".msg:not(.dl)", it => [it.querySelector(".mbody")], it => { const m = kit.msgs[it.dataset.id]; if (m && !m.dl) { E.reply = m; E.edit = null; replyPaint(); try { g("rmIn").focus() } catch (e) { } } }, "↩");
     g("rmSn").onclick = () => roomSend();
     g("rmStk").onclick = () => { const r = g("rmSk"); if (r.hidden) kit.stickers(r, x => roomSend(x)); r.hidden = !r.hidden };
     g("rmMc").onclick = () => { if (!kit.rec) return; kit.rec(g("o17").querySelector(".chbar"), (e, au) => { if (e) { setHint("rmSt", e.message, true); return } roomSend(null, au) }) };
@@ -136,7 +138,8 @@
   /* ---------- главный экран ---------- */
   function section(l, text) { l.appendChild(h("div", "ecsec", text)) }
   function badgeEl(n) { return h("i", "bdg ecb", num(n)) }
-  function paint() {
+  function paint() { const l = g("ecList"), sn = EchoKit.flipStart ? EchoKit.flipStart(l) : null; paintRaw(); if (sn && EchoKit.flipEnd) EchoKit.flipEnd(l, sn) }
+  function paintRaw() {
     const l = g("ecList"); l.textContent = "";
     const done = () => [...l.children].forEach((c, i) => c.style.setProperty("--i", Math.min(i, 10)));
     const ai = h("button", "ecrow ecai2"); ai.type = "button"; ai.appendChild(avatar("{bot}", false));
@@ -146,14 +149,14 @@
     section(l, T("КОМНАТЫ — ", "ROOMS — ", "КІМНАТИ — ") + E.rooms.length);
     if (!E.rooms.length) l.appendChild(h("div", "ecdim ecnone", T("Комнат пока нет. Нажми ＋ слева и позови друзей.", "No rooms yet. Tap ＋ on the left and invite friends.", "Кімнат поки немає. Натисни ＋ ліворуч і поклич друзів.")));
     E.rooms.forEach(rm => {
-      const r = h("button", "ecrow"); r.type = "button"; r.appendChild(avatar("#", false, tint(rm.id)));
+      const r = h("button", "ecrow"); r.type = "button"; r.dataset.k = rm.id; r.appendChild(avatar("#", false, tint(rm.id)));
       const t = h("div", "ect"); t.appendChild(h("b", "", rm.name)); t.appendChild(h("span", "", rm.last ? pretty(rm.last) : "{people}" + rm.members)); r.appendChild(t);
       if (rm.unread) r.appendChild(badgeEl(rm.unread));
       r.onclick = () => roomOpen(rm.id, rm.name); l.appendChild(r);
     });
     const onl = E.friends.filter(f => f.online), off = E.friends.filter(f => !f.online);
     const row = f => {
-      const r = h("button", "ecrow"); r.type = "button";
+      const r = h("button", "ecrow"); r.type = "button"; r.dataset.k = f.spCode || f.username;
       r.appendChild(avatar(f.avatar || first(f.username), f.online, f.avatar ? null : tint(f.username), f.username));
       const t = h("div", "ect"); t.appendChild(h("b", f.unread ? "ecnew" : "", f.username)); { const te = window.TagUI && TagUI.el(f.tag); if (te) t.firstChild.appendChild(te) } t.appendChild(h("span", "", f.unread ? T("новых: ", "new: ", "нових: ") + f.unread : f.online ? T("в сети", "online", "у мережі") : T("не в сети", "offline", "не в мережі"))); r.appendChild(t);
       if (f.unread) r.appendChild(badgeEl(f.unread));
@@ -224,7 +227,7 @@
 
   /* ---------- комната ---------- */
   function roomOpen(id, name) {
-    build(); E.room = { id, name: name || "", mine: false, members: [] }; E.lastRoom = { id, name: name || "" }; E.last = 0; E.sure = 0; lastMsg = null; E.els = {}; E.msgs = {}; E.races = {}; E.react = {}; E.sel = null; E.reply = null; E.edit = null; E.since = 0; E.day = ""; kit.reset(); replyPaint(); g("rmSk").hidden = true; g("rmPin").hidden = true; g("rmAb").hidden = true;
+    build(); E.room = { id, name: name || "", mine: false, members: [] }; E.lastRoom = { id, name: name || "" }; E.last = 0; E.sure = 0; lastMsg = null; E.els = {}; E.msgs = {}; if (E.dn) E.dn.reset(); E.races = {}; E.react = {}; E.sel = null; E.reply = null; E.edit = null; E.since = 0; E.day = ""; kit.reset(); replyPaint(); g("rmSk").hidden = true; g("rmPin").hidden = true; g("rmAb").hidden = true;
     g("rmL").textContent = ""; g("rmSt").textContent = ""; g("rmMenu").hidden = true; g("rmIn").value = "";
     g("rmIn").placeholder = T("Написать в # ", "Message # ", "Написати в # ") + (name || "");
     g("rmT").textContent = "# " + E.room.name; g("rmS").textContent = " ";
@@ -294,7 +297,11 @@
     row.classList.toggle("dl", !!m.dl); E.els[m.id] = row;
     row.onclick = null; if (!m.dl) (kit.hold ? kit.hold(row, () => roomSheet(m)) : (row.onclick = () => roomSheet(m)));
   }
-  function roomChanged(m) { const row = E.els[m.id]; kit.msgs[m.id] = { ...(kit.msgs[m.id] || {}), ...m }; if (row) roomFill(row, kit.msgs[m.id]) }
+  function roomChanged(m) {
+    const row = E.els[m.id], was = kit.msgs[m.id]; kit.msgs[m.id] = { ...(kit.msgs[m.id] || {}), ...m }; if (!row) return;
+    const fill = () => { roomFill(row, kit.msgs[m.id]); if (m.dl) { row.classList.add("dlin"); setTimeout(() => row.classList.remove("dlin"), 420) } };
+    if (m.dl && was && !was.dl && kit.vanish) kit.vanish(row.querySelector(".mbody"), () => { const b = row.querySelector(".mbody"); if (b) { b.style.transition = ""; b.style.transform = ""; b.style.opacity = "" } fill() }); else fill();
+  }
   function roomSheet(m) {
     const rm = E.room, mod = rm && rm.canMod, acts = [[T("↩ Ответить", "↩ Reply", "↩ Відповісти"), () => { E.reply = m; E.edit = null; replyPaint(); try { g("rmIn").focus() } catch (e) { } }]];
     if (m.body) acts.push([T("Скопировать", "Copy", "Копіювати"), () => { try { navigator.clipboard.writeText(m.body) } catch (e) { } }]);
@@ -373,10 +380,11 @@
       g("rmT").textContent = "# " + rm.name; IC.t(g("rmS"), "{people}" + r.members.map(x => x.name).slice(0, 4).join(", ") + (r.members.length > 4 ? " +" + (r.members.length - 4) : ""));
       const l = g("rmL"), stick = first || l.scrollHeight - l.scrollTop - l.clientHeight < 80;
       E.live = !first; r.messages.forEach(m => { E.last = Math.max(E.last, m.id); roomAdd(m) }); E.live = false;
+      if (E.dn) { if (stick) E.dn.reset(); else { const k = r.messages.filter(m => !m.mine).length; if (k) E.dn.bump(k); else E.dn.upd() } }
       (r.changed || []).forEach(roomChanged); if (r.react) kit.setReact(r.react);
       { const pn = g("rmPin"), ab = g("rmAb"); pn.hidden = !rm.pin; if (rm.pin) { pn.textContent = ""; pn.appendChild(h("span", "", "📌 " + rm.pin.who + ": " + rm.pin.text)); pn.onclick = () => kit.jump(rm.pin.id) }
         ab.hidden = !rm.about; ab.textContent = rm.about || ""; }
-      { let ty = l.querySelector(".chty"); if (r.typing && r.typing.length && !ty) { ty = h("div", "chty"); l.appendChild(ty) } else if ((!r.typing || !r.typing.length) && ty) { ty.remove(); ty = null } if (ty) { ty.textContent = r.typing.join(", ") + T(" печатает…", " is typing…", " друкує…"); l.appendChild(ty) } }
+      { let ty = l.querySelector(".chty"); if (r.typing && r.typing.length && !ty) { ty = h("div", "chty"); l.appendChild(ty) } else if ((!r.typing || !r.typing.length) && ty) { ty.remove(); ty = null } if (ty) { ty.textContent = r.typing.join(", ") + T(" печатает", " is typing", " друкує"); if (EchoKit.dots) ty.appendChild(EchoKit.dots()); l.appendChild(ty) } }
       if (!l.querySelector(".msg") && !l.querySelector(".race") && !l.querySelector(".chem")) l.appendChild(h("div", "chem", T("Здесь пока тихо. Напиши первым", "It's quiet here. Write first", "Тут поки тихо. Напиши першим")));
       else if (r.messages.length && l.querySelector(".chem")) l.querySelector(".chem").remove();
       if (stick) l.scrollTop = l.scrollHeight;

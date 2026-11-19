@@ -60,6 +60,11 @@
     after.parentNode.insertBefore(o, after.nextSibling); o.parentNode.insertBefore(p, o.nextSibling); p.parentNode.insertBefore(c15, p.nextSibling);
     chatWire();
     g("frBk").onclick = () => { pick = null; if (openFrom) { const f = openFrom; openFrom = null; f(); return } ov("o1"); };
+    if (kit.downBtn && !chat.dn) chat.dn = kit.downBtn(g("chL"), g("o15"));
+    if (EchoKit.swipeLeft) {
+      EchoKit.swipeLeft(g("chL"), ".chm:not(.dl):not(.rx)", it => [it.querySelector(".chb")], it => { const m = kit.msgs[it.dataset.id]; if (m && !m.dl) { chat.reply = m; chat.edit = null; chatBar(); try { g("chIn").focus() } catch (e) { } } }, "↩");
+      EchoKit.swipeLeft(g("frList"), ".frrow.tap", it => [...it.children].filter(c => !c.classList.contains("ekhint")), it => { if (it.dataset.k) profile(it.dataset.k) }, "👤");
+    }
     if (EchoKit.swipeBack) { EchoKit.swipeBack(g("o15"), () => g("chBk").click()); EchoKit.swipeBack(g("o13"), () => g("frBk").click()); EchoKit.swipeBack(g("o14"), () => g("fpBk").click()) }
     /* профиль: потяни вниз или нажми на аватарку, и фото раскроется на всю ширину */
     { const o = g("o14"), big = on => { g("fpH").classList.toggle("big", on); if (on) o.scrollTop = 0 }; let y0 = null;
@@ -105,7 +110,8 @@
     });
   }
 
-  function render() {
+  function render() { const box = g("frList"), snap = EchoKit.flipStart ? EchoKit.flipStart(box) : null; renderRaw(); if (snap && EchoKit.flipEnd) EchoKit.flipEnd(box, snap) }
+  function renderRaw() {
     const box = g("frList"); box.textContent = "";
     labels();
     const logged = !!sidTok();
@@ -128,7 +134,7 @@
   }
 
   function row(p, right, onTap, extra) {
-    const r = h("div", "frrow gl" + (onTap ? " tap" : ""));
+    const r = h("div", "frrow gl" + (onTap ? " tap" : "")); if (p && p.spCode) r.dataset.k = p.spCode;
     r.appendChild(avatar(p, 44));
     const m = h("div", "frm"); m.appendChild(h("div", "frn", p.username));
     const st = extra || status(p); if (st) m.appendChild(h("div", "frs" + (p.online && !extra ? " on" : ""), st));
@@ -317,7 +323,7 @@
     g("chRpb").textContent = chat.sure ? T("ТОЧНО ПОЖАЛОВАТЬСЯ?", "REALLY REPORT?", "ТОЧНО СКАРЖИТИСЬ?") : T("ПОЖАЛОВАТЬСЯ", "REPORT", "СКАРЖИТИСЬ");
   }
   function chatOpen(p) {
-    build(); chat.p = p; chat.last = 0; chat.since = 0; chat.blocked = false; chat.sure = 0; chat.reply = null; chat.edit = null; kit.reset(); chatBar(); g("chSk").hidden = true;
+    build(); chat.p = p; chat.last = 0; chat.since = 0; chat.blocked = false; chat.sure = 0; chat.reply = null; chat.edit = null; kit.reset(); chatBar(); g("chSk").hidden = true; if (chat.dn) chat.dn.reset();
     g("chL").textContent = ""; g("chSt").textContent = ""; g("chMenu").hidden = true; g("chRp").hidden = true; g("chIn").value = "";
     g("chT").textContent = p.username; g("chS").textContent = status(p) || " ";
     { const av = g("chAv"); av.textContent = ""; av.appendChild(avatar(p, 40)) }
@@ -358,14 +364,17 @@
     r.appendChild(h("span", "", (chat.edit ? "✎ " + T("Изменить: ", "Edit: ", "Змінити: ") : "↩ " + (q.mine ? T("Себе", "Yourself", "Себе") : chat.p.username) + ": ") + String(q.body || (q.au ? "🎤" : "📷")).slice(0, 50)));
     r.appendChild(btn("ecx", "✕", () => { chat.edit = chat.reply = null; chatBar() }));
   }
-  function chatAdd(m) {
+  function chatAdd(m, live) {
     const l = g("chL"); kit.msgs[m.id] = m;
     const box = h("div", "chm"); box.dataset.id = m.id; chatPaint(box, m); l.appendChild(box);
+    if (live) { box.classList.add("nw"); setTimeout(() => box.classList.remove("nw"), 420) }
   }
   function chatChanged(m) {
-    const old = kit.els[m.id]; kit.msgs[m.id] = m; if (old) chatPaint(old, m);
+    const old = kit.els[m.id], was = kit.msgs[m.id]; kit.msgs[m.id] = m; if (!old) return;
+    const stub = () => { chatPaint(old, m); if (m.dl) { old.classList.add("dlin"); setTimeout(() => old.classList.remove("dlin"), 420) } };
+    if (m.dl && was && !was.dl && kit.vanish) kit.vanish(old.querySelector(".chb"), stub); else stub();
   }
-  function chatTicks() { Object.keys(kit.els).forEach(id => { const m = kit.msgs[id]; if (m && m.mine) { const t = kit.els[id].querySelector(".cht"); if (t) t.textContent = kit.meta(m) } }) }
+  function chatTicks() { Object.keys(kit.els).forEach(id => { const m = kit.msgs[id]; if (m && m.mine) { const t = kit.els[id].querySelector(".cht"); if (t) { const was = t.textContent, now = kit.meta(m); t.textContent = now; if (was !== now && /✓✓/.test(now) && !/✓✓/.test(was)) { t.classList.add("tkp"); setTimeout(() => t.classList.remove("tkp"), 700) } } } }) }
   async function chatPoll(first) {
     if (!chat.p) return;
     if (!g("o15").classList.contains("s") && !backChat) { clearInterval(chat.timer); chat.timer = 0; chat.p = null; return }
@@ -376,13 +385,14 @@
       if (chat.p !== who) return;
       chat.blocked = !!r.blocked; chat.since = r.now || 0; chatLabels();
       const l = g("chL"), stick = first || l.scrollHeight - l.scrollTop - l.clientHeight < 80;
-      r.messages.forEach(m => { chat.last = Math.max(chat.last, m.id); chatAdd(m) });
+      r.messages.forEach(m => { chat.last = Math.max(chat.last, m.id); chatAdd(m, !first) });
+      if (chat.dn) { if (stick) chat.dn.reset(); else { const k = r.messages.filter(m => !m.mine).length; if (k) chat.dn.bump(k); else chat.dn.upd() } }
       (r.changed || []).forEach(chatChanged);
       kit.readTo = r.readTo || 0; chatTicks();
       if (r.react) kit.setReact(r.react);
       if (!l.querySelector(".chm") && !l.querySelector(".chem")) { const e = h("div", "chem", T("Напиши первым или отправь стикер 😊", "Write first or send a sticker 😊", "Напиши першим або надішли стікер 😊")); l.appendChild(e) }
       else if (r.messages.length && l.querySelector(".chem")) l.querySelector(".chem").remove();
-      let ty = l.querySelector(".chty"); if (r.typing && !ty) { ty = h("div", "chty", T("печатает…", "typing…", "друкує…")); l.appendChild(ty) } else if (!r.typing && ty) ty.remove(); else if (ty) l.appendChild(ty);
+      let ty = l.querySelector(".chty"); if (r.typing && !ty) { ty = h("div", "chty", T("печатает", "typing", "друкує")); if (EchoKit.dots) ty.appendChild(EchoKit.dots()); l.appendChild(ty) } else if (!r.typing && ty) ty.remove(); else if (ty) l.appendChild(ty);
       if (stick) l.scrollTop = l.scrollHeight;
       g("chIn").disabled = g("chSn").disabled = g("chRx").disabled = g("chPh").disabled = g("chMc").disabled = chat.blocked;
       g("chSt").textContent = chat.blocked ? T("Ты заблокировал этого игрока.", "You blocked this player.", "Ти заблокував цього гравця.") : "";

@@ -29,15 +29,55 @@
     } finally { URL.revokeObjectURL(url) }
   }
 
-  function viewer(src) {
-    const v = h("div", "ekview"); v.onclick = () => v.remove();
-    const i = h("img"); i.src = src; v.appendChild(i); document.body.appendChild(v);
+  // фото на весь экран: вырастает из миниатюры; потяни вниз или нажми, чтобы вернуть на место
+  function viewer(src, from) {
+    const v = h("div", "ekview"), i = h("img"); i.src = src; v.appendChild(i); v.style.background = "rgba(0,0,0,0)"; document.body.appendChild(v);
+    let gone = false, moved = false, y0 = 0, dy = 0, on = false;
+    const still = matchMedia && matchMedia("(prefers-reduced-motion:reduce)").matches;
+    const back = () => { const r = from && from.isConnected ? from.getBoundingClientRect() : null, q = i.getBoundingClientRect(); if (!r || !q.width) return ""; return "translate(" + (r.left + r.width / 2 - q.left - q.width / 2 + 0) + "px," + (r.top + r.height / 2 - q.top - q.height / 2) + "px) scale(" + (r.width / q.width) + "," + (r.height / q.height) + ")" };
+    const open = () => { if (gone) return; const t = still ? "" : back(); if (t) { i.style.transition = "none"; i.style.transform = t; i.getBoundingClientRect(); requestAnimationFrame(() => { i.style.transition = "transform .32s cubic-bezier(.2,.8,.2,1)"; i.style.transform = "" }) } v.style.transition = "background .3s"; v.style.background = "rgba(0,0,0,.92)" };
+    const close = () => { if (gone) return; gone = true; i.style.transition = "transform .26s cubic-bezier(.3,.7,.3,1),opacity .26s"; const t = still ? "" : back(); i.style.transform = t || "scale(.9)"; if (!t) i.style.opacity = "0"; v.style.transition = "background .26s"; v.style.background = "rgba(0,0,0,0)"; setTimeout(() => v.remove(), 280) };
+    v.onclick = () => { if (!moved) close() };
+    v.addEventListener("touchstart", e => { if (e.touches.length !== 1) return; y0 = e.touches[0].clientY; dy = 0; moved = false; on = true }, { passive: true });
+    v.addEventListener("touchmove", e => { if (!on) return; dy = e.touches[0].clientY - y0; if (Math.abs(dy) > 8) moved = true; if (!moved) return; i.style.transition = "none"; i.style.transform = "translateY(" + dy + "px) scale(" + Math.max(.6, 1 - Math.abs(dy) / 1200) + ")"; v.style.transition = "none"; v.style.background = "rgba(0,0,0," + Math.max(0, .92 - Math.abs(dy) / 500) + ")" }, { passive: true });
+    v.addEventListener("touchend", () => { if (!on) return; on = false; if (Math.abs(dy) > 90) { close(); return } i.style.transition = "transform .25s cubic-bezier(.2,.8,.2,1)"; i.style.transform = ""; v.style.transition = "background .25s"; v.style.background = "rgba(0,0,0,.92)"; setTimeout(() => { moved = false }, 50) }, { passive: true });
+    if (i.decode) i.decode().then(open, open); else i.onload = open; setTimeout(open, 400);
+  }
+  // плавная перестановка строк списка (ключ строки — data-k)
+  function flipStart(box) { const m = {}; if (box) [...box.children].forEach(e => { if (e.dataset && e.dataset.k) m[e.dataset.k] = e.getBoundingClientRect().top }); return m }
+  function flipEnd(box, m) {
+    if (!box || !m) return; [...box.children].forEach(e => {
+      const k = e.dataset && e.dataset.k; if (k === undefined || m[k] === undefined) return; const d = m[k] - e.getBoundingClientRect().top; if (Math.abs(d) < 2) return;
+      e.style.animation = "none"; e.style.transition = "none"; e.style.transform = "translateY(" + d + "px)";
+      requestAnimationFrame(() => requestAnimationFrame(() => { e.style.transition = "transform .38s cubic-bezier(.2,.8,.2,1)"; e.style.transform = "" })); setTimeout(() => { e.style.transition = ""; e.style.animation = "" }, 440);
+    });
+  }
+  // три прыгающие точки для «печатает»
+  const dots = () => { const s = h("span", "tdots"); for (let k = 0; k < 3; k++) s.appendChild(h("i")); return s };
+  // свайп влево по элементу списка: он едет за пальцем, за краем появляется значок; отпустил далеко — действие
+  function swipeLeft(box, sel, moving, fire, icon) {
+    if (!box || box.__sl) return; box.__sl = 1;
+    let it = null, sx = 0, sy = 0, mode = 0, d = 0, els = [], hint = null;
+    const reset = anim => { els.forEach(e => { e.style.transition = anim ? "transform .26s cubic-bezier(.2,.8,.2,1)" : ""; e.style.transform = "" }); if (hint) { const hh = hint; hh.style.opacity = "0"; setTimeout(() => hh.remove(), 260) } hint = null; els = [] };
+    box.addEventListener("touchstart", e => {
+      it = null; mode = 0; d = 0; if (e.touches.length !== 1) return; const t = e.target; if (t.closest && t.closest("input,textarea,.ekview,.mvo,.rxc,.mq,.eksh")) return;
+      it = t.closest ? t.closest(sel) : null; if (!it) return; sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+    }, { passive: true });
+    box.addEventListener("touchmove", e => {
+      if (!it) return; const x = e.touches[0].clientX - sx, y = e.touches[0].clientY - sy;
+      if (!mode) { if (Math.abs(x) < 10 && Math.abs(y) < 10) return; if (x < 0 && Math.abs(x) > Math.abs(y) * 1.5) { mode = 1; els = (moving(it) || []).filter(Boolean); hint = h("span", "ekhint", icon || "↩"); it.style.position = it.style.position || "relative"; it.appendChild(hint) } else { mode = 2; it = null; return } }
+      if (mode !== 1) return; e.preventDefault(); d = Math.min(86, -x * .55);
+      els.forEach(el => { el.style.transition = "none"; el.style.transform = "translateX(" + (-d) + "px)" });
+      if (hint) { hint.style.opacity = String(Math.max(0, Math.min(1, (d - 12) / 40))); hint.style.transform = "translateY(-50%) scale(" + (d >= 60 ? 1.2 : .8 + d / 300) + ")"; hint.classList.toggle("go", d >= 60) }
+    }, { passive: false });
+    const end = () => { if (!it || mode !== 1) { it = null; return } const go = d >= 60, item = it; it = null; mode = 0; reset(true); if (go) { try { navigator.vibrate && navigator.vibrate(10) } catch (x) { } try { fire(item) } catch (x) { } } };
+    box.addEventListener("touchend", end, { passive: true }); box.addEventListener("touchcancel", () => { if (it && mode === 1) { it = null; reset(true) } }, { passive: true });
   }
 
   // kit — свой на каждый чат: помнит сообщения, реакции и картинки
   function create(cfg) {
-    const K = { msgs: {}, els: {}, rxbox: {}, react: {}, imgs: {}, readTo: 0 };
-    K.reset = () => { K.msgs = {}; K.els = {}; K.rxbox = {}; K.react = {}; K.readTo = 0 };
+    const K = { msgs: {}, els: {}, rxbox: {}, react: {}, imgs: {}, readTo: 0, rxp: {}, rxInit: false };
+    K.reset = () => { K.msgs = {}; K.els = {}; K.rxbox = {}; K.react = {}; K.readTo = 0; K.rxp = {}; K.rxInit = false };
     K.me = () => (cfg.me ? cfg.me() : "") || "";
     K.quote = (m, jump) => {
       if (!m.rp) return null;
@@ -50,8 +90,10 @@
     const mmss = s => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
     let cur = null;
     K.voice = m => {
-      const box = h("div", "mvo"), bt = h("button", "mvb", "▶"), bar = h("div", "mvbar"), fill = h("i"), tm = h("span", "mvt", mmss(m.au));
-      bt.type = "button"; bar.appendChild(fill); box.appendChild(bt); box.appendChild(bar); box.appendChild(tm);
+      const box = h("div", "mvo"), bt = h("button", "mvb", "▶"), bar = h("div", "mvbar"), tm = h("span", "mvt", mmss(m.au));
+      const bars = []; { let z = (m.id | 0) * 2654435761 >>> 0 || 7; for (let k = 0; k < 30; k++) { z = (z * 1103515245 + 12345) >>> 0; const q = h("s"); q.style.height = (22 + (z >> 8) % 78) + "%"; bars.push(q); bar.appendChild(q) } }
+      const fill = { style: {} }; Object.defineProperty(fill.style, "width", { set: v => { const f = parseFloat(v) / 100 || 0; bars.forEach((q, k) => q.classList.toggle("pl", k / bars.length < f)) } });
+      bt.type = "button"; box.appendChild(bt); box.appendChild(bar); box.appendChild(tm);
       let a = null;
       const stopUI = () => { bt.textContent = "▶"; box.classList.remove("on") };
       const play = async () => {
@@ -76,7 +118,7 @@
       if (!m.im) return null;
       if (m.au > 0) return K.voice(m);
       const box = h("div", "mimg"), ph = h("div", "mimgp", "📷"); box.appendChild(ph);
-      const show = src => { if (!src) { ph.textContent = T("Картинка устарела", "Image expired", "Картинка застаріла"); return } const i = h("img"); i.src = src; i.alt = ""; i.onclick = e => { e.stopPropagation(); viewer(src) }; box.textContent = ""; i.draggable = false; i.onload = () => { if (cfg.onsize) cfg.onsize() }; box.appendChild(i) };
+      const show = src => { if (!src) { ph.textContent = T("Картинка устарела", "Image expired", "Картинка застаріла"); return } const i = h("img"); i.src = src; i.alt = ""; i.onclick = e => { e.stopPropagation(); viewer(src, i) }; box.textContent = ""; i.draggable = false; i.onload = () => { if (cfg.onsize) cfg.onsize() }; box.appendChild(i) };
       if (K.imgs[m.id]) show(K.imgs[m.id]);
       else Promise.resolve(cfg.img(m.id)).then(s => { K.imgs[m.id] = s || ""; show(s) }).catch(() => { ph.textContent = "⚠" });
       return box;
@@ -97,19 +139,37 @@
     K.meta = m => (m.ed && !m.dl ? T("изм. ", "edited ", "зм. ") : "") + clock(m.t) + (cfg.ticks && m.mine && !m.dl ? (K.readTo >= m.id ? " ✓✓" : " ✓") : "");
     K.reg = (id, row, rxbox) => { K.els[id] = row; if (rxbox) K.rxbox[id] = rxbox; K.drawReact(id) };
     K.setReact = list => {
-      const next = {};
+      const next = {}; const first = !K.rxInit;
       (list || []).forEach(([mid, emo, who]) => { const r = next[mid] || (next[mid] = {}); (r[emo] || (r[emo] = [])).push(who) });
       const ids = new Set([...Object.keys(K.react), ...Object.keys(next)]); K.react = next;
-      ids.forEach(K.drawReact);
+      if (first) { ids.forEach(K.drawReact); K.rxInit = true } else ids.forEach(K.drawReact);
     };
     K.drawReact = id => {
       const box = K.rxbox[id]; if (!box) return; box.textContent = "";
       const r = K.react[id] || {}, me = K.me();
       Object.keys(r).forEach(emo => {
         const who = r[emo]; if (!who.length) return;
-        const c = h("button", "rxc" + (who.indexOf(me) >= 0 ? " me" : ""), emo + " " + who.length); c.type = "button"; c.title = who.join(", ");
+        const key = id + emo, was = K.rxp[key]; K.rxp[key] = who.length;
+        const c = h("button", "rxc" + (who.indexOf(me) >= 0 ? " me" : "") + (K.rxInit && was === undefined ? " rxnew" : ""), emo + " "); c.type = "button"; c.title = who.join(", ");
+        const n = h("b", "rxcn" + (K.rxInit && was !== undefined && was !== who.length ? " rxup" : ""), String(who.length)); c.appendChild(n);
         c.onclick = e => { e.stopPropagation(); if (cfg.react) cfg.react(id, emo) }; box.appendChild(c);
       });
+      Object.keys(K.rxp).forEach(k => { if (k.indexOf(id) === 0 && !(k.slice(String(id).length) in r)) delete K.rxp[k] });
+    };
+    // сообщение удаляют: пузырь сжимается и растворяется, потом остаётся плашка «удалено»
+    K.vanish = (el, done) => {
+      if (!el || (matchMedia && matchMedia("(prefers-reduced-motion:reduce)").matches)) { done(); return }
+      el.style.transition = "transform .22s ease-in,opacity .22s ease-in"; el.style.transform = "scale(.6)"; el.style.opacity = "0";
+      setTimeout(done, 230);
+    };
+    // круглая кнопка «вниз»: появляется, когда пролистал вверх; на ней счётчик новых
+    K.downBtn = (list, host) => {
+      const b = h("button", "ekdn"), cnt = h("span", "ekdc"); b.type = "button"; b.setAttribute("aria-label", "down"); b.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'; cnt.hidden = true; b.appendChild(cnt); host.appendChild(b);
+      let n = 0; const near = () => list.scrollHeight - list.scrollTop - list.clientHeight < 120;
+      const upd = () => { b.style.top = Math.max(0, list.offsetTop + list.offsetHeight - 58) + "px"; const far = !near(); b.classList.toggle("on", far); if (!far) { n = 0; cnt.hidden = true } };
+      list.addEventListener("scroll", upd, { passive: true });
+      b.onclick = () => { try { list.scrollTo({ top: list.scrollHeight, behavior: "smooth" }) } catch (e) { list.scrollTop = list.scrollHeight } };
+      return { upd, reset: () => { n = 0; cnt.hidden = true; b.classList.remove("on") }, bump: k => { n += k; cnt.textContent = n > 99 ? "99+" : String(n); cnt.hidden = false; cnt.classList.remove("pop"); void cnt.offsetWidth; cnt.classList.add("pop"); upd() } };
     };
     // долгое нажатие (или правая кнопка) в любом месте сообщения, в том числе на фото, открывает меню; короткое — тоже
     let lpAt = 0;
@@ -221,5 +281,5 @@
     };
     ov.addEventListener("touchend", end, { passive: true }); ov.addEventListener("touchcancel", () => { if (on && mode === 1) { on = false; reset(true) } }, { passive: true });
   }
-  window.EchoKit = { create, compress, swipeBack, EMO, clock };
+  window.EchoKit = { create, compress, swipeBack, swipeLeft, flipStart, flipEnd, dots, EMO, clock };
 })();

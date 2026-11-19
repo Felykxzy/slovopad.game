@@ -33,6 +33,7 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
   for (const bad of ['data:audio/webm;d=0;base64,AAAA', 'data:audio/webm;d=99;base64,AAAA', 'data:audio/webm;base64,AAAA', 'data:audio/x-evil;d=5;base64,AAAA', 'data:text/html;d=5;base64,AAAA'])
     ok((await api('/api/chat/send', { to: A.code, img: bad }, B.token)).error, 'сервер отклонил плохое: ' + bad.slice(0, 30));
   await api('/api/chat/send', { to: A.code, text: 'ответ тебе', reply: first.id }, B.token);
+  for (let k = 1; k <= 8; k++) await api('/api/chat/send', { to: A.code, text: 'сообщение для длины чата ' + k }, B.token);
   await api('/api/chat/typing', { to: A.code }, B.token);
   await api('/api/chat?with=' + A.code, null, B.token);   // Боб прочитал
   const rid = (await api('/api/echo/room', { name: 'Словари' }, A.token)).id;
@@ -78,6 +79,12 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
   ok(await p.evaluate(() => !!document.querySelector('#chL .mq')), 'у ответа есть цитата');
   ok(await p.evaluate(() => !!document.querySelector('#chL .mimg img')), 'картинка загрузилась');
   ok(await p.evaluate(() => { const v = document.querySelector('#chL .mvo .mvt'); return !!v && v.textContent === '0:07' }), 'голосовое показано с длиной 0:07');
+  ok(await p.evaluate(() => document.querySelectorAll('#chL .mvo .mvbar s').length === 30), 'у голосового нарисована волна из 30 столбиков');
+  { await p.click('#chL .mimg img'); await p.waitForTimeout(600);
+    ok(await p.evaluate(() => { const i = document.querySelector('.ekview img'); return !!i && (i.style.transform === '' || i.style.transform === 'none') }), 'фото раскрылось на весь экран');
+    await p.screenshot({ path: shots + '/photo-open.png' });
+    await p.click('.ekview'); await p.waitForTimeout(500);
+    ok(await p.evaluate(() => !document.querySelector('.ekview')), 'фото закрывается плавно и пропадает'); }
   { const bb = await p.locator('#chL .mimg img').first().boundingBox(); const cx = bb.x + bb.width / 2, cy = bb.y + bb.height / 2;
     await p.mouse.move(cx, cy); await p.mouse.down(); await p.waitForTimeout(650); await p.mouse.up(); await p.waitForTimeout(250);
     ok(await p.evaluate(() => !!document.querySelector('#o15 .eksh .esre')), 'долгое нажатие по фото открывает меню');
@@ -89,11 +96,22 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
   ok(await p.evaluate(() => !!document.querySelector('#chL .rxc')), 'реакция видна');
   await api('/api/chat/typing', { to: A.code }, B.token); await p.waitForTimeout(4500);
   ok(await p.evaluate(() => !!document.querySelector('#chL .chty')), '«печатает…» видно');
+  ok(await p.evaluate(() => document.querySelectorAll('#chL .chty .tdots i').length === 3), 'у «печатает» три прыгающие точки');
+  { const sc = await p.evaluate(() => { const l = document.getElementById('chL'); return l.scrollHeight > l.clientHeight + 150 });
+    if (sc) {
+      await p.evaluate(() => { const l = document.getElementById('chL'); l.scrollTop = 0; l.dispatchEvent(new Event('scroll')) }); await p.waitForTimeout(400);
+      ok(await p.evaluate(() => !!document.querySelector('#o15 .ekdn.on')), 'кнопка «вниз» появилась, когда пролистал вверх');
+      await api('/api/chat/send', { to: A.code, text: 'новое пока ты наверху' }, B.token); await p.waitForTimeout(4600);
+      ok(await p.evaluate(() => { const c = document.querySelector('#o15 .ekdc'); return !!c && !c.hidden && c.textContent === '1' }), 'на кнопке «вниз» счётчик новых = 1');
+      await p.screenshot({ path: shots + '/down-btn.png' });
+      await p.click('#o15 .ekdn'); await p.waitForTimeout(900);
+      ok(await p.evaluate(() => { const l = document.getElementById('chL'); return l.scrollHeight - l.scrollTop - l.clientHeight < 130 && !document.querySelector('#o15 .ekdn.on') }), 'по кнопке чат прокрутился вниз, кнопка спряталась');
+    } else console.log('  (чат короткий, кнопку «вниз» не проверяем)') }
   ok(await p.evaluate(() => /✓✓/.test(document.getElementById('chL').innerText)), 'отметка «прочитано» видна');
   await p.screenshot({ path: shots + '/dm1.png' });
-  { const bb = await p.locator('#chL .chm.me .chb').first().boundingBox();
+  { await p.locator('#chL .chm.me .chb').first().scrollIntoViewIfNeeded(); await p.waitForTimeout(200); const bb = await p.locator('#chL .chm.me .chb').first().boundingBox();
     await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await p.mouse.down(); await p.waitForTimeout(650); await p.mouse.up(); await p.waitForTimeout(500);
-    const inside = await p.evaluate(() => { const W = innerWidth; return [...document.querySelectorAll('#o15 .eksh .esre, #o15 .eksh .eskc')].every(x => { const r = x.getBoundingClientRect(); return r.left >= 0 && r.right <= W }) });
+    const inside = await p.evaluate(() => { const W = innerWidth; const els = [...document.querySelectorAll('#o15 .eksh .esre, #o15 .eksh .eskc')]; return els.length >= 2 && els.every(x => { const r = x.getBoundingClientRect(); return r.left >= 0 && r.right <= W }) });
     if (!inside) console.log(await p.evaluate(() => JSON.stringify([...document.querySelectorAll('#o15 .eksh .esre, #o15 .eksh .eskc')].map(x => [x.className, x.getBoundingClientRect().left, x.getBoundingClientRect().right, x.style.cssText, innerWidth, document.querySelector('#o15 .eksh').clientWidth]))));
     ok(inside, 'меню своего сообщения целиком на экране'); await p.screenshot({ path: shots + '/menu-mine.png' });
     await p.evaluate(() => document.querySelector('#o15 .eksh').click()); await p.waitForTimeout(300); }
@@ -129,6 +147,11 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
     await swipe(120, 400, 170, 405); ok(await open(), 'короткий свайп чат не закрывает');
     await swipe(200, 300, 230, 600); ok(await open(), 'свайп вниз (прокрутка) чат не закрывает');
     await swipe(300, 400, 100, 400); ok(await open(), 'свайп влево чат не закрывает');
+    { await p.evaluate(() => { const x = document.querySelector('#chQp .ecx'); if (x) x.click(); document.getElementById('o15').querySelector('#chL').scrollTop = 1e6 }); await p.waitForTimeout(300);
+      const bb = await p.locator('#chL .chm:not(.me):not(.rx):not(.dl) .chb').last().boundingBox(); const y = bb.y + bb.height / 2, x0 = Math.min(380, bb.x + bb.width - 8);
+      await swipe(x0, y, x0 - 130, y + 3, 8, 'swipe-reply.png');
+      ok(await p.evaluate(() => !document.getElementById('chQp').hidden && /↩.*пока ты наверху/.test(document.getElementById('chQp').textContent)), 'свайп влево по сообщению включает ответ именно на него');
+      await p.click('#chQp .ecx'); await p.waitForTimeout(200); }
     await swipe(60, 400, 330, 410, 10, 'dm-swipe.png');
     ok(!(await open()), 'длинный свайп вправо закрывает чат');
     ok(await p.evaluate(() => { const o = document.getElementById('o15'); return !o.style.translate && !o.style.opacity }), 'после свайпа экран чата не остался сдвинутым');

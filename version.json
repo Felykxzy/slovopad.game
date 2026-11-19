@@ -1,12 +1,12 @@
 {
-  "version": "4.7.1",
+  "version": "4.8.0",
   "notes": [
-    "Исправлено: меню своего сообщения в личном чате уезжало за край экрана"
+    "Анимации как в Телеграме: реакции, отправка и удаление сообщений, кнопка «вниз», волны в голосовых, фото из миниатюры, свайп влево = ответ"
   ],
   "notes_en": [
-    "Fixed: the menu of your own message in a private chat went off the screen edge"
+    "Telegram-style animations: reactions, sending and deleting messages, scroll-down button, voice waveforms, photos from thumbnails, swipe left to reply"
   ],
   "notes_uk": [
-    "Виправлено: меню власного повідомлення в приватному чаті виїжджало за край екрана"
+    "Анімації як у Телеграмі: реакції, надсилання й видалення повідомлень, кнопка «вниз», хвилі в голосових, фото з мініатюри, свайп вліво = відповідь"
   ]
 }
