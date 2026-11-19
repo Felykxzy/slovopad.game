@@ -64,6 +64,11 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
   ok(await p.evaluate(() => document.getElementById('o14').classList.contains('s') && /Bobby/.test(document.getElementById('fpH').innerText)), 'нажатие на аватарку в шапке чата открывает профиль Bobby');
   ok(await p.evaluate(() => !!document.querySelector('#fpH .fav.hasph')), 'в профиле видно фото');
   await p.screenshot({ path: shots + '/chat-profile.png' });
+  await p.click('#fpH .fav'); await p.waitForTimeout(700);
+  ok(await p.evaluate(() => document.getElementById('fpH').classList.contains('big') && document.querySelector('#fpH .fav').getBoundingClientRect().width > 300), 'нажатие на аватарку раскрывает фото на всю ширину');
+  await p.screenshot({ path: shots + '/profile-big.png' });
+  await p.click('#fpH .fav'); await p.waitForTimeout(600);
+  ok(await p.evaluate(() => !document.getElementById('fpH').classList.contains('big')), 'повторное нажатие сворачивает фото');
   await p.click('#fpBk'); await p.waitForTimeout(500);
   ok(await p.evaluate(() => document.getElementById('o15').classList.contains('s')), 'из профиля «назад» возвращает в чат');
   await p.click('#chT'); await p.waitForTimeout(1000);

@@ -61,6 +61,11 @@
     chatWire();
     g("frBk").onclick = () => { pick = null; if (openFrom) { const f = openFrom; openFrom = null; f(); return } ov("o1"); };
     if (EchoKit.swipeBack) { EchoKit.swipeBack(g("o15"), () => g("chBk").click()); EchoKit.swipeBack(g("o13"), () => g("frBk").click()); EchoKit.swipeBack(g("o14"), () => g("fpBk").click()) }
+    /* профиль: потяни вниз или нажми на аватарку, и фото раскроется на всю ширину */
+    { const o = g("o14"), big = on => { g("fpH").classList.toggle("big", on); if (on) o.scrollTop = 0 }; let y0 = null;
+      o.addEventListener("touchstart", e => { y0 = o.scrollTop <= 0 && e.touches.length === 1 ? e.touches[0].clientY : null }, { passive: true });
+      o.addEventListener("touchmove", e => { if (y0 === null) return; const dy = e.touches[0].clientY - y0; if (dy > 60) { big(true); y0 = null } else if (dy < -40 && g("fpH").classList.contains("big")) { big(false); y0 = null } }, { passive: true });
+      o.addEventListener("click", e => { if (e.target.closest("#fpH .fav")) big(!g("fpH").classList.contains("big")) }); }
     g("fpBk").onclick = () => { if (backChat) { backChat = false; ov("o15"); return } render(); ov("o13"); };
     g("chFrt").onclick = g("chAv").onclick = async () => {
       if (!chat.p) return; const code = chat.p.spCode;
@@ -212,7 +217,7 @@
     if (!data) return;
     const p = data.friends.find(f => f.spCode === spCode); if (!p) { if (quiet) { render(); ov("o13") } return }
     cur = p;
-    const head = g("fpH"); head.textContent = "";
+    const head = g("fpH"); head.textContent = ""; head.classList.remove("big");
     head.append(avatar(p, 112), h("div", "fpn", p.username), h("div", "fps" + (p.online ? " on" : ""), status(p) || " "), h("div", "fpc", p.spCode));
     const box = g("fpB"); box.textContent = "";
     const stats = h("div", "fpst");

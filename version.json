@@ -1,12 +1,12 @@
 {
-  "version": "4.4.5",
+  "version": "4.5.0",
   "notes": [
-    "В личном чате можно открыть профиль игрока: нажми на его аватарку или имя вверху"
+    "Профиль игрока: потяни вниз или нажми на аватарку, и фото раскроется на всю ширину"
   ],
   "notes_en": [
-    "In a private chat you can open the player's profile: tap their avatar or name at the top"
+    "Player profile: pull down or tap the avatar to expand the photo to full width"
   ],
   "notes_uk": [
-    "У приватному чаті можна відкрити профіль гравця: натисни на його аватарку або ім’я вгорі"
+    "Профіль гравця: потягни вниз або натисни на аватарку, і фото розгорнеться на всю ширину"
   ]
 }
