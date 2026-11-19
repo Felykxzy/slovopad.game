@@ -1,12 +1,12 @@
 {
-  "version": "4.4.3",
+  "version": "4.4.4",
   "notes": [
-    "Вернулись звёздочки на карточках тематик (они слипались в одну большую в углу карточки)"
+    "У всех игроков видна фото-аватарка: в списках ЭХО и друзей, в чатах, в комнатах и в профиле"
   ],
   "notes_en": [
-    "The stars on the theme cards are back (they were stacking into one big star in the corner)"
+    "Everyone's photo avatar is now visible: in the ECHO and friends lists, chats, rooms and profiles"
   ],
   "notes_uk": [
-    "Повернулися зірочки на картках тематик (вони злипалися в одну велику в кутку картки)"
+    "У всіх гравців видно фото-аватарку: у списках ЕХО та друзів, у чатах, у кімнатах і в профілі"
   ]
 }
