@@ -76,6 +76,23 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
   await p.evaluate(() => [...document.querySelectorAll('#o15 .eksh .esa')].find(x => /Удалить/.test(x.textContent)).click()); await p.waitForTimeout(1200);
   ok(await p.evaluate(() => /Сообщение удалено/.test(document.getElementById('chL').innerText)), 'удаление работает');
   await p.click('#chRx'); await p.waitForTimeout(200); await p.screenshot({ path: shots + '/dm3.png' });
+  if (process.env.W) {
+    const cdp = await p.context().newCDPSession(p);
+    const swipe = async (x0, y0, x1, y1, steps = 8, shot) => {
+      const pt = (x, y) => [{ x, y, id: 1 }];
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: pt(x0, y0) });
+      for (let i = 1; i <= steps; i++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: pt(x0 + (x1 - x0) * i / steps, y0 + (y1 - y0) * i / steps) }); await p.waitForTimeout(12) }
+      if (shot) await p.screenshot({ path: shots + '/' + shot });
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await p.waitForTimeout(450);
+    };
+    const open = () => p.evaluate(() => document.getElementById('o15').classList.contains('s'));
+    await swipe(120, 400, 170, 405); ok(await open(), 'короткий свайп чат не закрывает');
+    await swipe(200, 300, 230, 600); ok(await open(), 'свайп вниз (прокрутка) чат не закрывает');
+    await swipe(300, 400, 100, 400); ok(await open(), 'свайп влево чат не закрывает');
+    await swipe(60, 400, 330, 410, 10, 'dm-swipe.png');
+    ok(!(await open()), 'длинный свайп вправо закрывает чат');
+    ok(await p.evaluate(() => { const o = document.getElementById('o15'); return !o.style.translate && !o.style.opacity }), 'после свайпа экран чата не остался сдвинутым');
+  }
   console.log('Комната');
   await p.evaluate(() => document.getElementById('chBk').click()); await p.waitForTimeout(300);
   await api('/api/echo/room/typing', { room: rid }, B.token);

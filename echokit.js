@@ -116,5 +116,32 @@
     };
     return K;
   }
-  window.EchoKit = { create, compress, EMO, clock };
+  // свайп вправо по чату = кнопка «назад»: экран едет за пальцем, отпустил далеко или быстро — выходим
+  function swipeBack(ov, back) {
+    if (!ov || ov.__sw) return; ov.__sw = 1;
+    let sx = 0, sy = 0, st = 0, mode = 0, dx = 0, on = false;
+    const reset = anim => { ov.style.transition = anim ? "translate .22s cubic-bezier(.2,.8,.3,1),opacity .22s" : ""; ov.style.translate = ""; ov.style.opacity = ""; if (anim) setTimeout(() => { ov.style.transition = "" }, 260) };
+    ov.addEventListener("touchstart", e => {
+      on = false; mode = 0; dx = 0; if (e.touches.length !== 1) return;
+      const t = e.target; if (t.closest && t.closest("input,textarea,button,.chbar,.eksh,.chrp,.ekview,.rxc,.mq")) return;
+      if (document.querySelector(".ekview")) return;
+      sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now(); on = true;
+    }, { passive: true });
+    ov.addEventListener("touchmove", e => {
+      if (!on) return; const x = e.touches[0].clientX - sx, y = e.touches[0].clientY - sy;
+      if (!mode) { if (Math.abs(x) < 10 && Math.abs(y) < 10) return; mode = (x > 0 && Math.abs(x) > Math.abs(y) * 1.6) ? 1 : 2 }
+      if (mode !== 1) return; e.preventDefault(); dx = Math.max(0, x);
+      ov.style.transition = "none"; ov.style.translate = dx + "px 0"; ov.style.opacity = String(Math.max(.35, 1 - dx / 420));
+    }, { passive: false });
+    const end = () => {
+      if (!on || mode !== 1) { on = false; return } on = false;
+      const fast = dx / Math.max(1, Date.now() - st) > 0.55;
+      if (dx > 110 || (fast && dx > 40)) {
+        ov.style.transition = "translate .18s ease-out,opacity .18s"; ov.style.translate = "100vw 0"; ov.style.opacity = "0";
+        setTimeout(() => { reset(false); try { back() } catch (x) { } }, 170);
+      } else reset(true);
+    };
+    ov.addEventListener("touchend", end, { passive: true }); ov.addEventListener("touchcancel", () => { if (on && mode === 1) { on = false; reset(true) } }, { passive: true });
+  }
+  window.EchoKit = { create, compress, swipeBack, EMO, clock };
 })();

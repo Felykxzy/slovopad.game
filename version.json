@@ -1,12 +1,12 @@
 {
-  "version": "4.2.3",
+  "version": "4.3.0",
   "notes": [
-    "Исправлена ошибка в комнатах ЭХО после обновления («kit.hold is not a function»)"
+    "ЭХО: свайп вправо в чате или комнате возвращает назад, как кнопка «назад»"
   ],
   "notes_en": [
-    "Fixed an error in ECHO rooms after the update (\"kit.hold is not a function\")"
+    "ECHO: swipe right in a chat or room to go back, like the back button"
   ],
   "notes_uk": [
-    "Виправлено помилку в кімнатах ЕХО після оновлення («kit.hold is not a function»)"
+    "ЕХО: свайп вправо в чаті або кімнаті повертає назад, як кнопка «назад»"
   ]
 }
