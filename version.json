@@ -1,12 +1,12 @@
 {
-  "version": "4.4.1",
+  "version": "4.4.2",
   "notes": [
-    "ЭХО: свайп вправо с главного экрана ЭХО и со списка друзей ведёт в главное меню игры"
+    "Подарки от создателя теперь могут включать бусты: они сразу попадают в твой запас"
   ],
   "notes_en": [
-    "ECHO: swipe right from the ECHO home screen and the friends list goes back to the game menu"
+    "Gifts from the creator can now include boosts: they go straight into your stock"
   ],
   "notes_uk": [
-    "ЕХО: свайп вправо з головного екрана ЕХО та зі списку друзів веде в головне меню гри"
+    "Подарунки від творця тепер можуть містити бусти: вони одразу потрапляють у твій запас"
   ]
 }

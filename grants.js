@@ -52,21 +52,24 @@
     const list = (r && r.grants) || [];
     if (!list.length) return;
     const done = new Set(ls.get("grDone", []));
-    let coins = 0, items = new Set(), notes = new Set();
+    let coins = 0, items = new Set(), notes = new Set(), bst = {};
     list.forEach(x => {
       if (done.has(x.id)) return;
       if (x.kind === "coins") coins += Number(x.val) || 0;
       else if (x.kind === "item") { if (x.val === "all") shopIds().forEach(i => items.add(i)); else if (shopIds().includes(x.val)) items.add(x.val) }
+      else if (x.kind === "boost") { const m = /^([fsbh]):([1-9]\d?)$/.exec(String(x.val)); if (m) bst[m[1]] = (bst[m[1]] || 0) + Number(m[2]) }
       if (x.note) notes.add(x.note);
     });
     try {
       if (coins) coS(Math.max(0, coG() + coins));
       if (items.size) addItems([...items]);
+      if (Object.keys(bst).length) { const b = bsG(); Object.keys(bst).forEach(k => { b[k] = Math.min(99, (Number(b[k]) || 0) + bst[k]) }); bsS(b) }
     } catch (e) { return }
     ls.set("grDone", [...done, ...list.map(x => x.id)].slice(-100));
     try { await cloudRequest("/api/grants/claim", { method: "POST", body: JSON.stringify({ ids: list.map(x => x.id) }) }) } catch (e) { }
     const bits = [];
     if (coins) bits.push((coins > 0 ? "+" : "") + coins + " ✨");
+    Object.keys(bst).forEach(k => { try { bits.push("+" + bst[k] + " " + BST.find(x => x[0] === k)[1]) } catch (e) { } });
     if (items.size) bits.push(items.size > 3 ? T("новые фоны и щиты", "new backgrounds and shields", "нові фони й щити") : [...items].map(i => { try { return shopIds().includes(i) ? SHOP.find(x => x[0] === i)[3][0] : i } catch (e) { return i } }).join(", "));
     if (bits.length) banner("🎁", T("Подарок от создателя", "A gift from the creator", "Подарунок від творця"), bits.join(" · ") + (notes.size ? "\n" + [...notes].join(" · ") : ""), 9000);
     try { const o = g("o1"); if (o && o.classList.contains("s") && typeof menu === "function") menu() } catch (e) { }

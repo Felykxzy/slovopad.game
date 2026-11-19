@@ -502,7 +502,7 @@ nav{position:fixed;left:0;right:0;bottom:0;z-index:10;display:flex;justify-conte
 <script>
 var API = "/api/ctl", KEY = "slovopadCtlKey";
 var $ = function (id) { return document.getElementById(id); };
-var token = "", tab = "ov", state = {}, catalog = [], pq = "", poff = 0, busy = false, poll = 0, repN = 0, cache = {};
+var token = "", tab = "ov", state = {}, catalog = [], boosts = [], pq = "", poff = 0, busy = false, poll = 0, repN = 0, cache = {};
 try { token = localStorage.getItem(KEY) || ""; } catch (e) {}
 
 function h(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined && text !== null) e.textContent = text; return e; }
@@ -621,6 +621,22 @@ async function itemsSelect(withAll) {
   catalog.forEach(function (c) { var o = h("option", "", c[1] + " · " + c[2] + " ✨"); o.value = c[0]; (c[0].charAt(0) === "b" ? g1 : g2).appendChild(o); });
   sel.appendChild(g1); sel.appendChild(g2); return sel;
 }
+/* выдача буста: вид + сколько штук (1–50) */
+async function boostRow(who, note) {
+  if (!boosts.length) { var c = await call("catalog"); boosts = c.boosts || []; catalog = c.items || catalog; }
+  var row = h("div", "row"), sel = h("select"), n = h("input");
+  boosts.forEach(function (b) { var o = h("option", "", b[1]); o.value = b[0]; sel.appendChild(o); });
+  n.type = "number"; n.inputMode = "numeric"; n.min = 1; n.max = 50; n.value = 3; row.style.flexWrap = "wrap"; sel.style.flex = "1 1 100%"; n.style.flex = "0 0 92px"; row.appendChild(sel); row.appendChild(n);
+  var gb = btn("ok", who === "all" ? "🎁 ВЫДАТЬ ВСЕМ" : "ВЫДАТЬ", async function () {
+    var k = parseInt(n.value, 10); if (!(k >= 1 && k <= 50)) { say("Число от 1 до 50.", "er"); return; }
+    var label = sel.options[sel.selectedIndex].text + " × " + k;
+    if (who === "all" && !(await ask("Выдать «" + label + "» всем игрокам?", { ok: "ВЫДАТЬ" }))) return;
+    var r = await act("grant", { target: who, kind: "boost", val: sel.value + ":" + k, note: note ? note.value : "" }, who === "all" ? "" : "Отправлено: " + label);
+    if (r && who === "all") say("Готово: " + label + " — " + r.count + " игрокам.", "ok");
+  });
+  gb.style.flex = "1"; row.appendChild(gb);
+  return row;
+}
 
 async function openPlayer(id) {
   if (!catalog.length) { try { catalog = (await call("catalog")).items; } catch (e) {} }
@@ -643,6 +659,7 @@ async function openPlayer(id) {
   var r2 = h("div", "row"), sel = await itemsSelect(true); r2.appendChild(sel);
   r2.appendChild(btn("ok", "ВЫДАТЬ", async function () { await act("grant", { target: d.id, kind: "item", val: sel.value }, "Подарок отправлен"); })); si.appendChild(r2);
   si.appendChild(h("div", "hint", "Подарок появится в игре, как только игрок её откроет. Если он не в сети — дождётся.")); pan.appendChild(si);
+  var sb = h("div", "sec"); sb.appendChild(h("label", "", "ВЫДАТЬ БУСТЫ")); sb.appendChild(await boostRow(d.id)); pan.appendChild(sb);
 
   var sm = h("div", "sec"); sm.appendChild(h("label", "", "УПРАВЛЕНИЕ"));
   var r3 = h("div", "row w");
@@ -670,6 +687,9 @@ async function vGive(box) {
   var cn2 = h("input"); cn2.placeholder = "Подпись (необязательно)"; cn2.maxLength = 60; c2.appendChild(cn2);
   c2.appendChild(btn("ok", "🎁 ВЫДАТЬ ВСЕМ", async function () { if (!(await ask("Выдать «" + sel.options[sel.selectedIndex].text + "» всем игрокам?", { ok: "ВЫДАТЬ" }))) return; var r = await act("grant", { target: "all", kind: "item", val: sel.value, note: cn2.value }, ""); if (r) say("Готово: получат " + r.count + " игроков", "ok"); }));
   box.appendChild(c2);
+  var c3 = h("div", "card"); c3.appendChild(h("h3", "", "БУСТЫ ВСЕМ ИГРОКАМ"));
+  var cn3 = h("input"); cn3.placeholder = "Подпись (необязательно)"; cn3.maxLength = 60;
+  c3.appendChild(await boostRow("all", cn3)); c3.appendChild(cn3); box.appendChild(c3);
   box.appendChild(h("div", "hint", "Подарки не пропадают: игрок получит их, когда в следующий раз откроет игру и войдёт в аккаунт. Выдать одному человеку можно на вкладке «Игроки»."));
 }
 
@@ -808,6 +828,7 @@ async function wipeUser(env, id) {
 
 /* ---------- Панель управления: что можно выдавать и что можно делать ---------- */
 const CATALOG = [["s0","НЕОН",0],["s1","ОГОНЬ",120],["s2","ЯД",120],["s3","САКУРА",250],["s4","ЗОЛОТО",400],["s5","РАДУГА",700],["s6","ЛЁД",300],["s7","ПЛАЗМА",500],["s8","МОЛНИЯ",450],["s9","ЛАВА",550],["s10","КОМЕТЫ",800],["s11","КИБЕР",350],["s12","ВОДА",450],["s13","СЕРДЦА",550],["s14","ЗВЁЗДНЫЙ ПУТЬ",650],["s15","ТЬМА",750],["s16","ГЛИТЧ",900],["b0","КОСМОС",0],["b1","ЗАКАТ",150],["b2","АВРОРА",150],["b3","СНЕГОПАД",300],["b4","САКУРА",450],["b5","ДОЖДЬ КОДА",600],["b6","СИНТВЕЙВ",500],["b7","СВЕТЛЯЧКИ",350],["b8","ОКЕАН",550],["b9","ПУСТЫНЯ",550],["b10","НОЧНОЙ ГОРОД",650],["b11","ГОРНОЕ ОЗЕРО",700],["b12","ВУЛКАН",750],["b13","КРИСТАЛЛЫ",800],["b14","ЗИМНИЙ ДОМИК",750],["b15","ТУМАННОСТЬ",700],["b16","МЕТЕОРНЫЙ ДОЖДЬ",650]];   // [id, название, цена] — те же фоны и щиты, что в магазине игры
+const BOOSTS = [["f","❄️ ЗАМОРОЗКА"],["s","🐢 ЗАМЕДЛЕНИЕ"],["b","💥 ВЗРЫВ"],["h","❤️ ЖИЗНЬ"]];   // [буква буста, название] — как в магазине игры
 const manageState = s => ({ off: s.off, msg: s.msg, epoch: s.epoch, since: s.since, news: s.news, newsId: s.newsId });
 const oneLine = (v, max) => String(v || '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
 
@@ -826,7 +847,7 @@ async function manageDo(env, body) {
     await setSetting(env, 'news', text); await setSetting(env, 'newsId', text ? now : 0);
     return manageState(await settings(env));
   }
-  if (act === 'catalog') return { items: CATALOG };
+  if (act === 'catalog') return { items: CATALOG, boosts: BOOSTS };
 
   if (act === 'overview') {
     const iso = ms => new Date(ms).toISOString();
@@ -879,6 +900,7 @@ async function manageDo(env, body) {
     let val;
     if (kind === 'coins') { val = Math.trunc(Number(body.val)); if (!val || Math.abs(val) > 1000000) return err('Монеты: число от −1 000 000 до 1 000 000, не ноль.'); }
     else if (kind === 'item') { val = String(body.val || ''); if (val !== 'all' && !CATALOG.some(c => c[0] === val)) return err('Такого предмета нет в магазине.'); }
+    else if (kind === 'boost') { val = String(body.val || ''); const m = /^([a-z]):([1-9]\d?)$/.exec(val); if (!m || !BOOSTS.some(b => b[0] === m[1]) || +m[2] > 50) return err('Буст: вид и число от 1 до 50.'); }
     else return err('Неизвестный вид подарка.');
     if (body.target === 'all') {
       const r = await db.prepare('INSERT INTO sp_grants (uid,kind,val,note,t) SELECT id,?,?,?,? FROM users WHERE id NOT IN (SELECT uid FROM sp_bans)').bind(kind, String(val), note, now).run();

@@ -124,3 +124,18 @@ test('управление: список выдачи совпадает с ма
   const cat = (await s.adm('catalog')).data.items;
   assert.deepEqual(cat, shop, 'в панели выдачи должны быть все щиты и фоны магазина, с теми же названиями и ценами');
 });
+
+test('управление: выдача бустов (проверка вида и числа), игрок забирает', async t => {
+  const s = await setup(); if (!s) return t.skip('нет node:sqlite');
+  const a = await s.reg('Alice');
+  const id = (await s.adm('players', { q: 'Alice' })).data.players[0].id;
+  const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '../app.js'), 'utf8');
+  const bst = eval(src.match(/const BST=(\[\[.*?\]\]);\s*let frz/s)[1]).map(x => x[0]);
+  assert.deepEqual((await s.adm('catalog')).data.boosts.map(b => b[0]), bst, 'виды бустов в панели совпадают с игрой');
+  for (const bad of ['x:3', 'f:0', 'f:51', 'f', 'f:-2', 'f:3.5', ':3', 'f:03', 'fs:2'])
+    assert.equal((await s.adm('grant', { target: id, kind: 'boost', val: bad })).status, 400, 'плохое значение: ' + bad);
+  assert.equal((await s.adm('grant', { target: id, kind: 'boost', val: 'f:3', note: 'держи' })).status, 200);
+  assert.equal((await s.adm('grant', { target: 'all', kind: 'boost', val: 'h:1' })).data.count >= 1, true);
+  const g = await s.call('/api/grants', null, a.token);
+  assert.deepEqual(g.data.grants.map(x => [x.kind, x.val]).sort(), [['boost', 'f:3'], ['boost', 'h:1']]);
+});

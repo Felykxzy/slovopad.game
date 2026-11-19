@@ -139,6 +139,17 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
     ok(!(await on('o16')) && await on('o1'), 'свайп вправо с экрана ЭХО ведёт в главное меню игры');
     await p.screenshot({ path: shots + '/hub-swipe-menu.png' });
   }
+  {
+    env.ADMIN_TOKEN = 'correct-horse-battery-staple';
+    const ctl = async (action, extra) => (await worker.fetch(new Request('https://api.test/api/ctl', { method: 'POST', headers: { 'content-type': 'application/json', 'cf-connecting-ip': '9.9.9.9' }, body: JSON.stringify({ token: env.ADMIN_TOKEN, action, ...(extra || {}) }) }), env)).json();
+    const uid = (await ctl('players', { q: 'Alice' })).players[0].id;
+    await p.evaluate(() => { localStorage.setItem('bst', JSON.stringify({ f: 1, s: 0, b: 0, h: 0 })); localStorage.removeItem('grDone') });
+    await ctl('grant', { target: uid, kind: 'boost', val: 'f:3', note: 'тест' }); await ctl('grant', { target: uid, kind: 'boost', val: 'h:2' });
+    await p.evaluate(() => SpGrants.claim()); await p.waitForTimeout(900);
+    const got = await p.evaluate(() => JSON.parse(localStorage.getItem('bst') || '{}'));
+    ok(got.f === 4 && got.h === 2, 'подаренные бусты упали в инвентарь игрока (' + JSON.stringify(got) + ')');
+    ok(await p.evaluate(() => /❄️/.test(document.body.innerText)), 'игрок видит уведомление о подарке');
+  }
   ok(errs.length === 0, 'нет ошибок в консоли' + (errs.length ? ': ' + errs[0] : ''));
   await b.close(); srv.close(); console.log(fails ? '\nПровалов: ' + fails : '\nВсё хорошо'); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1) });
