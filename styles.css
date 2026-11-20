@@ -1519,3 +1519,9 @@ html.lite.beta #o1 #seB{animation:none}
 .ekrec.locked{box-shadow:0 0 0 2px #5ef2ff inset}
 .ekhl{font-size:11px;opacity:.7;margin-left:auto;white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.stkb.shake,.mimg.mystk img{animation:none}}
+/* меню у высокого сообщения (гифка/фото на маленьком экране): реакции над меню, а не рядом */
+.eksh:not(.lift){flex-direction:column;align-items:center;justify-content:flex-end}
+.eksh:not(.lift) .esre{max-width:calc(100% - 16px);margin:0 0 8px;padding:6px;border-radius:99px;background:rgba(18,20,44,.96);border:1px solid rgba(255,255,255,.18);flex-wrap:nowrap;overflow:hidden}
+.eksh:not(.lift) .esre button{padding:4px 6px;font-size:24px}
+.eksh:not(.lift) .eskc{flex:0 1 auto}
+.eksh:not(.lift) .eskc{box-sizing:border-box}

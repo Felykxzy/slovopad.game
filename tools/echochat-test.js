@@ -174,6 +174,12 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
       ok(await p.evaluate(() => JSON.parse(localStorage.getItem('spMyStk') || '[]').length === 1), 'свой стикер сохранился в «Мои»');
       await p.click('#chSk .stkmy .gifw .stkb'); await p.waitForSelector('#chL .chm.me .mystk img', { timeout: 6000 }); await p.waitForTimeout(800);
       ok(await p.evaluate(() => { const i = document.querySelector('#chL .chm.me:last-child .mystk img'); return !!i && i.naturalWidth > 0 && !document.querySelector('#chL .chm.me:last-child .chb').textContent.includes(':ms:') }), 'свой стикер ушёл в чат картинкой без подписи');
+      { const gb = await p.locator('#chL .chm.me .gifimg').last().boundingBox();
+        await p.mouse.move(gb.x + gb.width / 2, gb.y + gb.height / 2); await p.mouse.down(); await p.waitForTimeout(650); await p.mouse.up(); await p.waitForTimeout(1200);
+        await p.screenshot({ path: shots + '/gifmenu.png' });
+        const g = await p.evaluate(() => { const W = innerWidth; const e = [...document.querySelectorAll('#o15 .eksh .esre, #o15 .eksh .eskc')].map(x => { const r = x.getBoundingClientRect(); return [x.className, Math.round(r.left), Math.round(r.right), Math.round(r.top), Math.round(r.bottom)] }); const o = document.getElementById('o15'); return { sl: o.scrollLeft, ol: Math.round(o.getBoundingClientRect().left), ow: o.offsetWidth, sw: o.scrollWidth, W, H: innerHeight, lift: !!document.querySelector('#o15 .eksh.lift'), e } });
+        ok(g.e.length >= 2 && g.e.every(x => x[1] >= g.ol - 1 && x[2] <= g.ol + g.ow + 1), 'меню на гифке целиком на экране');
+        await p.evaluate(() => { const e = document.querySelector('#o15 .eksh'); if (e) e.click() }); await p.waitForTimeout(300); }
       await p.screenshot({ path: shots + '/mystk.png' });
       const bb = await p.locator('#chL .chm.me .mystk img').last().boundingBox();
       await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await p.mouse.down(); await p.waitForTimeout(650); await p.mouse.up(); await p.waitForTimeout(350);

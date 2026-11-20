@@ -1,12 +1,12 @@
 {
-  "version": "4.12.0",
+  "version": "4.12.1",
   "notes": [
-    "Свои стикеры, избранные гифки, сезонные стикеры и награды, голос с замком"
+    "Исправлено: меню при нажатии на гифку или большое фото уезжало за край экрана"
   ],
   "notes_en": [
-    "Your own stickers, favorite GIFs, seasonal and reward stickers, voice lock"
+    "Fixed: the menu on a GIF or a large photo went off the screen edge"
   ],
   "notes_uk": [
-    "Свої стікери, обрані гіфки, сезонні стікери і нагороди, голос із замком"
+    "Виправлено: меню на гіфці чи великому фото виїжджало за край екрана"
   ]
 }
