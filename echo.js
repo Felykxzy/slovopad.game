@@ -83,6 +83,7 @@
     if (EchoKit.swipeBack) EchoKit.swipeBack(g("o16"), hubOut);
     if (EchoKit.swipeBack) EchoKit.swipeBack(g("o17"), roomClose);
     if (kit.downBtn && !E.dn) E.dn = kit.downBtn(g("rmL"), g("o17"));
+    if (kit.searchBar && !kit.SR) { kit.searchBar(g("o17"), g("rmL")); const sb = h("button", "ib", "🔍"); sb.id = "rmSrb"; sb.type = "button"; sb.setAttribute("aria-label", "search"); sb.onclick = () => kit.SR.toggle(); g("rmMn").parentNode.insertBefore(sb, g("rmMn")) }
     if (kit.selectInit && !kit.S) kit.selectInit({ host: g("o17"), list: g("rmL"), itemSel: ".msg", canDel: m => { const rm = E.room, mod = rm && rm.canMod, ow = ((rm && rm.members) || []).find(x => x.owner); return !m.dl && (m.mine || (mod && !(ow && ow.name === m.who))) }, del: m => post("/api/echo/room/del", { room: E.room.id, id: m.id }), after: () => { E.busy = false; roomPoll(false) } });
     try { g("rmL").addEventListener("scroll", () => { const l = g("rmL"); g("o17").classList.toggle("chsm", l.scrollHeight - l.scrollTop - l.clientHeight > 160) }, { passive: true }) } catch (e) { }
     if (EchoKit.swipeLeft) EchoKit.swipeLeft(g("rmL"), ".msg:not(.dl)", it => [it.querySelector(".mbody")], it => { const m = kit.msgs[it.dataset.id]; if (m && !m.dl) { E.reply = m; E.edit = null; replyPaint(); try { g("rmIn").focus() } catch (e) { } } }, "↩");
@@ -139,7 +140,8 @@
 
   /* ---------- главный экран ---------- */
   function section(l, text) { l.appendChild(h("div", "ecsec", text)) }
-  function badgeEl(n) { return h("i", "bdg ecb", num(n)) }
+  const prevU = {};
+  function badgeEl(n, key) { const b = h("i", "bdg ecb", num(n)); if (key !== undefined) { if (prevU[key] !== undefined && n > prevU[key]) b.classList.add("bnc"); prevU[key] = n } return b }
   function paint() { const l = g("ecList"), sn = EchoKit.flipStart ? EchoKit.flipStart(l) : null; paintRaw(); if (sn && EchoKit.flipEnd) EchoKit.flipEnd(l, sn) }
   function paintRaw() {
     const l = g("ecList"); l.textContent = "";
@@ -153,7 +155,7 @@
     E.rooms.forEach(rm => {
       const r = h("button", "ecrow"); r.type = "button"; r.dataset.k = rm.id; r.appendChild(avatar("#", false, tint(rm.id)));
       const t = h("div", "ect"); t.appendChild(h("b", "", rm.name)); { const dr = EchoKit.draft ? EchoKit.draft("r." + rm.id) : ""; const sp = h("span", "", dr ? dr.slice(0, 40) : rm.last ? pretty(rm.last) : "{people}" + rm.members); if (dr) sp.prepend(h("em", "ecdr", T("Черновик: ", "Draft: ", "Чернетка: "))); t.appendChild(sp) } r.appendChild(t);
-      if (rm.unread) r.appendChild(badgeEl(rm.unread));
+      if (rm.unread) r.appendChild(badgeEl(rm.unread, "r" + rm.id)); else prevU["r" + rm.id] = 0;
       r.onclick = () => roomOpen(rm.id, rm.name); l.appendChild(r);
     });
     const onl = E.friends.filter(f => f.online), off = E.friends.filter(f => !f.online);
@@ -161,7 +163,7 @@
       const r = h("button", "ecrow"); r.type = "button"; r.dataset.k = f.spCode || f.username;
       r.appendChild(avatar(f.avatar || first(f.username), f.online, f.avatar ? null : tint(f.username), f.username));
       const t = h("div", "ect"); t.appendChild(h("b", f.unread ? "ecnew" : "", f.username)); { const te = window.TagUI && TagUI.el(f.tag); if (te) t.firstChild.appendChild(te) } { const dr = EchoKit.draft ? EchoKit.draft("d." + f.spCode) : ""; if (dr) { const sp = h("span", "", dr.slice(0, 40)); sp.prepend(h("em", "ecdr", T("Черновик: ", "Draft: ", "Чернетка: "))); t.appendChild(sp) } else t.appendChild(h("span", "", f.unread ? T("новых: ", "new: ", "нових: ") + f.unread : f.online ? T("в сети", "online", "у мережі") : T("не в сети", "offline", "не в мережі"))) } r.appendChild(t);
-      if (f.unread) r.appendChild(badgeEl(f.unread));
+      if (f.unread) r.appendChild(badgeEl(f.unread, "f" + f.spCode)); else prevU["f" + f.spCode] = 0;
       r.onclick = () => { const F = window.SlovopadFriends; if (F && F.chatOpen) { F.setBack(hubOpen); F.chatOpen(f) } };
       l.appendChild(r);
     };
@@ -237,7 +239,7 @@
     roomPoll(true); clearInterval(E.timer); E.timer = setInterval(() => roomPoll(false), 6000);
   }
   function roomClose() {
-    if (kit.S) kit.S.exit();
+    if (kit.S) kit.S.exit(); if (kit.SR) kit.SR.toggle(false);
     clearInterval(E.timer); E.timer = 0; E.room = null;
     const o = g("o17"); o.style.height = ""; o.style.transform = ""; g("rmIn").blur();
     hubOpen();
@@ -314,6 +316,7 @@
     if (mod) acts.push([rm.pin && rm.pin.id === m.id ? T("📌 Открепить", "📌 Unpin", "📌 Відкріпити") : T("📌 Закрепить", "📌 Pin", "📌 Закріпити"), () => post("/api/echo/room/pin", { room: rm.id, id: rm.pin && rm.pin.id === m.id ? 0 : m.id }).then(() => { E.busy = false; roomPoll(false) }).catch(e => setHint("rmSt", e.message, true))]);
     const ow = ((rm && rm.members) || []).find(x => x.owner);
     if (m.mine || (mod && !(ow && ow.name === m.who))) acts.push([T("🗑 Удалить", "🗑 Delete", "🗑 Видалити"), () => post("/api/echo/room/del", { room: rm.id, id: m.id }).then(() => { E.busy = false; roomPoll(false) }).catch(e => setHint("rmSt", e.message, true)), true]);
+    if (m.body && !m.dl) acts.push([T("↪ Переслать", "↪ Forward", "↪ Переслати"), () => { const F = window.SlovopadFriends; kit.forward(g("o17"), m, [...((F && F.list && F.list()) || []).map(f => ({ kind: "friend", name: f.username, code: f.spCode })), ...(E.rooms || []).filter(r => !E.room || r.id !== E.room.id).map(r => ({ kind: "room", name: r.name, id: r.id }))], t => { const txt = "↪ " + (m.who || "?") + ":\n" + m.body; return t.kind === "room" ? post("/api/echo/room/send", { room: t.id, text: txt }) : post("/api/chat/send", { to: t.code, text: txt }) }) }]);
     acts.push([T("☑ Выбрать", "☑ Select", "☑ Обрати"), () => { if (kit.S) kit.S.enter(m) }]);
     kit.sheet(g("o17"), m, acts);
   }
@@ -466,7 +469,7 @@
   const _over = window.over;
   if (typeof _over === "function") window.over = function (q) { const rc = typeof RACE !== "undefined" ? RACE : null; const r = _over.apply(this, arguments); try { if (state === "over") { const old = g("raceRes"); if (old) old.remove(); if (rc) { RACE = null; raceDone(rc, q) } } } catch (e) { } return r };
   build(); wireMenuBtn();
-  window.SlovopadEcho = { open: hubOpen, roomOpen, relabel: wireMenuBtn, badge: () => { labels() } };
+  window.SlovopadEcho = { rooms: () => (E.rooms || []).slice(), open: hubOpen, roomOpen, relabel: wireMenuBtn, badge: () => { labels() } };
   const _menu = window.menu;
   if (typeof _menu === "function") window.menu = function () { const r = _menu.apply(this, arguments); try { wireMenuBtn() } catch (e) { } return r };
 })();

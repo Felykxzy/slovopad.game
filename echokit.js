@@ -199,6 +199,47 @@
       o.list.addEventListener("click", e => { if (!S.on) return; const it = e.target.closest ? e.target.closest(o.itemSel) : null; e.preventDefault(); e.stopPropagation(); if (it && it.dataset.id) S.toggle(+it.dataset.id) }, true);
       K.S = S; return S;
     };
+    // пересылка: выбираешь, кому, сообщение «улетает» вверх, внизу выезжает подтверждение
+    K.forward = (host, m, targets, send, from) => {
+      const old = host.querySelector(".ekfw"); if (old) old.remove();
+      const w = h("div", "ekfw"), c = h("div", "ekfc"); let gone = false;
+      const close = () => { if (gone) return; gone = true; w.classList.add("out"); setTimeout(() => w.remove(), 180) };
+      w.onclick = e => { if (e.target === w) close() };
+      c.appendChild(h("h3", "", T("Переслать", "Forward", "Переслати")));
+      const box = h("div", "ekfl"); c.appendChild(box);
+      if (!targets.length) box.appendChild(h("div", "hint", T("Некому пересылать: добавь друзей или вступи в комнату.", "Nobody to forward to yet.", "Нікому пересилати.")));
+      targets.forEach((t, k) => {
+        const b = h("button", "ekft"); b.type = "button"; b.style.animationDelay = (k * 22) + "ms";
+        const a = h("i", "", (t.name || "?").slice(0, 1).toUpperCase()); b.append(a, h("b", "", t.name), h("em", "", t.kind === "room" ? T("комната", "room", "кімната") : T("друг", "friend", "друг")));
+        b.onclick = async () => {
+          const el = K.els[m.id]; close();
+          if (el && !(matchMedia && matchMedia("(prefers-reduced-motion:reduce)").matches)) {
+            const r = el.getBoundingClientRect(), cl = el.cloneNode(true); cl.querySelectorAll("[id]").forEach(x => x.removeAttribute("id")); cl.classList.remove("sel", "flash", "nw", "eksel");
+            cl.className += " ekfly"; cl.style.cssText = "position:fixed;left:" + r.left + "px;top:" + r.top + "px;width:" + r.width + "px;margin:0;z-index:99999;pointer-events:none;transition:transform .6s cubic-bezier(.5,0,.8,.4),opacity .6s ease-in;transform-origin:100% 0";
+            document.body.appendChild(cl); cl.getBoundingClientRect(); requestAnimationFrame(() => { cl.style.transform = "translate(" + (innerWidth - r.left - r.width * .2) + "px," + (-r.top - 40) + "px) scale(.25) rotate(14deg)"; cl.style.opacity = "0" }); setTimeout(() => cl.remove(), 700);
+          }
+          let ok = true; try { await send(t) } catch (e) { ok = false; toast(e && e.message || "Ошибка", true) }
+          if (ok) toast(T("Переслано: ", "Forwarded to ", "Переслано: ") + t.name);
+        };
+        box.appendChild(b);
+      });
+      w.appendChild(c); host.appendChild(w);
+    };
+    const toast = (msg, bad) => { const t = h("div", "ekto" + (bad ? " bad" : ""), (bad ? "" : "✓ ") + msg); document.body.appendChild(t); setTimeout(() => t.classList.add("out"), 2400); setTimeout(() => t.remove(), 2800) };
+    // поиск по чату: лупа в шапке, поле выезжает, найденное подсвечивается, стрелки ведут по совпадениям
+    K.searchBar = (host, list) => {
+      const bar = h("div", "eksr"), inp = h("input"), cnt = h("span", "eksc"), up = h("button", "eksa", "↑"), dn = h("button", "eksa", "↓"), x = h("button", "eksa", "✕");
+      inp.type = "search"; inp.placeholder = T("Поиск по чату", "Search chat", "Пошук у чаті"); inp.autocomplete = "off"; [up, dn, x].forEach(b => b.type = "button");
+      bar.append(inp, cnt, up, dn, x); host.insertBefore(bar, list);
+      let hits = [], cur = -1;
+      const clear = () => Object.keys(K.els).forEach(id => { const e = K.els[id]; if (e) e.classList.remove("ekhit", "ekcur") });
+      const show = () => { Object.keys(K.els).forEach(id => { const e = K.els[id]; if (e) e.classList.remove("ekcur") }); cnt.textContent = hits.length ? (cur + 1) + " / " + hits.length : (inp.value.trim() ? "0" : ""); if (hits.length && K.els[hits[cur]]) { K.els[hits[cur]].classList.add("ekcur"); K.jump(hits[cur]) } };
+      const run = () => { clear(); const q = inp.value.trim().toLowerCase(); hits = []; if (q) Object.keys(K.msgs).map(Number).sort((a, b) => a - b).forEach(id => { const m = K.msgs[id]; if (m && !m.dl && m.body && String(m.body).toLowerCase().indexOf(q) >= 0) { hits.push(id); if (K.els[id]) K.els[id].classList.add("ekhit") } }); cur = hits.length - 1; show() };
+      inp.addEventListener("input", run); inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); dn.click() } });
+      up.onclick = () => { if (hits.length) { cur = (cur - 1 + hits.length) % hits.length; show() } }; dn.onclick = () => { if (hits.length) { cur = (cur + 1) % hits.length; show() } };
+      const S = { on: false, toggle: on => { S.on = on === undefined ? !S.on : on; bar.classList.toggle("on", S.on); if (S.on) setTimeout(() => inp.focus(), 60); else { clear(); inp.value = ""; cnt.textContent = ""; hits = []; inp.blur() } } };
+      x.onclick = () => S.toggle(false); K.SR = S; return S;
+    };
     // круглая кнопка «вниз»: появляется, когда пролистал вверх; на ней счётчик новых
     K.downBtn = (list, host) => {
       const b = h("button", "ekdn"), cnt = h("span", "ekdc"); b.type = "button"; b.setAttribute("aria-label", "down"); b.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'; cnt.hidden = true; b.appendChild(cnt); host.appendChild(b);

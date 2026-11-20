@@ -1425,7 +1425,7 @@ export default {
 
           if (url.pathname === '/api/echo/rooms' && request.method === 'GET') {
             if (!await allow(env, 'er:' + user.id, 80, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
-            const rows = (await env.DB.prepare('SELECT r.id,r.name,r.owner,m.last,(SELECT COUNT(*) FROM sp_room_members x WHERE x.room=r.id) AS members,(SELECT COUNT(*) FROM sp_room_msgs g WHERE g.room=r.id AND g.id>m.last AND g.uid<>?) AS unread,(SELECT body FROM sp_room_msgs g WHERE g.room=r.id ORDER BY g.id DESC LIMIT 1) AS lastbody,(SELECT t FROM sp_room_msgs g WHERE g.room=r.id ORDER BY g.id DESC LIMIT 1) AS lastt FROM sp_room_members m JOIN sp_rooms r ON r.id=m.room WHERE m.uid=? ORDER BY COALESCE(lastt,r.t) DESC LIMIT 30')
+            const rows = (await env.DB.prepare('SELECT r.id,r.name,r.owner,m.last,(SELECT COUNT(*) FROM sp_room_members x WHERE x.room=r.id) AS members,(SELECT COUNT(*) FROM sp_room_msgs g WHERE g.room=r.id AND g.id>m.last AND g.uid<>?) AS unread,(SELECT body FROM sp_room_msgs g WHERE g.room=r.id ORDER BY g.id DESC LIMIT 1) AS lastbody,(SELECT t FROM sp_room_msgs g WHERE g.room=r.id ORDER BY g.id DESC LIMIT 1) AS lastt FROM sp_room_members m JOIN sp_rooms r ON r.id=m.room WHERE m.uid=? AND r.name NOT LIKE \'Зв:%\' ORDER BY COALESCE(lastt,r.t) DESC LIMIT 30')
               .bind(user.id, user.id).all()).results || [];
             return reply({ rooms: rows.map(r => ({ id: r.id, name: r.name, mine: r.owner === user.id, members: r.members, unread: r.unread, last: r.lastbody ? String(r.lastbody).slice(0, 60) : '', t: r.lastt || 0 })) });
           }
@@ -1434,7 +1434,7 @@ export default {
             if (!await allow(env, 'ec:' + user.id, 5, 60 * 60 * 1000)) return reply(TOO_MANY, 429);
             const name = cleanText(body.name, ROOM_NAME_MAX);
             if (!name) return reply({ error: 'Название комнаты — от 1 до ' + ROOM_NAME_MAX + ' символов.' }, 400);
-            const cnt = await env.DB.prepare('SELECT COUNT(*) AS n FROM sp_room_members WHERE uid=?').bind(user.id).first();
+            const cnt = await env.DB.prepare("SELECT COUNT(*) AS n FROM sp_room_members m JOIN sp_rooms r ON r.id=m.room WHERE m.uid=? AND r.name NOT LIKE 'Зв:%'").bind(user.id).first();
             if (cnt && cnt.n >= ROOM_MAX_JOINED) return reply({ error: 'Ты уже в ' + ROOM_MAX_JOINED + ' комнатах. Выйди из лишней.' }, 409);
             const id = hex(random(6));
             await env.DB.prepare('INSERT INTO sp_rooms (id,name,owner,t) VALUES (?,?,?,?)').bind(id, name, user.id, now).run();
@@ -1680,7 +1680,7 @@ export default {
             { const pk = await env.DB.prepare('SELECT mid FROM sp_dmpin WHERE a=? AND b=?').bind(pairA(user.id, other.id), pairB(user.id, other.id)).first();
               if (pk) { const pm = await env.DB.prepare('SELECT id,a,body,img FROM sp_msgs WHERE id=? AND dl=0 AND ((a=? AND b=?) OR (a=? AND b=?))').bind(pk.mid, user.id, other.id, other.id, user.id).first();
                 if (pm) pin = { id: pm.id, who: names[pm.a] || '?', text: String(pm.body || (String(pm.img || '').startsWith('data:audio') ? '🎤' : '📷')).slice(0, 60) } } }
-            return reply({ with: other.username, blocked: !!iBlocked, messages: sy.messages, changed: sy.changed, react: sy.react, typing: sy.typing.length > 0, readTo: rd && rd.m ? rd.m : 0, now: sy.now, pin });
+            return reply({ with: other.username, blocked: !!iBlocked, messages: sy.messages, changed: sy.changed, react: sy.react, typing: sy.typing.length > 0, readTo: rd && rd.m ? rd.m : 0, now: sy.now, pin, call: (await env.DB.prepare('SELECT 1 AS x FROM sp_rooms WHERE id=?').bind('dm_' + pairA(user.id, other.id) + '_' + pairB(user.id, other.id)).first()) ? 'dm_' + pairA(user.id, other.id) + '_' + pairB(user.id, other.id) : '' });
           }
 
           if (url.pathname === '/api/chat/img' && request.method === 'GET') {
@@ -1697,6 +1697,17 @@ export default {
             if (!r) return reply({ error: 'Править можно только своё сообщение.' }, 403);
             await env.DB.prepare('UPDATE sp_msgs SET body=?, ed=1, upd=? WHERE id=?').bind(text, now, id).run();
             return reply({ ok: true });
+          }
+          if (url.pathname === '/api/chat/call' && post) {
+            if (!await allow(env, 'cc:' + user.id, 40, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+            if (iBlocked) return reply({ error: 'Сначала разблокируй игрока.' }, 403);
+            const blockedMe = await env.DB.prepare('SELECT 1 AS x FROM sp_blocks WHERE a=? AND b=?').bind(other.id, user.id).first();
+            if (blockedMe) return reply({ error: 'Игрок не принимает звонки от тебя.' }, 403);
+            const rid = 'dm_' + pairA(user.id, other.id) + '_' + pairB(user.id, other.id);
+            await env.DB.prepare('INSERT OR IGNORE INTO sp_rooms (id,name,owner,t) VALUES (?,?,?,?)').bind(rid, 'Зв:' + pairA(user.id, other.id).slice(0, 6) + pairB(user.id, other.id).slice(0, 6), user.id, now).run();
+            await env.DB.prepare('INSERT OR IGNORE INTO sp_room_members (room,uid,t,last) VALUES (?,?,?,0)').bind(rid, user.id, now).run();
+            await env.DB.prepare('INSERT OR IGNORE INTO sp_room_members (room,uid,t,last) VALUES (?,?,?,0)').bind(rid, other.id, now).run();
+            return reply({ ok: true, room: rid });
           }
           if (url.pathname === '/api/chat/pin' && post) {
             if (!await allow(env, 'cp:' + user.id, 60, 10 * 60 * 1000)) return reply(TOO_MANY, 429);

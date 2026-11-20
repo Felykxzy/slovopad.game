@@ -50,9 +50,9 @@
     const p = h("div", "ov sc"); p.id = "o14";
     p.innerHTML = '<div class="fph" id="fpH"></div><div class="frlist" id="fpB"></div><div class="hint" id="fpSt"></div><div class="mb"><button class="btn" id="fpBk" type="button"></button></div>';
     const c15 = h("div", "ov"); c15.id = "o15";
-    c15.innerHTML = '<div class="frh"><button class="ib" id="chBk" type="button">←</button><span class="chav" id="chAv"></span><div class="frt" id="chFrt"><h2 id="chT"></h2><div class="sub" id="chS"></div></div><button class="ib" id="chMn" type="button">⋯</button></div>' +
+    c15.innerHTML = '<div class="frh"><button class="ib" id="chBk" type="button">←</button><span class="chav" id="chAv"></span><div class="frt" id="chFrt"><h2 id="chT"></h2><div class="sub" id="chS"></div></div><button class="ib" id="chCl" type="button" aria-label="call">'+(window.IC ? IC.html("phone") : "📞")+'</button><button class="ib" id="chMn" type="button">⋯</button></div>' +
       '<div class="chmenu" id="chMenu" hidden><button class="btn a" id="chBl" type="button"></button><button class="btn a" id="chRpb" type="button"></button></div>' +
-      '<div class="pinb" id="chPin" hidden></div><div class="chl" id="chL"></div><div class="hint" id="chSt"></div>' +
+      '<div class="rmcall" id="chCall" hidden></div><div class="pinb" id="chPin" hidden></div><div class="chl" id="chL"></div><div class="hint" id="chSt"></div>' +
       '<div class="chrp" id="chRp" hidden></div><div class="chrp stkp" id="chSk" hidden></div>' +
       '<div class="rmrp" id="chQp" hidden></div>' +
       '<div class="chbar"><button class="ib chrx" id="chRx" type="button" aria-label="reactions">😊</button><button class="ib chph" id="chPh" type="button" aria-label="photo">📷</button><button class="ib chph chmc" id="chMc" type="button" aria-label="voice">🎤</button><input id="chIn" type="text" maxlength="120" autocomplete="off" enterkeyhint="send"><button class="btn chsn" id="chSn" type="button">➤</button></div>';
@@ -61,6 +61,7 @@
     chatWire();
     g("frBk").onclick = () => { pick = null; if (openFrom) { const f = openFrom; openFrom = null; f(); return } ov("o1"); };
     if (kit.downBtn && !chat.dn) chat.dn = kit.downBtn(g("chL"), g("o15"));
+    if (kit.searchBar && !kit.SR) { kit.searchBar(g("o15"), g("chL")); const sb = h("button", "ib", "🔍"); sb.id = "chSrb"; sb.type = "button"; sb.setAttribute("aria-label", "search"); sb.onclick = () => kit.SR.toggle(); g("chMn").parentNode.insertBefore(sb, g("chMn")) }
     if (kit.selectInit && !kit.S) kit.selectInit({ host: g("o15"), list: g("chL"), itemSel: ".chm", canDel: m => m.mine && !m.dl, del: m => post("/api/chat/del", { to: chat.p.spCode, id: m.id }), after: () => { chat.busy = false; chatPoll(false) } });
     try { g("chL").addEventListener("scroll", () => { const l = g("chL"), far = l.scrollHeight - l.scrollTop - l.clientHeight > 160; g("o15").classList.toggle("chsm", far) }, { passive: true }) } catch (e) { }
     if (EchoKit.swipeLeft) {
@@ -301,6 +302,10 @@
   function chatWire() {
     g("chBk").onclick = chatClose;
     g("chSn").onclick = chatSend;
+    g("chCl").onclick = async () => {
+      if (!chat.p || !window.EchoCall) return; const p = chat.p, b = g("chCl"); if (b.disabled) return; b.disabled = true;
+      try { const r = await post("/api/chat/call", { to: p.spCode }); EchoCall.join(r.room, p.username, () => chatOpen(p)) } catch (e) { g("chSt").textContent = e.message } finally { b.disabled = false }
+    };
     g("chIn").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); chatSend() } });
     g("chRx").onclick = () => { const r = g("chSk"); if (r.hidden) kit.stickers(r, x => chatSend(x)); r.hidden = !r.hidden; g("chMenu").hidden = true; g("chRp").hidden = true };
     g("chMc").onclick = () => { if (!kit.rec) return; kit.rec(g("o15").querySelector(".chbar"), (e, au) => { if (e) { g("chSt").textContent = e.message; return } chatSend(null, au) }) };
@@ -336,7 +341,7 @@
   }
   function chatFit() { const o = g("o15"), v = window.visualViewport; if (v) { o.style.height = v.height + "px"; o.style.transform = "translateY(" + v.offsetTop + "px)" } }
   function chatClose() {
-    if (kit.S) kit.S.exit();
+    if (kit.S) kit.S.exit(); if (kit.SR) kit.SR.toggle(false);
     clearInterval(chat.timer); chat.timer = 0; chat.p = null;
     const o = g("o15"); o.style.height = ""; o.style.transform = "";
     g("chIn").blur();
@@ -360,6 +365,7 @@
     if (m.body) acts.push([T("Скопировать", "Copy", "Копіювати"), () => { try { navigator.clipboard.writeText(m.body) } catch (e) { } }]);
     if (m.mine && m.body) acts.push([T("✎ Изменить", "✎ Edit", "✎ Змінити"), () => { chat.edit = m; chat.reply = null; chatBar(); const i = g("chIn"); i.value = m.body; try { i.focus() } catch (e) { } }]);
     if (m.mine) acts.push([T("🗑 Удалить", "🗑 Delete", "🗑 Видалити"), () => post("/api/chat/del", { to: chat.p.spCode, id: m.id }).then(() => { chat.busy = false; chatPoll(false) }).catch(e => { g("chSt").textContent = e.message }), true]);
+    if (m.body && !m.dl) acts.push([T("↪ Переслать", "↪ Forward", "↪ Переслати"), () => kit.forward(g("o15"), m, [...((data && data.friends) || []).filter(f => !chat.p || f.spCode !== chat.p.spCode).map(f => ({ kind: "friend", name: f.username, code: f.spCode })), ...((window.SlovopadEcho && SlovopadEcho.rooms && SlovopadEcho.rooms()) || []).map(r => ({ kind: "room", name: r.name, id: r.id }))], t => { const txt = "↪ " + (m.mine ? T("от меня", "from me", "від мене") : chat.p.username) + ":\n" + m.body; return t.kind === "room" ? post("/api/echo/room/send", { room: t.id, text: txt }) : post("/api/chat/send", { to: t.code, text: txt }) })]);
     acts.push([T("☑ Выбрать", "☑ Select", "☑ Обрати"), () => { if (kit.S) kit.S.enter(m) }]);
     if (!m.dl) acts.push([chat.pin && chat.pin.id === m.id ? T("📌 Открепить", "📌 Unpin", "📌 Відкріпити") : T("📌 Закрепить", "📌 Pin", "📌 Закріпити"), () => post("/api/chat/pin", { to: chat.p.spCode, id: chat.pin && chat.pin.id === m.id ? 0 : m.id }).then(() => { chat.busy = false; chatPoll(false) }).catch(e => { g("chSt").textContent = e.message })]);
     kit.sheet(g("o15"), m, acts);
@@ -398,6 +404,7 @@
       kit.readTo = r.readTo || 0; chatTicks();
       if (r.react) kit.setReact(r.react);
       chat.pin = r.pin || null;
+      if (window.EchoCall && EchoCall.banner) { const who2 = chat.p; if (r.call && who2) EchoCall.banner(r.call, g("chCall"), () => chatOpen(who2), who2.username); else if (!r.call) g("chCall").hidden = true }
       { const pn = g("chPin"), had = !pn.hidden; pn.hidden = !chat.pin; if (chat.pin) { pn.textContent = ""; pn.appendChild(h("span", "", "📌 " + chat.pin.who + ": " + chat.pin.text)); pn.onclick = () => kit.jump(chat.pin.id); if (!had) { pn.classList.remove("pinin"); void pn.offsetWidth; pn.classList.add("pinin") } } }
       if (Date.now() - (chat.stAt || 0) > 30000) { chat.stAt = Date.now(); load(true).then(() => { const f = data && data.friends.find(x => x.spCode === who.spCode); if (f && chat.p === who) { who.online = f.online; who.seen = f.seen; EchoKit.swap(g("chS"), status(who) || " ") } }).catch(() => { }) }
       if (!l.querySelector(".chm") && !l.querySelector(".chem")) { const e = h("div", "chem", T("Напиши первым или отправь стикер 😊", "Write first or send a sticker 😊", "Напиши першим або надішли стікер 😊")); l.appendChild(e) }
@@ -462,7 +469,7 @@
   }
 
   build();
-  window.SlovopadFriends = { open, load, chatOpen, badges: () => badge, openFriends: f => { openFrom = f; open() }, setBack: f => { backFn = f } };
+  window.SlovopadFriends = { list: () => (data && data.friends) || [], open, load, chatOpen, badges: () => badge, openFriends: f => { openFrom = f; open() }, setBack: f => { backFn = f } };
   const _over = window.over;
   if (typeof _over === "function") window.over = function (q) { const r = _over.apply(this, arguments); try { if (state === "over") afterOver(q) } catch (e) { } return r };
   const _menu = window.menu;

@@ -137,6 +137,26 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
     await p.screenshot({ path: shots + '/dm-compact.png' });
     await p.evaluate(() => { const l = document.getElementById('chL'); l.scrollTop = l.scrollHeight; l.dispatchEvent(new Event('scroll')) }); await p.waitForTimeout(400);
     ok(await p.evaluate(() => !document.getElementById('o15').classList.contains('chsm')), 'шапка вернулась внизу чата'); }
+  { console.log('Звонок, пересылка, поиск, счёт, брызги');
+    await p.evaluate(() => { window.__j = null; EchoCall.join = (room, name) => { window.__j = [room, name] } });
+    await p.click('#chCl'); await p.waitForTimeout(800);
+    ok(await p.evaluate(() => !!window.__j && /^dm_/.test(window.__j[0]) && window.__j[1] === 'Bobby'), 'кнопка звонка в личном чате открывает звонок с Bobby');
+    ok(!!(await api('/api/chat?with=' + A.code, null, B.token)).call, 'второй игрок получает пометку о звонке');
+    const hold2 = async sel => { const l = p.locator(sel).last(); await l.scrollIntoViewIfNeeded(); await p.waitForTimeout(150); const bb = await l.boundingBox(); await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await p.mouse.down(); await p.waitForTimeout(650); await p.mouse.up(); await p.waitForTimeout(450) };
+    await hold2('#chL .chm:not(.me):not(.rx):not(.dl) .chb');
+    await p.locator('#o15 .eksh .esa', { hasText: 'Переслать' }).click(); await p.waitForTimeout(500);
+    ok(await p.evaluate(() => document.querySelectorAll('#o15 .ekfw .ekft').length >= 1), 'окно пересылки показывает, кому переслать');
+    await p.screenshot({ path: shots + '/forward.png' });
+    await p.locator('#o15 .ekft', { hasText: 'Carol' }).click(); await p.waitForTimeout(1200);
+    ok(await p.evaluate(() => !!document.querySelector('.ekto')), 'после пересылки видно подтверждение');
+    ok(((await api('/api/chat?with=' + A.code, null, C.token)).messages || []).some(m => /↪/.test(m.body || '')), 'Carol получила пересланное сообщение');
+    await p.click('#chSrb'); await p.waitForTimeout(400);
+    await p.fill('.eksr input', 'длины чата'); await p.waitForTimeout(500);
+    ok(await p.evaluate(() => /^\d+ \/ \d+$/.test(document.querySelector('.eksc').textContent) && document.querySelectorAll('#chL .ekhit').length >= 2), 'поиск нашёл несколько сообщений и подсветил их');
+    await p.screenshot({ path: shots + '/search.png' });
+    await p.click('.eksr .eksa >> nth=2'); await p.waitForTimeout(400);
+    ok(await p.evaluate(() => document.querySelectorAll('#chL .ekhit').length === 0), 'после закрытия поиска подсветка снята');
+  }
   ok(await p.evaluate(() => /✓✓/.test(document.getElementById('chL').innerText)), 'отметка «прочитано» видна');
   await p.screenshot({ path: shots + '/dm1.png' });
   { await p.locator('#chL .chm.me .chb').first().scrollIntoViewIfNeeded(); await p.waitForTimeout(200); const bb = await p.locator('#chL .chm.me .chb').first().boundingBox();
@@ -270,6 +290,14 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
     await p.evaluate(() => { pickTheme(SlovopadSeason.monthTheme()) }); await p.waitForTimeout(400);
     await p.evaluate(() => { score = 120; state = 'play'; over(false) }); await p.waitForTimeout(900);
     ok((await api('/api/season', null, A.token)).me.score >= 200, 'сезон: игра в тему месяца не сломала таблицу');
+  }
+  {
+    await p.evaluate(() => { score = 250; state = 'play'; over(false) }); await p.waitForTimeout(150);
+  const mid = await p.evaluate(() => +document.getElementById('oS').textContent);
+  await p.waitForTimeout(2200);
+  ok(mid < 250 && await p.evaluate(() => document.getElementById('oS').textContent === '250'), 'счёт в конце игры набегает до 250 (в середине было ' + mid + ')');
+  await p.evaluate(() => SpFx.burst(document.getElementById('oS'), ['✨'])); 
+  ok(await p.evaluate(() => document.querySelectorAll('.spfx').length > 0), 'брызги появляются');
   }
   ok(errs.length === 0, 'нет ошибок в консоли' + (errs.length ? ': ' + errs[0] : ''));
   await b.close(); srv.close(); console.log(fails ? '\nПровалов: ' + fails : '\nВсё хорошо'); process.exit(fails ? 1 : 0);

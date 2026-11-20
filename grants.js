@@ -21,6 +21,7 @@
     const b = document.createElement("b"); b.textContent = it.title; tx.appendChild(b);
     if (it.text) { const s = document.createElement("span"); s.textContent = it.text; tx.appendChild(s) }
     el.appendChild(ic); el.appendChild(tx); document.body.appendChild(el);
+    if (it.icon === "🎁") { el.classList.add("gift"); setTimeout(() => { if (window.SpFx) SpFx.burst(ic, ["🪙", "✨", "⭐", "💎"], 16) }, 380) }
     let done = false;
     const close = () => { if (done) return; done = true; el.classList.add("out"); setTimeout(() => { el.remove(); showing = false; pump() }, 350) };
     el.onclick = close; setTimeout(close, it.ms || 8000);
