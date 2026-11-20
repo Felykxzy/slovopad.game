@@ -28,6 +28,7 @@
     return { t: "m", text: body };
   }
   function pretty(body) {
+    { const SK = window.SlovopadStickers, GF = window.SlovopadGif, l = (SK && SK.label(body)) || (GF && GF.label(body)); if (l) return l }
     const p = parse(body);
     if (p.t === "K") return T("Заезд", "Race", "Заїзд");
     if (p.t === "S") return T("результат заезда", "race result", "результат заїзду");

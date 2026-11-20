@@ -138,6 +138,21 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
     await p.evaluate(() => { const l = document.getElementById('chL'); l.scrollTop = l.scrollHeight; l.dispatchEvent(new Event('scroll')) }); await p.waitForTimeout(400);
     ok(await p.evaluate(() => !document.getElementById('o15').classList.contains('chsm')), 'шапка вернулась внизу чата'); }
   { console.log('Звонок, пересылка, поиск, счёт, брызги');
+    await p.click('#chRx'); await p.waitForTimeout(500);
+    ok(await p.evaluate(() => document.querySelectorAll('#chSk .stkb img').length >= 20), 'в панели есть нарисованные стикеры');
+    await p.screenshot({ path: shots + '/stickers.png' });
+    await p.click('#chSk .stkb >> nth=0'); await p.waitForTimeout(1500);
+    ok(await p.evaluate(() => { const i = document.querySelector('#chL .chm.me .stkimg'); return !!i && i.naturalWidth > 0 }), 'стикер ушёл в чат и нарисован картинкой');
+    { const png = Buffer.from('R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==', 'base64');
+      await p.route('**/api.giphy.com/**', r => r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ data: ['abc12345', 'def67890', 'ghi11111'].map(id => ({ id, images: { fixed_width_small: { url: 'https://media.giphy.com/media/' + id + '/100w.gif', width: '100', height: '80' } } })) }) }));
+      await p.route('**/media.giphy.com/**', r => r.fulfill({ contentType: 'image/gif', body: png }));
+      await p.evaluate(() => localStorage.setItem('giphyKey', 'TESTKEY'));
+      await p.click('#chRx'); await p.waitForTimeout(400);
+      await p.locator('#chSk .stkta', { hasText: 'GIF' }).click(); await p.waitForSelector('#chSk .gifb', { timeout: 5000 });
+      ok(await p.evaluate(() => document.querySelectorAll('#chSk .gifb').length === 3 && /GIPHY/.test(document.querySelector('#chSk .gifpw').textContent)), 'во вкладке GIF есть гифки и надпись Powered by GIPHY');
+      await p.screenshot({ path: shots + '/gifs.png' });
+      await p.click('#chSk .gifb >> nth=0'); await p.waitForTimeout(1500);
+      ok(await p.evaluate(() => { const i = document.querySelector('#chL .chm.me .gifimg'); return !!i && i.naturalWidth > 0 }), 'гифка ушла в чат и показывается картинкой'); }
     await p.evaluate(() => { window.__j = null; EchoCall.join = (room, name) => { window.__j = [room, name] } });
     await p.click('#chCl'); await p.waitForTimeout(800);
     ok(await p.evaluate(() => !!window.__j && /^dm_/.test(window.__j[0]) && window.__j[1] === 'Bobby'), 'кнопка звонка в личном чате открывает звонок с Bobby');

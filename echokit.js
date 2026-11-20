@@ -144,6 +144,8 @@
     K.text = m => {
       if (m.dl) return h("span", "mdel", T("Сообщение удалено", "Message deleted", "Повідомлення видалено"));
       const t = String(m.body || ""), sp = h("span", "mt");
+      { const GF = window.SlovopadGif, gid = GF && GF.parse(t); if (gid) { sp.className = "mt stki"; const im = h("img", "gifimg"); im.src = GF.url(gid); im.alt = "GIF"; im.draggable = false; im.loading = "lazy"; im.onerror = () => { sp.textContent = "GIF"; sp.className = "mt" }; im.onload = () => { if (K.onsize) K.onsize() }; sp.appendChild(im); return sp } }
+      { const SK = window.SlovopadStickers, sid = SK && SK.parse(t); if (sid && SK.has(sid)) { sp.className = "mt stki"; const im = h("img", "stkimg"); im.src = SK.uri(sid); im.alt = SK.label(t); im.draggable = false; sp.appendChild(im); return sp } }
       if (t && bigRe.test(t)) { sp.className = "mt big"; sp.textContent = t; return sp }
       const me = K.me().toLowerCase(); let last = 0; const re = /@[^\s@,.!?;:()]{1,32}/g, x = /./; let r;
       while ((r = re.exec(t))) {
@@ -295,7 +297,29 @@
     };
     // панель стикеров над полем ввода
     K.stickers = (box, send) => {
-      box.textContent = ""; STK.forEach(s => { const b = h("button", "stk", s); b.type = "button"; b.onclick = () => { box.hidden = true; send(s) }; box.appendChild(b) });
+      box.textContent = ""; const SK = window.SlovopadStickers, GF = window.SlovopadGif;
+      const tabs = h("div", "stkt"), body = h("div", "stkbody"); box.append(tabs, body);
+      const tab = (name, fn) => { const b = h("button", "stkta", name); b.type = "button"; b.onclick = () => { [...tabs.children].forEach(x => x.classList.toggle("on", x === b)); body.textContent = ""; fn() }; tabs.appendChild(b); return b };
+      const stickers = () => {
+        if (SK) { const g = h("div", "stkg"); SK.list.forEach((x, k) => { const b = h("button", "stkb"); b.type = "button"; b.title = x.cap; b.style.animationDelay = (k * 18) + "ms"; const im = h("img"); im.src = SK.uri(x.id); im.alt = x.cap; im.draggable = false; im.loading = "lazy"; b.appendChild(im); b.onclick = () => { box.hidden = true; send(SK.token(x.id)) }; g.appendChild(b) }); body.appendChild(g) }
+        const er = h("div", "stke"); STK.forEach(s => { const b = h("button", "stk", s); b.type = "button"; b.onclick = () => { box.hidden = true; send(s) }; er.appendChild(b) }); body.appendChild(er);
+      };
+      const gifs = () => {
+        if (!GF || !GF.ready()) { body.appendChild(h("div", "hint", T("Гифки пока не подключены: нужен ключ Giphy.", "GIFs are not set up yet: a Giphy key is needed.", "Гіфки ще не підключені: потрібен ключ Giphy."))); return }
+        const q = h("input", "gifq"); q.type = "search"; q.placeholder = T("Найти гифку", "Search GIFs", "Знайти гіфку"); q.autocomplete = "off";
+        const grid = h("div", "gifg"), st = h("div", "hint gifs"), pw = h("div", "gifpw", "Powered by GIPHY"); body.append(q, grid, st, pw);
+        let seq = 0, tm = 0;
+        const show = async fn => {
+          const my = ++seq; st.textContent = T("Ищу…", "Searching…", "Шукаю…"); grid.textContent = "";
+          try {
+            const list = await fn(); if (my !== seq) return; st.textContent = list.length ? "" : T("Ничего не нашлось.", "Nothing found.", "Нічого не знайшлось.");
+            list.forEach((x, k) => { const b = h("button", "gifb"); b.type = "button"; b.style.animationDelay = Math.min(k, 12) * 20 + "ms"; const im = h("img"); im.src = x.thumb; im.alt = "GIF"; im.loading = "lazy"; im.draggable = false; im.style.aspectRatio = x.w + "/" + x.h; b.appendChild(im); b.onclick = () => { box.hidden = true; send(GF.token(x.id)) }; grid.appendChild(b) });
+          } catch (e) { if (my === seq) st.textContent = e && e.message === "limit" ? T("Слишком много запросов, подожди минутку.", "Too many requests, wait a minute.", "Забагато запитів, зачекай хвилину.") : T("Гифки не загрузились. Проверь интернет.", "GIFs did not load. Check your connection.", "Гіфки не завантажились. Перевір інтернет.") }
+        };
+        q.addEventListener("input", () => { clearTimeout(tm); const v = q.value.trim(); tm = setTimeout(() => show(() => v ? GF.search(v) : GF.trending()), 350) });
+        show(() => GF.trending());
+      };
+      const first = tab("🖼 " + T("Стикеры", "Stickers", "Стікери"), stickers); tab("GIF", gifs); first.click();
     };
     // выбор картинки: прячем input[type=file], после выбора сжимаем и отдаём строку
     // запись голоса: поверх строки ввода появляется полоска «● 0:07  ✕  ➤»; до 30 секунд

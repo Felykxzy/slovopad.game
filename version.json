@@ -1,12 +1,12 @@
 {
-  "version": "4.10.0",
+  "version": "4.11.0",
   "notes": [
-    "Звонок в личных чатах, пересылка сообщений, поиск по чату, анимации звонка, списка, конца игры, магазина и подарков"
+    "Стикеры и гифки в чатах: кнопка эмодзи открывает панель со вкладками «Стикеры» и «GIF»"
   ],
   "notes_en": [
-    "Calls in private chats, forwarding, chat search, animations for calls, the list, game over, the shop and gifts"
+    "Stickers and GIFs in chats: the emoji button opens a panel with Stickers and GIF tabs"
   ],
   "notes_uk": [
-    "Дзвінок у приватних чатах, пересилання, пошук у чаті, анімації дзвінка, списку, кінця гри, магазину і подарунків"
+    "Стікери та гіфки в чатах: кнопка емодзі відкриває панель із вкладками «Стікери» і «GIF»"
   ]
 }
