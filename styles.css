@@ -1492,8 +1492,30 @@ html.lite.beta #o1 #seB{animation:none}
 .stkbody{width:100%}
 .gifq{width:100%;box-sizing:border-box;border-radius:16px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:var(--ink);font:inherit;font-size:15px;padding:8px 12px;outline:0;margin-bottom:6px}
 .gifg{columns:3;column-gap:6px}
-.gifb{display:block;width:100%;margin:0 0 6px;padding:0;border:0;border-radius:12px;overflow:hidden;background:rgba(255,255,255,.06);cursor:pointer;break-inside:avoid;animation:rxPop .3s cubic-bezier(.3,1.4,.5,1) both}
+.gifb{display:block;width:100%;margin:0;padding:0;border:0;border-radius:12px;overflow:hidden;background:rgba(255,255,255,.06);cursor:pointer;break-inside:avoid;animation:rxPop .3s cubic-bezier(.3,1.4,.5,1) both}
 .gifb img{width:100%;display:block;min-height:40px}.gifb:active{transform:scale(.96)}
 .gifs{padding:6px}.gifpw{text-align:center;font-size:10px;opacity:.55;padding:2px 0 0;letter-spacing:.1em}
 .gifimg{width:min(220px,62vw);max-height:260px;object-fit:contain;display:block;border-radius:14px;user-select:none;-webkit-user-drag:none;animation:stkPop .4s cubic-bezier(.3,1.5,.5,1) both}
 @media (prefers-reduced-motion:reduce){.gifb,.gifimg{animation:none!important}}
+/* 4.12: панель стикеров — разделы, замки, мои стикеры, избранные гифки */
+.stks{font-size:12px;font-weight:700;opacity:.75;padding:8px 6px 4px;letter-spacing:.02em}
+.stkh{padding:4px 6px;min-height:0}.stkh:empty{display:none}
+.stkb{position:relative}.stkb.lock img{filter:grayscale(1) brightness(.55);opacity:.7}
+.stkl{position:absolute;right:4px;bottom:4px;font-size:16px;font-style:normal}
+.stkb.shake{animation:stkShake .4s}@keyframes stkShake{20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+.stkse .stkb{background:rgba(255,255,255,.08);border-radius:16px}
+.stkadd{display:flex;align-items:center;justify-content:center;font-size:34px;color:var(--ac);border:2px dashed rgba(255,255,255,.25)!important;border-radius:16px;min-height:76px;background:none}
+.gifw{position:relative;break-inside:avoid;margin:0 0 6px}.stkg .gifw{margin:0}
+.gifst{position:absolute;top:3px;right:3px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:15px;line-height:26px;padding:0;cursor:pointer}
+.gifst.on{color:#ffd84f}.gifst:active{transform:scale(1.25)}
+.mimg.mystk{background:none}.mimg.mystk img{max-width:min(200px,56vw);max-height:200px;object-fit:contain;background:none;border-radius:0;animation:stkPop .4s cubic-bezier(.3,1.5,.5,1) both}
+.mt.mystk0{display:none}
+.chb:has(.mystk),.mbody:has(.mystk),.chb:has(.stki),.mbody:has(.stki){background:none!important;border-color:transparent!important;box-shadow:none!important;padding:0 4px}
+.mc:has(.mystk) .mtx:has(.mystk0:only-child),.chb:has(.mystk) .mts{background:none}
+/* микрофон: зажал — запись, вверх — замок, влево — отмена */
+.chmc{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.chmc.hold{transform:scale(1.5);background:rgba(255,80,110,.35);transition:transform .15s}
+.ekrec{--ekx:0px;--eky:0px;transform:translate(var(--ekx),var(--eky));transition:transform .18s}
+.ekrec.locked{box-shadow:0 0 0 2px #5ef2ff inset}
+.ekhl{font-size:11px;opacity:.7;margin-left:auto;white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.stkb.shake,.mimg.mystk img{animation:none}}

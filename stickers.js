@@ -35,7 +35,7 @@
     wave: () => eye(58) + eye(102) + arc(56, 92, 80, 118, 104, 92) + '<g><ellipse cx="146" cy="74" rx="11" ry="16" fill="#ffd9a8" stroke="' + INK + '" stroke-width="3"/><animateTransform attributeName="transform" type="rotate" values="-14 142 96;14 142 96;-14 142 96" dur=".9s" repeatCount="indefinite"/></g>'
   };
   function svg(it) {
-    const [, cap, hue, face] = it, h2 = (hue + 28) % 360, fs = cap.length > 6 ? 15 : cap.length > 4 ? 18 : 22;
+    const [, cap, hue, face, emo] = it, h2 = (hue + 28) % 360, fs = cap.length > 6 ? 15 : cap.length > 4 ? 18 : 22;
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -22 172 190" width="172" height="190">' +
       '<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="hsl(' + hue + ' 90% 70%)"/><stop offset="1" stop-color="hsl(' + h2 + ' 82% 52%)"/></linearGradient></defs>' +
       '<g><animateTransform attributeName="transform" type="translate" values="0 0;0 -3;0 0" dur="2.6s" repeatCount="indefinite"/>' +
@@ -44,15 +44,29 @@
       '<ellipse cx="52" cy="30" rx="22" ry="8" fill="#fff" opacity=".35" transform="rotate(-16 52 30)"/>' +
       (FACE[face] || FACE.happy)() +
       '<rect x="12" y="124" width="136" height="32" rx="16" fill="#fff" stroke="' + INK + '" stroke-width="3.5"/>' +
-      '<text x="80" y="146" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="' + fs + '" fill="' + INK + '">' + cap + '</text></g></svg>';
+      '<text x="80" y="146" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="' + fs + '" fill="' + INK + '">' + cap + '</text>' +
+      (emo ? '<text x="136" y="30" text-anchor="middle" font-size="40">' + emo + '<animateTransform attributeName="transform" type="rotate" values="-10 136 20;10 136 20;-10 136 20" dur="2.2s" repeatCount="indefinite"/></text>' : '') + '</g></svg>';
   }
-  const cache = {}, byId = {}; LIST.forEach(x => { byId[x[0]] = x });
+  // награды: открываются по числу полученных достижений (ach в памяти игры)
+  const REW = [["rk1", "НОВИЧОК", 160, "happy", "🌱", 1], ["rk2", "ИГРОК", 205, "cool", "🎯", 4], ["rk3", "ПРО", 280, "star", "⚡", 8],
+    ["rk4", "МАСТЕР", 335, "love", "💎", 14], ["rk5", "ЛЕГЕНДА", 48, "party", "🔥", 20], ["rk6", "КОРОЛЬ", 30, "star", "👑", 28]];
+  // сезонные: у каждой темы месяца свой набор из шести, в панели виден набор текущего месяца
+  const SEF = ["happy", "star", "love", "party", "shock", "cool"], SEC = (n) => [n, "ТОП", "ЛЮБЛЮ", "ГО!", "ВАУ", "GG"];
+  const hueOf = c => { const [r, g, b] = String(c).split(",").map(x => (+x || 0) / 255), mx = Math.max(r, g, b), d = mx - Math.min(r, g, b); if (!d) return 200; const k = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return Math.round((k * 60 + 360) % 360) };
+  const TH = () => (typeof THEMES !== "undefined" && THEMES) || [];
+  const SEAS = []; TH().forEach(t => { const caps = SEC(String(t.n).slice(0, 8)); for (let k = 0; k < 6; k++) SEAS.push(["t-" + t.id + "-" + k, caps[k], hueOf(t.c), SEF[k], t.i, 0, t.id]) });
+  const cache = {}, byId = {}; LIST.concat(REW, SEAS).forEach(x => { byId[x[0]] = x });
+  const achN = () => { try { return Object.keys(JSON.parse(localStorage.getItem("ach") || "{}") || {}).length } catch (e) { return 0 } };
+  const curTheme = () => { const L = TH(); if (!L.length) return null; const d = new Date(); return L[(d.getUTCFullYear() * 12 + d.getUTCMonth()) % L.length] };
   window.SlovopadStickers = {
     list: LIST.map(x => ({ id: x[0], cap: x[1] })),
     has: id => !!byId[id],
     uri: id => { if (!byId[id]) return ""; return cache[id] || (cache[id] = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg(byId[id]))) },
+    rewards: () => { const n = achN(); return REW.map(x => ({ id: x[0], cap: x[1], need: x[5], open: n >= x[5] })) },
+    seasonal: () => { const t = curTheme(); return t ? { name: t.n, icon: t.i, list: SEAS.filter(x => x[6] === t.id).map(x => ({ id: x[0], cap: x[1] })) } : null },
+    achCount: achN,
     token: id => ":s:" + id + ":",
     parse: body => { const m = /^:s:([a-z0-9-]{1,24}):$/.exec(String(body || "").trim()); return m ? m[1] : "" },
-    label: body => { const id = window.SlovopadStickers.parse(body); return id && byId[id] ? "🖼 " + byId[id][1] : "" }
+    label: body => { if (String(body || "").trim() === ":ms:") return "🖼 " + (typeof CFG !== "undefined" && CFG.lang === 1 ? "Sticker" : "Стикер"); const id = window.SlovopadStickers.parse(body); return id && byId[id] ? "🖼 " + byId[id][1] : "" }
   };
 })();

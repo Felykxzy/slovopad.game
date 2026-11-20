@@ -307,8 +307,8 @@
       try { const r = await post("/api/chat/call", { to: p.spCode }); EchoCall.join(r.room, p.username, () => chatOpen(p)) } catch (e) { g("chSt").textContent = e.message } finally { b.disabled = false }
     };
     g("chIn").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); chatSend() } });
-    g("chRx").onclick = () => { const r = g("chSk"); if (r.hidden) kit.stickers(r, x => chatSend(x)); r.hidden = !r.hidden; g("chMenu").hidden = true; g("chRp").hidden = true };
-    g("chMc").onclick = () => { if (!kit.rec) return; kit.rec(g("o15").querySelector(".chbar"), (e, au) => { if (e) { g("chSt").textContent = e.message; return } chatSend(null, au) }) };
+    g("chRx").onclick = () => { const r = g("chSk"); if (r.hidden) kit.stickers(r, (x, im) => chatSend(x, im)); r.hidden = !r.hidden; g("chMenu").hidden = true; g("chRp").hidden = true };
+    if (kit.mic) kit.mic(g("chMc"), g("o15").querySelector(".chbar"), (e, au) => { if (e) { g("chSt").textContent = e.message; return } chatSend(null, au) });
     g("chPh").onclick = () => kit.pick((e, img) => { if (e) { g("chSt").textContent = e.message; return } chatSend(null, img) });
     g("chIn").addEventListener("input", () => { if (chat.p && !chat.edit && EchoKit.draft) EchoKit.draft("d." + chat.p.spCode, g("chIn").value); const n = Date.now(); if (!chat.p || n - chat.typedAt < 3000 || !g("chIn").value) return; chat.typedAt = n; post("/api/chat/typing", { to: chat.p.spCode }).catch(() => { }) });
     g("chMn").onclick = () => { g("chMenu").hidden = !g("chMenu").hidden; g("chRp").hidden = true; chatMenuLabels() };

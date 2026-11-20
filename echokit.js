@@ -134,7 +134,7 @@
     K.media = m => {
       if (!m.im) return null;
       if (m.au > 0) return K.voice(m);
-      const box = h("div", "mimg"), ph = h("div", "mimgp", "📷"); box.appendChild(ph);
+      const mys = String(m.body || "").trim() === ":ms:", box = h("div", "mimg" + (mys ? " mystk" : "")), ph = h("div", "mimgp", "📷"); box.appendChild(ph);
       const show = src => { if (!src) { ph.textContent = T("Картинка устарела", "Image expired", "Картинка застаріла"); return } const i = h("img"); i.src = src; i.alt = ""; i.onclick = e => { e.stopPropagation(); viewer(src, i) }; box.textContent = ""; i.draggable = false; i.onload = () => { if (cfg.onsize) cfg.onsize() }; box.appendChild(i) };
       if (K.imgs[m.id]) show(K.imgs[m.id]);
       else Promise.resolve(cfg.img(m.id)).then(s => { K.imgs[m.id] = s || ""; show(s) }).catch(() => { ph.textContent = "⚠" });
@@ -144,6 +144,7 @@
     K.text = m => {
       if (m.dl) return h("span", "mdel", T("Сообщение удалено", "Message deleted", "Повідомлення видалено"));
       const t = String(m.body || ""), sp = h("span", "mt");
+      if (t.trim() === ":ms:" && m.im) { sp.className = "mt mystk0"; return sp }
       { const GF = window.SlovopadGif, gid = GF && GF.parse(t); if (gid) { sp.className = "mt stki"; const im = h("img", "gifimg"); im.src = GF.url(gid); im.alt = "GIF"; im.draggable = false; im.loading = "lazy"; im.onerror = () => { sp.textContent = "GIF"; sp.className = "mt" }; im.onload = () => { if (K.onsize) K.onsize() }; sp.appendChild(im); return sp } }
       { const SK = window.SlovopadStickers, sid = SK && SK.parse(t); if (sid && SK.has(sid)) { sp.className = "mt stki"; const im = h("img", "stkimg"); im.src = SK.uri(sid); im.alt = SK.label(t); im.draggable = false; sp.appendChild(im); return sp } }
       if (t && bigRe.test(t)) { sp.className = "mt big"; sp.textContent = t; return sp }
@@ -296,13 +297,49 @@
       } catch (e) { }
     };
     // панель стикеров над полем ввода
+    const lsR = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || "null") || d } catch (e) { return d } };
+    const lsW = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true } catch (e) { return false } };
+    // свой стикер: любая картинка ужимается до 256 пикселей, прозрачность сохраняется
+    const mkSticker = file => new Promise((ok, no) => {
+      if (!file || !/^image\//.test(file.type)) { no(new Error(T("Выбери картинку.", "Pick an image.", "Обери картинку."))); return }
+      const u = URL.createObjectURL(file), im = new Image();
+      im.onerror = () => { URL.revokeObjectURL(u); no(new Error(T("Не удалось открыть картинку.", "Could not open the image.", "Не вдалося відкрити картинку."))) };
+      im.onload = () => {
+        URL.revokeObjectURL(u); let side = 256;
+        for (let k = 0; k < 4; k++, side = Math.round(side * .75)) {
+          const sc = Math.min(1, side / Math.max(im.naturalWidth, im.naturalHeight)), c = document.createElement("canvas");
+          c.width = Math.max(1, Math.round(im.naturalWidth * sc)); c.height = Math.max(1, Math.round(im.naturalHeight * sc));
+          c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+          let out = c.toDataURL("image/webp", .82); if (!/^data:image\/webp/.test(out)) out = c.toDataURL("image/png");
+          if (out.length <= 60000) { ok(out); return }
+        }
+        no(new Error(T("Картинка слишком тяжёлая.", "The image is too heavy.", "Картинка задовга.")));
+      };
+      im.src = u;
+    });
     K.stickers = (box, send) => {
       box.textContent = ""; const SK = window.SlovopadStickers, GF = window.SlovopadGif;
       const tabs = h("div", "stkt"), body = h("div", "stkbody"); box.append(tabs, body);
       const tab = (name, fn) => { const b = h("button", "stkta", name); b.type = "button"; b.onclick = () => { [...tabs.children].forEach(x => x.classList.toggle("on", x === b)); body.textContent = ""; fn() }; tabs.appendChild(b); return b };
+      const grid = (list, cls) => { const g = h("div", "stkg" + (cls ? " " + cls : "")); list.forEach((x, k) => { const b = h("button", "stkb" + (x.open === false ? " lock" : "")); b.type = "button"; b.title = x.cap; b.style.animationDelay = Math.min(k, 14) * 18 + "ms"; const im = h("img"); im.src = SK.uri(x.id); im.alt = x.cap; im.draggable = false; im.loading = "lazy"; b.appendChild(im); if (x.open === false) b.appendChild(h("i", "stkl", "🔒")); b.onclick = () => { if (x.open === false) { hint.textContent = T("Откроется за достижения: нужно " + x.need + ", у тебя " + SK.achCount() + ".", "Unlocks with achievements: " + x.need + " needed, you have " + SK.achCount() + ".", "Відкриється за досягнення: потрібно " + x.need + ", у тебе " + SK.achCount() + "."); b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake"); return } box.hidden = true; send(SK.token(x.id)) }; g.appendChild(b) }); return g };
+      const hint = h("div", "hint stkh");
       const stickers = () => {
-        if (SK) { const g = h("div", "stkg"); SK.list.forEach((x, k) => { const b = h("button", "stkb"); b.type = "button"; b.title = x.cap; b.style.animationDelay = (k * 18) + "ms"; const im = h("img"); im.src = SK.uri(x.id); im.alt = x.cap; im.draggable = false; im.loading = "lazy"; b.appendChild(im); b.onclick = () => { box.hidden = true; send(SK.token(x.id)) }; g.appendChild(b) }); body.appendChild(g) }
+        if (SK) {
+          const se = SK.seasonal && SK.seasonal(); if (se && se.list.length) { body.appendChild(h("div", "stks", se.icon + " " + T("Сезон: ", "Season: ", "Сезон: ") + se.name)); body.appendChild(grid(se.list, "stkse")) }
+          body.appendChild(h("div", "stks", T("Стикеры", "Stickers", "Стікери"))); body.appendChild(grid(SK.list));
+          body.appendChild(h("div", "stks", "🏆 " + T("За достижения", "Achievement rewards", "За досягнення"))); body.appendChild(grid(SK.rewards()));
+          body.appendChild(hint);
+        }
         const er = h("div", "stke"); STK.forEach(s => { const b = h("button", "stk", s); b.type = "button"; b.onclick = () => { box.hidden = true; send(s) }; er.appendChild(b) }); body.appendChild(er);
+      };
+      const favs = () => lsR("spFavGif", []);
+      const gifTile = (x, k, onStar) => {
+        const w = h("div", "gifw"), b = h("button", "gifb"); b.type = "button"; b.style.animationDelay = Math.min(k, 12) * 20 + "ms";
+        const im = h("img"); im.src = GF.thumb(x.id); im.alt = "GIF"; im.loading = "lazy"; im.draggable = false; im.style.aspectRatio = (x.w || 100) + "/" + (x.h || 100); b.appendChild(im);
+        b.onclick = () => { box.hidden = true; send(GF.token(x.id)) };
+        const on = () => favs().some(f => f.id === x.id), st = h("button", "gifst" + (on() ? " on" : ""), on() ? "★" : "☆"); st.type = "button"; st.setAttribute("aria-label", "favorite");
+        st.onclick = e => { e.stopPropagation(); let l = favs(); if (on()) l = l.filter(f => f.id !== x.id); else l = [{ id: x.id, w: x.w, h: x.h }].concat(l).slice(0, 40); lsW("spFavGif", l); st.classList.toggle("on", on()); st.textContent = on() ? "★" : "☆"; if (onStar) onStar() };
+        w.append(b, st); return w;
       };
       const gifs = () => {
         if (!GF || !GF.ready()) { body.appendChild(h("div", "hint", T("Гифки пока не подключены: нужен ключ Giphy.", "GIFs are not set up yet: a Giphy key is needed.", "Гіфки ще не підключені: потрібен ключ Giphy."))); return }
@@ -313,13 +350,36 @@
           const my = ++seq; st.textContent = T("Ищу…", "Searching…", "Шукаю…"); grid.textContent = "";
           try {
             const list = await fn(); if (my !== seq) return; st.textContent = list.length ? "" : T("Ничего не нашлось.", "Nothing found.", "Нічого не знайшлось.");
-            list.forEach((x, k) => { const b = h("button", "gifb"); b.type = "button"; b.style.animationDelay = Math.min(k, 12) * 20 + "ms"; const im = h("img"); im.src = x.thumb; im.alt = "GIF"; im.loading = "lazy"; im.draggable = false; im.style.aspectRatio = x.w + "/" + x.h; b.appendChild(im); b.onclick = () => { box.hidden = true; send(GF.token(x.id)) }; grid.appendChild(b) });
+            list.forEach((x, k) => grid.appendChild(gifTile(x, k)));
           } catch (e) { if (my === seq) st.textContent = e && e.message === "limit" ? T("Слишком много запросов, подожди минутку.", "Too many requests, wait a minute.", "Забагато запитів, зачекай хвилину.") : T("Гифки не загрузились. Проверь интернет.", "GIFs did not load. Check your connection.", "Гіфки не завантажились. Перевір інтернет.") }
         };
         q.addEventListener("input", () => { clearTimeout(tm); const v = q.value.trim(); tm = setTimeout(() => show(() => v ? GF.search(v) : GF.trending()), 350) });
         show(() => GF.trending());
       };
-      const first = tab("🖼 " + T("Стикеры", "Stickers", "Стікери"), stickers); tab("GIF", gifs); first.click();
+      const mine = () => {
+        const msg = h("div", "hint stkh");
+        body.appendChild(h("div", "stks", T("Мои стикеры", "My stickers", "Мої стікери")));
+        const g = h("div", "stkg stkmy"); body.append(g, msg);
+        const draw = () => {
+          g.textContent = ""; const list = lsR("spMyStk", []);
+          const add = h("button", "stkb stkadd", "＋"); add.type = "button"; add.setAttribute("aria-label", "add");
+          add.onclick = () => { if (list.length >= 24) { msg.textContent = T("Хватит, максимум 24. Удали лишний.", "Enough, max 24. Remove one first.", "Досить, максимум 24. Видали зайвий."); return }
+            const i = h("input"); i.type = "file"; i.accept = "image/*"; i.style.display = "none";
+            i.onchange = async () => { const f = i.files && i.files[0]; i.remove(); if (!f) return; try { const u = await mkSticker(f); const l = lsR("spMyStk", []); l.unshift(u); if (!lsW("spMyStk", l)) throw new Error(T("Не хватило места на устройстве.", "Not enough storage.", "Не вистачило місця.")); msg.textContent = ""; draw() } catch (e) { msg.textContent = e.message } };
+            document.body.appendChild(i); i.click() };
+          g.appendChild(add);
+          list.forEach((u, k) => { const w = h("div", "gifw"), b = h("button", "stkb"); b.type = "button"; const im = h("img"); im.src = u; im.alt = ""; im.draggable = false; b.appendChild(im); b.onclick = () => { box.hidden = true; send(":ms:", u) };
+            const x = h("button", "gifst on", "✕"); x.type = "button"; x.setAttribute("aria-label", "remove"); x.onclick = e => { e.stopPropagation(); const l = lsR("spMyStk", []); l.splice(k, 1); lsW("spMyStk", l); draw() }; w.append(b, x); g.appendChild(w) });
+        };
+        draw();
+        if (GF) {
+          body.appendChild(h("div", "stks", "★ " + T("Избранные гифки", "Favorite GIFs", "Обрані гіфки")));
+          const fg = h("div", "gifg"); body.appendChild(fg);
+          const drawF = () => { fg.textContent = ""; const l = favs(); if (!l.length) { fg.appendChild(h("div", "hint", T("Нажми ☆ на гифке, и она появится здесь.", "Tap ☆ on a GIF and it shows up here.", "Натисни ☆ на гіфці, і вона з'явиться тут."))); return } l.forEach((x, k) => fg.appendChild(gifTile(x, k, () => setTimeout(drawF, 120)))) };
+          drawF();
+        }
+      };
+      const first = tab("🖼 " + T("Стикеры", "Stickers", "Стікери"), stickers); tab("GIF", gifs); tab("⭐ " + T("Мои", "Mine", "Мої"), mine); first.click();
     };
     // выбор картинки: прячем input[type=file], после выбора сжимаем и отдаём строку
     // запись голоса: поверх строки ввода появляется полоска «● 0:07  ✕  ➤»; до 30 секунд
@@ -335,8 +395,11 @@
         no.type = ok.type = "button"; no.setAttribute("aria-label", "cancel"); ok.setAttribute("aria-label", "send");
         [dot, tm, no, ok].forEach(x => ui.appendChild(x)); bar.appendChild(ui);
         const tick = setInterval(() => { const s = (Date.now() - t0) / 1000; tm.textContent = mmss(s); if (s >= 30) fin(true) }, 250);
-        const fin = go => { if (dead) return; dead = true; send = go; clearInterval(tick); ui.remove(); try { rec.stop() } catch (e) { } stream.getTracks().forEach(t => t.stop()) };
+        const fin = go => { if (dead) return; dead = true; send = go; clearInterval(tick); bar.__rc = null; ui.remove(); try { rec.stop() } catch (e) { } stream.getTracks().forEach(t => t.stop()) };
         no.onclick = () => fin(false); ok.onclick = () => fin(true);
+        const hintEl = h("span", "ekhl", "⬆ " + T("замок", "lock", "замок") + "   ⬅ " + T("отмена", "cancel", "скасувати")); ui.insertBefore(hintEl, no);
+        bar.__rc = { fin, lock: () => { ui.classList.add("locked"); hintEl.textContent = "🔒 " + T("запись закреплена", "recording locked", "запис закріплено") }, slide: (dx, dy) => { if (!ui.classList.contains("locked")) { ui.style.setProperty("--ekx", Math.max(-120, Math.min(0, dx)) + "px"); ui.style.setProperty("--eky", Math.max(-80, Math.min(0, dy)) + "px") } }, ui };
+        if (bar.__want) { const w = bar.__want; bar.__want = null; if (w === "send") fin(true); else if (w === "cancel") fin(false); else if (w === "lock") bar.__rc.lock() }
         rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data) };
         rec.onstop = () => {
           const sec = Math.round((Date.now() - t0) / 1000);
@@ -348,6 +411,25 @@
         };
         rec.start(250);
       }).catch(() => done(new Error(T("Нет доступа к микрофону. Разреши его в настройках.", "No microphone access. Allow it in settings.", "Немає доступу до мікрофона. Дозволь його в налаштуваннях."))));
+    };
+    // микрофон как в Телеграме: зажал и говори, отпустил — отправилось; вверх — замок; влево — отмена; короткое нажатие включает запись с кнопками
+    K.mic = (btn, bar, done) => {
+      if (btn.__mic) return; btn.__mic = 1;
+      let t0 = 0, sx = 0, sy = 0, down = false, locked = false, touch = false;
+      const ctl = () => bar.__rc;
+      btn.addEventListener("pointerdown", e => { if (e.button > 0 || down) return; down = true; locked = false; touch = e.pointerType !== "mouse"; t0 = Date.now(); sx = e.clientX; sy = e.clientY; try { btn.setPointerCapture(e.pointerId) } catch (x) { } bar.__want = null; K.rec(bar, done); btn.classList.add("hold"); e.preventDefault() });
+      btn.addEventListener("pointermove", e => {
+        if (!down || locked) return; const dx = e.clientX - sx, dy = e.clientY - sy, c = ctl();
+        if (c) c.slide(dx, dy);
+        if (dx < -90) { down = false; btn.classList.remove("hold"); if (c) c.fin(false); else bar.__want = "cancel" }
+        else if (dy < -70) { locked = true; btn.classList.remove("hold"); try { navigator.vibrate && navigator.vibrate(12) } catch (x) { } if (c) c.lock(); else bar.__want = "lock" }
+      });
+      const up = e => { if (!down) return; down = false; btn.classList.remove("hold"); if (locked) return; const c = ctl(), long = Date.now() - t0 > 450;
+        if (c) { c.ui.style.removeProperty("--ekx"); c.ui.style.removeProperty("--eky"); if (long) c.fin(e.type !== "pointercancel"); else c.lock() }
+        else bar.__want = long && e.type !== "pointercancel" ? "send" : "lock" };
+      btn.addEventListener("pointerup", up); btn.addEventListener("pointercancel", up);
+      btn.addEventListener("contextmenu", e => e.preventDefault());
+      btn.addEventListener("click", e => { if (e.detail === 0) K.rec(bar, done) });
     };
     K.pick = done => {
       const i = h("input"); i.type = "file"; i.accept = "image/*"; i.style.display = "none";

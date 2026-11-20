@@ -153,6 +153,44 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
       await p.screenshot({ path: shots + '/gifs.png' });
       await p.click('#chSk .gifb >> nth=0'); await p.waitForTimeout(1500);
       ok(await p.evaluate(() => { const i = document.querySelector('#chL .chm.me .gifimg'); return !!i && i.naturalWidth > 0 }), 'гифка ушла в чат и показывается картинкой'); }
+    { console.log('Свои стикеры, избранное, награды, реакция на стикер, голос');
+      await p.click('#chRx'); await p.waitForTimeout(400);
+      await p.locator('#chSk .stkta').first().click(); await p.waitForTimeout(300);
+      ok(await p.evaluate(() => document.querySelectorAll('#chSk .stkse .stkb').length === 6 && /Сезон/.test(document.querySelector('#chSk .stks').textContent)), 'виден сезонный набор из 6 стикеров');
+      ok(await p.evaluate(() => document.querySelectorAll('#chSk .stkb.lock').length === 6), 'награды закрыты замками (достижений нет)');
+      await p.locator('#chSk .stkb.lock').first().click(); await p.waitForTimeout(200);
+      ok(await p.evaluate(() => /нужно 1/.test(document.querySelector('#chSk .stkh').textContent)), 'замок подсказывает, сколько достижений нужно');
+      await p.screenshot({ path: shots + '/stickers2.png' });
+      await p.evaluate(() => localStorage.setItem('ach', JSON.stringify({ a: 1, b: 2, c: 3, d: 4, e: 5 })));
+      await p.locator('#chSk .stkta').nth(2).click(); await p.locator('#chSk .stkta').first().click(); await p.waitForTimeout(300);
+      ok(await p.evaluate(() => document.querySelectorAll('#chSk .stkb.lock').length === 4), 'после 5 достижений открыты 2 награды');
+      await p.locator('#chSk .stkta').nth(1).click(); await p.waitForSelector('#chSk .gifb');
+      await p.locator('#chSk .gifst').first().click(); await p.waitForTimeout(150);
+      await p.locator('#chSk .stkta').nth(2).click(); await p.waitForTimeout(300);
+      ok(await p.evaluate(() => document.querySelectorAll('#chSk .gifg .gifb').length === 1), 'гифка с ☆ попала в избранное');
+      const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVR4nGP8z8Dwn4GBgYEJRDACAB4QAgOLB6mhAAAAAElFTkSuQmCC', 'base64');
+      const [fc] = await Promise.all([p.waitForEvent('filechooser'), p.click('#chSk .stkadd')]);
+      await fc.setFiles({ name: 'm.png', mimeType: 'image/png', buffer: png }); await p.waitForTimeout(700);
+      ok(await p.evaluate(() => JSON.parse(localStorage.getItem('spMyStk') || '[]').length === 1), 'свой стикер сохранился в «Мои»');
+      await p.click('#chSk .stkmy .gifw .stkb'); await p.waitForSelector('#chL .chm.me .mystk img', { timeout: 6000 }); await p.waitForTimeout(800);
+      ok(await p.evaluate(() => { const i = document.querySelector('#chL .chm.me:last-child .mystk img'); return !!i && i.naturalWidth > 0 && !document.querySelector('#chL .chm.me:last-child .chb').textContent.includes(':ms:') }), 'свой стикер ушёл в чат картинкой без подписи');
+      await p.screenshot({ path: shots + '/mystk.png' });
+      const bb = await p.locator('#chL .chm.me .mystk img').last().boundingBox();
+      await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await p.mouse.down(); await p.waitForTimeout(650); await p.mouse.up(); await p.waitForTimeout(350);
+      ok(await p.evaluate(() => !!document.querySelector('#o15 .eksh .esre')), 'долгое нажатие по стикеру открывает реакции');
+      await p.locator('#o15 .eksh .esre').first().click(); await p.waitForTimeout(900);
+      ok(await p.evaluate(() => !!document.querySelector('#chL .rxc')), 'реакция на стикер поставилась');
+      await p.evaluate(() => { const e = document.querySelector('#o15 .eksh'); if (e) e.click() }); await p.waitForTimeout(250);
+      const mb = await p.locator('#chMc').boundingBox(); await p.mouse.move(mb.x + mb.width / 2, mb.y + mb.height / 2); await p.mouse.down(); await p.waitForTimeout(900);
+      ok(await p.evaluate(() => !!document.querySelector('#o15 .ekrec')), 'зажал микрофон: пошла запись');
+      await p.mouse.move(mb.x + mb.width / 2, mb.y - 90, { steps: 6 }); await p.mouse.up(); await p.waitForTimeout(300);
+      ok(await p.evaluate(() => { const r = document.querySelector('#o15 .ekrec'); return !!r && r.classList.contains('locked') }), 'сдвинул вверх: запись закреплена замком');
+      await p.screenshot({ path: shots + '/voicelock.png' });
+      await p.click('#o15 .ekno'); await p.waitForTimeout(300);
+      ok(await p.evaluate(() => !document.querySelector('#o15 .ekrec')), 'крестик отменяет закреплённую запись');
+      await p.mouse.move(mb.x + mb.width / 2, mb.y + mb.height / 2); await p.mouse.down(); await p.waitForTimeout(800); await p.mouse.move(mb.x - 120, mb.y + mb.height / 2, { steps: 6 }); await p.mouse.up(); await p.waitForTimeout(300);
+      ok(await p.evaluate(() => !document.querySelector('#o15 .ekrec')), 'сдвинул влево: запись отменена');
+    }
     await p.evaluate(() => { window.__j = null; EchoCall.join = (room, name) => { window.__j = [room, name] } });
     await p.click('#chCl'); await p.waitForTimeout(800);
     ok(await p.evaluate(() => !!window.__j && /^dm_/.test(window.__j[0]) && window.__j[1] === 'Bobby'), 'кнопка звонка в личном чате открывает звонок с Bobby');
@@ -213,7 +251,8 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
     await swipe(200, 300, 230, 600); ok(await open(), 'свайп вниз (прокрутка) чат не закрывает');
     await swipe(300, 400, 100, 400); ok(await open(), 'свайп влево чат не закрывает');
     { await p.evaluate(() => { const x = document.querySelector('#chQp .ecx'); if (x) x.click(); document.getElementById('o15').querySelector('#chL').scrollTop = 1e6 }); await p.waitForTimeout(300);
-      const bb = await p.locator('#chL .chm:not(.me):not(.rx):not(.dl) .chb').last().boundingBox(); const y = bb.y + bb.height / 2, x0 = Math.min(380, bb.x + bb.width - 8);
+      await p.locator('#chL .chm:not(.me):not(.rx):not(.dl) .chb').last().scrollIntoViewIfNeeded(); await p.waitForTimeout(250);
+      const bb = await p.locator('#chL .chm:not(.me):not(.rx):not(.dl) .chb').last().boundingBox(); const y = bb.y + bb.height / 2, x0 = Math.min((p.viewportSize() || {width: 430}).width - 24, bb.x + bb.width - 8);
       await swipe(x0, y, x0 - 130, y + 3, 8, 'swipe-reply.png');
       ok(await p.evaluate(() => !document.getElementById('chQp').hidden && /↩.*🎉/.test(document.getElementById('chQp').textContent)), 'свайп влево по сообщению включает ответ именно на него');
       await p.click('#chQp .ecx'); await p.waitForTimeout(200); }

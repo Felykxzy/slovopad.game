@@ -89,8 +89,8 @@
     try { g("rmL").addEventListener("scroll", () => { const l = g("rmL"); g("o17").classList.toggle("chsm", l.scrollHeight - l.scrollTop - l.clientHeight > 160) }, { passive: true }) } catch (e) { }
     if (EchoKit.swipeLeft) EchoKit.swipeLeft(g("rmL"), ".msg:not(.dl)", it => [it.querySelector(".mbody")], it => { const m = kit.msgs[it.dataset.id]; if (m && !m.dl) { E.reply = m; E.edit = null; replyPaint(); try { g("rmIn").focus() } catch (e) { } } }, "↩");
     g("rmSn").onclick = () => roomSend();
-    g("rmStk").onclick = () => { const r = g("rmSk"); if (r.hidden) kit.stickers(r, x => roomSend(x)); r.hidden = !r.hidden };
-    g("rmMc").onclick = () => { if (!kit.rec) return; kit.rec(g("o17").querySelector(".chbar"), (e, au) => { if (e) { setHint("rmSt", e.message, true); return } roomSend(null, au) }) };
+    g("rmStk").onclick = () => { const r = g("rmSk"); if (r.hidden) kit.stickers(r, (x, im) => roomSend(x, im)); r.hidden = !r.hidden };
+    if (kit.mic) kit.mic(g("rmMc"), g("o17").querySelector(".chbar"), (e, au) => { if (e) { setHint("rmSt", e.message, true); return } roomSend(null, au) });
     g("rmPh").onclick = () => kit.pick((e, img) => { if (e) { setHint("rmSt", e.message, true); return } roomSend(null, img) });
     g("rmIn").addEventListener("input", () => { if (E.room && !E.edit && EchoKit.draft) EchoKit.draft("r." + E.room.id, g("rmIn").value); const n = Date.now(); if (!E.room || !g("rmIn").value || n - E.typedAt < 3000) return; E.typedAt = n; post("/api/echo/room/typing", { room: E.room.id }).catch(() => { }) });
     g("rmIn").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); roomSend() } });

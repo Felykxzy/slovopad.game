@@ -1,12 +1,12 @@
 {
-  "version": "4.11.0",
+  "version": "4.12.0",
   "notes": [
-    "Стикеры и гифки в чатах: кнопка эмодзи открывает панель со вкладками «Стикеры» и «GIF»"
+    "Свои стикеры, избранные гифки, сезонные стикеры и награды, голос с замком"
   ],
   "notes_en": [
-    "Stickers and GIFs in chats: the emoji button opens a panel with Stickers and GIF tabs"
+    "Your own stickers, favorite GIFs, seasonal and reward stickers, voice lock"
   ],
   "notes_uk": [
-    "Стікери та гіфки в чатах: кнопка емодзі відкриває панель із вкладками «Стікери» і «GIF»"
+    "Свої стікери, обрані гіфки, сезонні стікери і нагороди, голос із замком"
   ]
 }
