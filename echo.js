@@ -230,7 +230,7 @@
   /* ---------- комната ---------- */
   function roomOpen(id, name) {
     build(); E.room = { id, name: name || "", mine: false, members: [] }; E.lastRoom = { id, name: name || "" }; E.last = 0; E.sure = 0; lastMsg = null; E.els = {}; E.msgs = {}; if (E.dn) E.dn.reset(); if (kit.S) kit.S.exit(); g("o17").classList.remove("chsm"); E.races = {}; E.react = {}; E.sel = null; E.reply = null; E.edit = null; E.since = 0; E.day = ""; kit.reset(); replyPaint(); g("rmSk").hidden = true; g("rmPin").hidden = true; g("rmAb").hidden = true;
-    g("rmL").textContent = ""; g("rmSt").textContent = ""; g("rmMenu").hidden = true; g("rmIn").value = "";
+    g("rmL").textContent = ""; g("rmSt").textContent = ""; g("rmMenu").hidden = true; g("rmIn").value = EchoKit.draft ? EchoKit.draft("r." + id) : "";
     g("rmIn").placeholder = T("Написать в # ", "Message # ", "Написати в # ") + (name || "");
     g("rmT").textContent = "# " + E.room.name; g("rmS").textContent = " ";
     ov("o17"); const o = g("o17"), v = window.visualViewport; if (v) { o.style.height = v.height + "px"; o.style.transform = "translateY(" + v.offsetTop + "px)" }

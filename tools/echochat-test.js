@@ -124,6 +124,9 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
     ok(await p.evaluate(() => !document.getElementById('o15').classList.contains('eksmode') && document.querySelectorAll('#chL .chm.eksel').length === 0), 'выбор выключился, отметки сняты');
     await p.fill('#chIn', 'недописанное'); await p.waitForTimeout(200);
     ok(await p.evaluate(() => Object.keys(localStorage).some(k => /^slovopad\.dr\.d\./.test(k) && localStorage[k] === 'недописанное')), 'черновик сохранился');
+    await p.evaluate(() => document.getElementById('chBk').click()); await p.waitForTimeout(500);
+    await p.evaluate(c => SlovopadFriends.chatOpen({ spCode: c, username: 'Bobby', online: true }), B.code); await p.waitForTimeout(900);
+    ok(await p.evaluate(() => document.getElementById('chIn').value === 'недописанное'), 'вышел из чата и зашёл снова: черновик на месте');
     await p.click('#chSn'); await p.waitForTimeout(800);
     ok(await p.evaluate(() => !Object.keys(localStorage).some(k => /^slovopad\.dr\.d\./.test(k))), 'после отправки черновик стёрт');
     await api('/api/chat/send', { to: A.code, text: '🎉' }, B.token); await p.waitForSelector('#o15 .ekfx i', { timeout: 9000 }).catch(() => { });
@@ -187,6 +190,11 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
   await p.evaluate(() => document.getElementById('chBk').click()); await p.waitForTimeout(300);
   await api('/api/echo/room/typing', { room: rid }, B.token);
   await p.evaluate(id => SlovopadEcho.roomOpen(id, 'Словари'), rid); await p.waitForTimeout(1800);
+  await p.fill('#rmIn', 'черновик комнаты'); await p.waitForTimeout(200);
+  await p.evaluate(() => document.getElementById('o17').querySelector('.ib').click()); await p.waitForTimeout(500);
+  await p.evaluate(id => SlovopadEcho.roomOpen(id, 'Словари'), rid); await p.waitForTimeout(1500);
+  ok(await p.evaluate(() => document.getElementById('rmIn').value === 'черновик комнаты'), 'в комнате черновик тоже возвращается');
+  await p.fill('#rmIn', ''); await p.waitForTimeout(150);
   const rt = await p.evaluate(() => document.getElementById('rmL').innerText);
   ok(/Всем привет/.test(rt) && /буду/.test(rt), 'сообщения комнаты видны');
   ok(await p.evaluate(() => !!document.querySelector('#rmL .mq')), 'ответ с цитатой');
