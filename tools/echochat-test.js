@@ -209,6 +209,10 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
     await p.locator('#o15 .ekft', { hasText: 'Carol' }).click(); await p.waitForTimeout(1200);
     ok(await p.evaluate(() => !!document.querySelector('.ekto')), 'после пересылки видно подтверждение');
     ok(((await api('/api/chat?with=' + A.code, null, C.token)).messages || []).some(m => /↪/.test(m.body || '')), 'Carol получила пересланное сообщение');
+    await hold2('#chL .chm.me .stkimg');
+    await p.locator('#o15 .eksh .esa', { hasText: 'Переслать' }).click(); await p.waitForTimeout(500);
+    await p.locator('#o15 .ekft', { hasText: 'Carol' }).click(); await p.waitForTimeout(1200);
+    ok(((await api('/api/chat?with=' + A.code, null, C.token)).messages || []).some(m => /^:s:[a-z0-9-]+:$/.test(m.body || '')), 'стикер пересылается стикером, а не текстом с подписью');
     await p.click('#chSrb'); await p.waitForTimeout(400);
     await p.fill('.eksr input', 'длины чата'); await p.waitForTimeout(500);
     ok(await p.evaluate(() => /^\d+ \/ \d+$/.test(document.querySelector('.eksc').textContent) && document.querySelectorAll('#chL .ekhit').length >= 2), 'поиск нашёл несколько сообщений и подсветил их');

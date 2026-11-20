@@ -1,12 +1,12 @@
 {
-  "version": "4.12.1",
+  "version": "4.12.2",
   "notes": [
-    "Исправлено: меню при нажатии на гифку или большое фото уезжало за край экрана"
+    "Исправлено: стикер и гифка при пересылке уходили текстом с кодом"
   ],
   "notes_en": [
-    "Fixed: the menu on a GIF or a large photo went off the screen edge"
+    "Fixed: stickers and GIFs were forwarded as plain text with a code"
   ],
   "notes_uk": [
-    "Виправлено: меню на гіфці чи великому фото виїжджало за край екрана"
+    "Виправлено: стікер і гіфка при пересиланні йшли текстом із кодом"
   ]
 }

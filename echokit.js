@@ -203,6 +203,13 @@
       K.S = S; return S;
     };
     // пересылка: выбираешь, кому, сообщение «улетает» вверх, внизу выезжает подтверждение
+    // что отправлять при пересылке: стикер, гифка и свой стикер уходят как есть, обычный текст получает подпись «от кого»
+    K.fwd = (m, pre) => {
+      const b = String(m.body || "").trim(), SK = window.SlovopadStickers, GF = window.SlovopadGif;
+      if ((SK && SK.parse(b)) || (GF && GF.parse(b))) return { text: b };
+      if (b === ":ms:" && m.im && K.imgs[m.id]) return { text: b, img: K.imgs[m.id] };
+      return { text: pre + "\n" + m.body };
+    };
     K.forward = (host, m, targets, send, from) => {
       const old = host.querySelector(".ekfw"); if (old) old.remove();
       const w = h("div", "ekfw"), c = h("div", "ekfc"); let gone = false;
