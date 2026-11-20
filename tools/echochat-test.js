@@ -107,6 +107,33 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
       await p.click('#o15 .ekdn'); await p.waitForTimeout(900);
       ok(await p.evaluate(() => { const l = document.getElementById('chL'); return l.scrollHeight - l.scrollTop - l.clientHeight < 130 && !document.querySelector('#o15 .ekdn.on') }), 'по кнопке чат прокрутился вниз, кнопка спряталась');
     } else console.log('  (чат короткий, кнопку «вниз» не проверяем)') }
+  { console.log('Выбор, закреп, черновик, эффект, шапка');
+    const hold = async sel => { const l = p.locator(sel).last(); await l.scrollIntoViewIfNeeded(); await p.waitForTimeout(150); const bb = await l.boundingBox(); await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await p.mouse.down(); await p.waitForTimeout(650); await p.mouse.up(); await p.waitForTimeout(450) };
+    await hold('#chL .chm:not(.me):not(.rx):not(.dl) .chb');
+    await p.locator('#o15 .eksh .esa', { hasText: 'Закрепить' }).click(); await p.waitForTimeout(5200);
+    ok(await p.evaluate(() => { const x = document.getElementById('chPin'); return !x.hidden && /📌/.test(x.textContent) }), 'закреп в личном чате появился');
+    ok((await api('/api/chat?with=' + A.code, null, B.token)).pin, 'закреп виден и второму игроку');
+    await p.screenshot({ path: shots + '/dm-pin.png' });
+    await hold('#chL .chm:not(.me):not(.rx):not(.dl) .chb');
+    await p.locator('#o15 .eksh .esa', { hasText: 'Выбрать' }).click(); await p.waitForTimeout(400);
+    ok(await p.evaluate(() => document.getElementById('o15').classList.contains('eksmode') && !document.querySelector('.eksb').hidden && document.querySelectorAll('#chL .chm.eksel').length === 1), 'режим выбора включился, одно сообщение отмечено');
+    await p.evaluate(() => { const m = [...document.querySelectorAll('#chL .chm:not(.rx):not(.dl) .chb')]; m[m.length - 3].click() }); await p.waitForTimeout(250);
+    ok(await p.evaluate(() => document.querySelectorAll('#chL .chm.eksel').length === 2 && /^2 /.test(document.querySelector('.eksn').textContent)), 'после нажатия выбрано два сообщения');
+    await p.screenshot({ path: shots + '/dm-select.png' });
+    await p.evaluate(() => document.querySelector('.eksx').click()); await p.waitForTimeout(400);
+    ok(await p.evaluate(() => !document.getElementById('o15').classList.contains('eksmode') && document.querySelectorAll('#chL .chm.eksel').length === 0), 'выбор выключился, отметки сняты');
+    await p.fill('#chIn', 'недописанное'); await p.waitForTimeout(200);
+    ok(await p.evaluate(() => Object.keys(localStorage).some(k => /^slovopad\.dr\.d\./.test(k) && localStorage[k] === 'недописанное')), 'черновик сохранился');
+    await p.click('#chSn'); await p.waitForTimeout(800);
+    ok(await p.evaluate(() => !Object.keys(localStorage).some(k => /^slovopad\.dr\.d\./.test(k))), 'после отправки черновик стёрт');
+    await api('/api/chat/send', { to: A.code, text: '🎉' }, B.token); await p.waitForSelector('#o15 .ekfx i', { timeout: 9000 }).catch(() => { });
+    ok(await p.evaluate(() => !!document.querySelector('#o15 .ekfx i')), 'смайлик 🎉 запустил конфетти');
+    await p.screenshot({ path: shots + '/dm-confetti.png' }); await p.waitForTimeout(3400);
+    await p.evaluate(() => { const l = document.getElementById('chL'); l.scrollTop = 0; l.dispatchEvent(new Event('scroll')) }); await p.waitForTimeout(500);
+    ok(await p.evaluate(() => document.getElementById('o15').classList.contains('chsm')), 'шапка сжалась при чтении истории');
+    await p.screenshot({ path: shots + '/dm-compact.png' });
+    await p.evaluate(() => { const l = document.getElementById('chL'); l.scrollTop = l.scrollHeight; l.dispatchEvent(new Event('scroll')) }); await p.waitForTimeout(400);
+    ok(await p.evaluate(() => !document.getElementById('o15').classList.contains('chsm')), 'шапка вернулась внизу чата'); }
   ok(await p.evaluate(() => /✓✓/.test(document.getElementById('chL').innerText)), 'отметка «прочитано» видна');
   await p.screenshot({ path: shots + '/dm1.png' });
   { await p.locator('#chL .chm.me .chb').first().scrollIntoViewIfNeeded(); await p.waitForTimeout(200); const bb = await p.locator('#chL .chm.me .chb').first().boundingBox();
@@ -150,7 +177,7 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
     { await p.evaluate(() => { const x = document.querySelector('#chQp .ecx'); if (x) x.click(); document.getElementById('o15').querySelector('#chL').scrollTop = 1e6 }); await p.waitForTimeout(300);
       const bb = await p.locator('#chL .chm:not(.me):not(.rx):not(.dl) .chb').last().boundingBox(); const y = bb.y + bb.height / 2, x0 = Math.min(380, bb.x + bb.width - 8);
       await swipe(x0, y, x0 - 130, y + 3, 8, 'swipe-reply.png');
-      ok(await p.evaluate(() => !document.getElementById('chQp').hidden && /↩.*пока ты наверху/.test(document.getElementById('chQp').textContent)), 'свайп влево по сообщению включает ответ именно на него');
+      ok(await p.evaluate(() => !document.getElementById('chQp').hidden && /↩.*🎉/.test(document.getElementById('chQp').textContent)), 'свайп влево по сообщению включает ответ именно на него');
       await p.click('#chQp .ecx'); await p.waitForTimeout(200); }
     await swipe(60, 400, 330, 410, 10, 'dm-swipe.png');
     ok(!(await open()), 'длинный свайп вправо закрывает чат');

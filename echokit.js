@@ -52,6 +52,23 @@
       requestAnimationFrame(() => requestAnimationFrame(() => { e.style.transition = "transform .38s cubic-bezier(.2,.8,.2,1)"; e.style.transform = "" })); setTimeout(() => { e.style.transition = ""; e.style.animation = "" }, 440);
     });
   }
+  // текст плавно сменяется, когда меняется (например «в сети» → «был(а) 5 мин назад»)
+  const swap = (el, txt) => { if (!el || el.textContent === txt) return; el.textContent = txt; el.classList.remove("swp"); void el.offsetWidth; el.classList.add("swp") };
+  // черновик: недописанный текст хранится на этом устройстве
+  const draft = (key, val) => { try { const k = "slovopad.dr." + key; if (val === undefined) return localStorage.getItem(k) || ""; if (val) localStorage.setItem(k, val); else localStorage.removeItem(k) } catch (e) { return "" } return "" };
+  // эффект на весь экран: 🎉 — конфетти, ❤️ — сердечки, 🔥 — искры
+  const FX = { "🎉": "c", "🎊": "c", "❤️": "h", "❤": "h", "💕": "h", "💖": "h", "🔥": "f" };
+  function fx(host, body) {
+    const kind = FX[String(body || "").trim()]; if (!kind || !host || (matchMedia && matchMedia("(prefers-reduced-motion:reduce)").matches)) return;
+    const box = h("div", "ekfx"); host.appendChild(box); const cols = ["#ff4fd8", "#5ef2ff", "#ffd84f", "#8cff6a", "#b86bff", "#ff7a4f"];
+    for (let k = 0; k < 34; k++) {
+      const p = h("i", "ekp" + kind); p.style.left = (Math.random() * 100) + "%"; p.style.setProperty("--dx", (Math.random() * 120 - 60) + "px"); p.style.setProperty("--r", (Math.random() * 720 - 360) + "deg");
+      p.style.animationDelay = (Math.random() * .5) + "s"; p.style.animationDuration = (1.6 + Math.random() * 1.1) + "s";
+      if (kind === "c") { p.style.background = cols[k % cols.length]; p.style.width = (6 + Math.random() * 6) + "px"; p.style.height = (9 + Math.random() * 8) + "px" } else p.textContent = kind === "h" ? ["❤️", "💖", "💕"][k % 3] : ["🔥", "✨", "🧡"][k % 3];
+      box.appendChild(p);
+    }
+    setTimeout(() => box.remove(), 3200);
+  }
   // три прыгающие точки для «печатает»
   const dots = () => { const s = h("span", "tdots"); for (let k = 0; k < 3; k++) s.appendChild(h("i")); return s };
   // свайп влево по элементу списка: он едет за пальцем, за краем появляется значок; отпустил далеко — действие
@@ -161,6 +178,26 @@
       if (!el || (matchMedia && matchMedia("(prefers-reduced-motion:reduce)").matches)) { done(); return }
       el.style.transition = "transform .22s ease-in,opacity .22s ease-in"; el.style.transform = "scale(.6)"; el.style.opacity = "0";
       setTimeout(done, 230);
+    };
+    // выбор нескольких сообщений: кружки на пузырях, внизу панель «скопировать / удалить»
+    K.selectInit = o => {
+      const S = { on: false, ids: new Set(), sure: 0 }, bar = h("div", "eksb"); bar.hidden = true; o.host.appendChild(bar);
+      const items = () => [...S.ids].map(id => K.msgs[id]).filter(Boolean).sort((a, b) => a.id - b.id);
+      const mark = () => { Object.keys(K.els).forEach(id => { const e = K.els[id]; if (e) e.classList.toggle("eksel", S.ids.has(+id)) }) };
+      const paint = () => {
+        bar.textContent = ""; const n = S.ids.size, list = items();
+        const x = h("button", "eksx", "✕"); x.type = "button"; x.onclick = () => S.exit();
+        const c = h("b", "eksn", n + " " + T("выбрано", "selected", "обрано")); bar.append(x, c);
+        const cp = h("button", "eksbtn", T("Копировать", "Copy", "Копіювати")); cp.type = "button"; cp.disabled = !n;
+        cp.onclick = () => { try { navigator.clipboard.writeText(list.filter(m => m.body).map(m => m.body).join("\n")) } catch (e) { } S.exit() }; bar.appendChild(cp);
+        if (o.del) { const dl = h("button", "eksbtn bad", S.sure ? T("Точно удалить?", "Really delete?", "Точно видалити?") : T("Удалить", "Delete", "Видалити")); dl.type = "button"; dl.disabled = !n || list.some(m => !o.canDel(m));
+          dl.onclick = async () => { if (!S.sure) { S.sure = 1; paint(); setTimeout(() => { if (S.sure) { S.sure = 0; if (S.on) paint() } }, 3000); return } const ms = list; S.exit(); for (const m of ms) { try { await o.del(m) } catch (e) { } } if (o.after) o.after() }; bar.appendChild(dl) }
+      };
+      S.toggle = id => { if (!S.on) return; if (S.ids.has(id)) S.ids.delete(id); else S.ids.add(id); S.sure = 0; mark(); paint() };
+      S.enter = m => { S.on = true; S.sure = 0; S.ids = new Set(m ? [m.id] : []); o.list.classList.add("eksm"); o.host.classList.add("eksmode"); bar.hidden = false; bar.classList.remove("out"); mark(); paint() };
+      S.exit = () => { if (!S.on) return; S.on = false; S.ids = new Set(); o.list.classList.remove("eksm"); o.host.classList.remove("eksmode"); mark(); bar.classList.add("out"); setTimeout(() => { if (!S.on) bar.hidden = true }, 220) };
+      o.list.addEventListener("click", e => { if (!S.on) return; const it = e.target.closest ? e.target.closest(o.itemSel) : null; e.preventDefault(); e.stopPropagation(); if (it && it.dataset.id) S.toggle(+it.dataset.id) }, true);
+      K.S = S; return S;
     };
     // круглая кнопка «вниз»: появляется, когда пролистал вверх; на ней счётчик новых
     K.downBtn = (list, host) => {
@@ -281,5 +318,5 @@
     };
     ov.addEventListener("touchend", end, { passive: true }); ov.addEventListener("touchcancel", () => { if (on && mode === 1) { on = false; reset(true) } }, { passive: true });
   }
-  window.EchoKit = { create, compress, swipeBack, swipeLeft, flipStart, flipEnd, dots, EMO, clock };
+  window.EchoKit = { create, compress, swipeBack, swipeLeft, flipStart, flipEnd, dots, swap, draft, fx, EMO, clock };
 })();

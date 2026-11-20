@@ -52,7 +52,7 @@
     const c15 = h("div", "ov"); c15.id = "o15";
     c15.innerHTML = '<div class="frh"><button class="ib" id="chBk" type="button">←</button><span class="chav" id="chAv"></span><div class="frt" id="chFrt"><h2 id="chT"></h2><div class="sub" id="chS"></div></div><button class="ib" id="chMn" type="button">⋯</button></div>' +
       '<div class="chmenu" id="chMenu" hidden><button class="btn a" id="chBl" type="button"></button><button class="btn a" id="chRpb" type="button"></button></div>' +
-      '<div class="chl" id="chL"></div><div class="hint" id="chSt"></div>' +
+      '<div class="pinb" id="chPin" hidden></div><div class="chl" id="chL"></div><div class="hint" id="chSt"></div>' +
       '<div class="chrp" id="chRp" hidden></div><div class="chrp stkp" id="chSk" hidden></div>' +
       '<div class="rmrp" id="chQp" hidden></div>' +
       '<div class="chbar"><button class="ib chrx" id="chRx" type="button" aria-label="reactions">😊</button><button class="ib chph" id="chPh" type="button" aria-label="photo">📷</button><button class="ib chph chmc" id="chMc" type="button" aria-label="voice">🎤</button><input id="chIn" type="text" maxlength="120" autocomplete="off" enterkeyhint="send"><button class="btn chsn" id="chSn" type="button">➤</button></div>';
@@ -61,6 +61,8 @@
     chatWire();
     g("frBk").onclick = () => { pick = null; if (openFrom) { const f = openFrom; openFrom = null; f(); return } ov("o1"); };
     if (kit.downBtn && !chat.dn) chat.dn = kit.downBtn(g("chL"), g("o15"));
+    if (kit.selectInit && !kit.S) kit.selectInit({ host: g("o15"), list: g("chL"), itemSel: ".chm", canDel: m => m.mine && !m.dl, del: m => post("/api/chat/del", { to: chat.p.spCode, id: m.id }), after: () => { chat.busy = false; chatPoll(false) } });
+    try { g("chL").addEventListener("scroll", () => { const l = g("chL"), far = l.scrollHeight - l.scrollTop - l.clientHeight > 160; g("o15").classList.toggle("chsm", far) }, { passive: true }) } catch (e) { }
     if (EchoKit.swipeLeft) {
       EchoKit.swipeLeft(g("chL"), ".chm:not(.dl):not(.rx)", it => [it.querySelector(".chb")], it => { const m = kit.msgs[it.dataset.id]; if (m && !m.dl) { chat.reply = m; chat.edit = null; chatBar(); try { g("chIn").focus() } catch (e) { } } }, "↩");
       EchoKit.swipeLeft(g("frList"), ".frrow.tap", it => [...it.children].filter(c => !c.classList.contains("ekhint")), it => { if (it.dataset.k) profile(it.dataset.k) }, "👤");
@@ -303,7 +305,7 @@
     g("chRx").onclick = () => { const r = g("chSk"); if (r.hidden) kit.stickers(r, x => chatSend(x)); r.hidden = !r.hidden; g("chMenu").hidden = true; g("chRp").hidden = true };
     g("chMc").onclick = () => { if (!kit.rec) return; kit.rec(g("o15").querySelector(".chbar"), (e, au) => { if (e) { g("chSt").textContent = e.message; return } chatSend(null, au) }) };
     g("chPh").onclick = () => kit.pick((e, img) => { if (e) { g("chSt").textContent = e.message; return } chatSend(null, img) });
-    g("chIn").addEventListener("input", () => { const n = Date.now(); if (!chat.p || n - chat.typedAt < 3000 || !g("chIn").value) return; chat.typedAt = n; post("/api/chat/typing", { to: chat.p.spCode }).catch(() => { }) });
+    g("chIn").addEventListener("input", () => { if (chat.p && !chat.edit && EchoKit.draft) EchoKit.draft("d." + chat.p.spCode, g("chIn").value); const n = Date.now(); if (!chat.p || n - chat.typedAt < 3000 || !g("chIn").value) return; chat.typedAt = n; post("/api/chat/typing", { to: chat.p.spCode }).catch(() => { }) });
     g("chMn").onclick = () => { g("chMenu").hidden = !g("chMenu").hidden; g("chRp").hidden = true; chatMenuLabels() };
     g("chBl").onclick = chatBlock;
     g("chRpb").onclick = chatReport;
@@ -324,8 +326,9 @@
   }
   function chatOpen(p) {
     build(); chat.p = p; chat.last = 0; chat.since = 0; chat.blocked = false; chat.sure = 0; chat.reply = null; chat.edit = null; kit.reset(); chatBar(); g("chSk").hidden = true; if (chat.dn) chat.dn.reset();
-    g("chL").textContent = ""; g("chSt").textContent = ""; g("chMenu").hidden = true; g("chRp").hidden = true; g("chIn").value = "";
-    g("chT").textContent = p.username; g("chS").textContent = status(p) || " ";
+    g("chL").textContent = ""; g("chSt").textContent = ""; g("chMenu").hidden = true; g("chRp").hidden = true; g("chIn").value = EchoKit.draft ? EchoKit.draft("d." + p.spCode) : "";
+    g("chT").textContent = p.username; g("chS").textContent = status(p) || " "; chat.stAt = Date.now(); chat.pin = null; g("chPin").hidden = true; g("o15").classList.remove("chsm");
+    if (kit.S) kit.S.exit();
     { const av = g("chAv"); av.textContent = ""; av.appendChild(avatar(p, 40)) }
     chatLabels(); ov("o15"); chatFit();
     chatPoll(true);
@@ -333,6 +336,7 @@
   }
   function chatFit() { const o = g("o15"), v = window.visualViewport; if (v) { o.style.height = v.height + "px"; o.style.transform = "translateY(" + v.offsetTop + "px)" } }
   function chatClose() {
+    if (kit.S) kit.S.exit();
     clearInterval(chat.timer); chat.timer = 0; chat.p = null;
     const o = g("o15"); o.style.height = ""; o.style.transform = "";
     g("chIn").blur();
@@ -351,10 +355,13 @@
     if (!m.dl) (kit.hold ? kit.hold(b, () => chatSheet(m)) : (b.onclick = () => chatSheet(m)));
   }
   function chatSheet(m) {
+    if (kit.S && kit.S.on) { kit.S.toggle(m.id); return }
     const acts = [[T("↩ Ответить", "↩ Reply", "↩ Відповісти"), () => { chat.reply = m; chat.edit = null; chatBar(); try { g("chIn").focus() } catch (e) { } }]];
     if (m.body) acts.push([T("Скопировать", "Copy", "Копіювати"), () => { try { navigator.clipboard.writeText(m.body) } catch (e) { } }]);
     if (m.mine && m.body) acts.push([T("✎ Изменить", "✎ Edit", "✎ Змінити"), () => { chat.edit = m; chat.reply = null; chatBar(); const i = g("chIn"); i.value = m.body; try { i.focus() } catch (e) { } }]);
     if (m.mine) acts.push([T("🗑 Удалить", "🗑 Delete", "🗑 Видалити"), () => post("/api/chat/del", { to: chat.p.spCode, id: m.id }).then(() => { chat.busy = false; chatPoll(false) }).catch(e => { g("chSt").textContent = e.message }), true]);
+    acts.push([T("☑ Выбрать", "☑ Select", "☑ Обрати"), () => { if (kit.S) kit.S.enter(m) }]);
+    if (!m.dl) acts.push([chat.pin && chat.pin.id === m.id ? T("📌 Открепить", "📌 Unpin", "📌 Відкріпити") : T("📌 Закрепить", "📌 Pin", "📌 Закріпити"), () => post("/api/chat/pin", { to: chat.p.spCode, id: chat.pin && chat.pin.id === m.id ? 0 : m.id }).then(() => { chat.busy = false; chatPoll(false) }).catch(e => { g("chSt").textContent = e.message })]);
     kit.sheet(g("o15"), m, acts);
   }
   function chatBar() {
@@ -367,7 +374,7 @@
   function chatAdd(m, live) {
     const l = g("chL"); kit.msgs[m.id] = m;
     const box = h("div", "chm"); box.dataset.id = m.id; chatPaint(box, m); l.appendChild(box);
-    if (live) { box.classList.add("nw"); setTimeout(() => box.classList.remove("nw"), 420) }
+    if (live) { box.classList.add("nw"); setTimeout(() => box.classList.remove("nw"), 420); if (EchoKit.fx && !m.dl) EchoKit.fx(g("o15"), m.body) }
   }
   function chatChanged(m) {
     const old = kit.els[m.id], was = kit.msgs[m.id]; kit.msgs[m.id] = m; if (!old) return;
@@ -390,6 +397,9 @@
       (r.changed || []).forEach(chatChanged);
       kit.readTo = r.readTo || 0; chatTicks();
       if (r.react) kit.setReact(r.react);
+      chat.pin = r.pin || null;
+      { const pn = g("chPin"), had = !pn.hidden; pn.hidden = !chat.pin; if (chat.pin) { pn.textContent = ""; pn.appendChild(h("span", "", "📌 " + chat.pin.who + ": " + chat.pin.text)); pn.onclick = () => kit.jump(chat.pin.id); if (!had) { pn.classList.remove("pinin"); void pn.offsetWidth; pn.classList.add("pinin") } } }
+      if (Date.now() - (chat.stAt || 0) > 30000) { chat.stAt = Date.now(); load(true).then(() => { const f = data && data.friends.find(x => x.spCode === who.spCode); if (f && chat.p === who) { who.online = f.online; who.seen = f.seen; EchoKit.swap(g("chS"), status(who) || " ") } }).catch(() => { }) }
       if (!l.querySelector(".chm") && !l.querySelector(".chem")) { const e = h("div", "chem", T("Напиши первым или отправь стикер 😊", "Write first or send a sticker 😊", "Напиши першим або надішли стікер 😊")); l.appendChild(e) }
       else if (r.messages.length && l.querySelector(".chem")) l.querySelector(".chem").remove();
       let ty = l.querySelector(".chty"); if (r.typing && !ty) { ty = h("div", "chty", T("печатает", "typing", "друкує")); if (EchoKit.dots) ty.appendChild(EchoKit.dots()); l.appendChild(ty) } else if (!r.typing && ty) ty.remove(); else if (ty) l.appendChild(ty);
@@ -413,7 +423,7 @@
     try {
       if (chat.edit) { await post("/api/chat/edit", { to: chat.p.spCode, id: chat.edit.id, text }); chat.edit = null; chat.editWas = false; chatBar() }
       else { await post("/api/chat/send", { to: chat.p.spCode, text, img: img || undefined, reply: chat.reply ? chat.reply.id : undefined }); chat.reply = null; chatBar() }
-      if (typeof sticker !== "string") inp.value = "";
+      if (typeof sticker !== "string") { inp.value = ""; if (EchoKit.draft) EchoKit.draft("d." + chat.p.spCode, "") }
       g("chSt").textContent = ""; chat.busy = false; await chatPoll(false);
       const l = g("chL"); l.scrollTop = l.scrollHeight;
     } catch (e) { g("chSt").textContent = e.message }

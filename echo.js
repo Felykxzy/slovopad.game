@@ -83,12 +83,14 @@
     if (EchoKit.swipeBack) EchoKit.swipeBack(g("o16"), hubOut);
     if (EchoKit.swipeBack) EchoKit.swipeBack(g("o17"), roomClose);
     if (kit.downBtn && !E.dn) E.dn = kit.downBtn(g("rmL"), g("o17"));
+    if (kit.selectInit && !kit.S) kit.selectInit({ host: g("o17"), list: g("rmL"), itemSel: ".msg", canDel: m => { const rm = E.room, mod = rm && rm.canMod, ow = ((rm && rm.members) || []).find(x => x.owner); return !m.dl && (m.mine || (mod && !(ow && ow.name === m.who))) }, del: m => post("/api/echo/room/del", { room: E.room.id, id: m.id }), after: () => { E.busy = false; roomPoll(false) } });
+    try { g("rmL").addEventListener("scroll", () => { const l = g("rmL"); g("o17").classList.toggle("chsm", l.scrollHeight - l.scrollTop - l.clientHeight > 160) }, { passive: true }) } catch (e) { }
     if (EchoKit.swipeLeft) EchoKit.swipeLeft(g("rmL"), ".msg:not(.dl)", it => [it.querySelector(".mbody")], it => { const m = kit.msgs[it.dataset.id]; if (m && !m.dl) { E.reply = m; E.edit = null; replyPaint(); try { g("rmIn").focus() } catch (e) { } } }, "↩");
     g("rmSn").onclick = () => roomSend();
     g("rmStk").onclick = () => { const r = g("rmSk"); if (r.hidden) kit.stickers(r, x => roomSend(x)); r.hidden = !r.hidden };
     g("rmMc").onclick = () => { if (!kit.rec) return; kit.rec(g("o17").querySelector(".chbar"), (e, au) => { if (e) { setHint("rmSt", e.message, true); return } roomSend(null, au) }) };
     g("rmPh").onclick = () => kit.pick((e, img) => { if (e) { setHint("rmSt", e.message, true); return } roomSend(null, img) });
-    g("rmIn").addEventListener("input", () => { const n = Date.now(); if (!E.room || !g("rmIn").value || n - E.typedAt < 3000) return; E.typedAt = n; post("/api/echo/room/typing", { room: E.room.id }).catch(() => { }) });
+    g("rmIn").addEventListener("input", () => { if (E.room && !E.edit && EchoKit.draft) EchoKit.draft("r." + E.room.id, g("rmIn").value); const n = Date.now(); if (!E.room || !g("rmIn").value || n - E.typedAt < 3000) return; E.typedAt = n; post("/api/echo/room/typing", { room: E.room.id }).catch(() => { }) });
     g("rmIn").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); roomSend() } });
     g("rmCl").onclick = () => { const rm = E.room; if (rm && window.EchoCall) EchoCall.join(rm.id, rm.name, () => roomOpen(rm.id, rm.name)) };
     g("rmMn").onclick = () => { const m = g("rmMenu"); if (m.hidden) { E.sure = 0; E.panel = ""; menuPaint() } m.hidden = !m.hidden };
@@ -150,7 +152,7 @@
     if (!E.rooms.length) l.appendChild(h("div", "ecdim ecnone", T("Комнат пока нет. Нажми ＋ слева и позови друзей.", "No rooms yet. Tap ＋ on the left and invite friends.", "Кімнат поки немає. Натисни ＋ ліворуч і поклич друзів.")));
     E.rooms.forEach(rm => {
       const r = h("button", "ecrow"); r.type = "button"; r.dataset.k = rm.id; r.appendChild(avatar("#", false, tint(rm.id)));
-      const t = h("div", "ect"); t.appendChild(h("b", "", rm.name)); t.appendChild(h("span", "", rm.last ? pretty(rm.last) : "{people}" + rm.members)); r.appendChild(t);
+      const t = h("div", "ect"); t.appendChild(h("b", "", rm.name)); { const dr = EchoKit.draft ? EchoKit.draft("r." + rm.id) : ""; const sp = h("span", "", dr ? dr.slice(0, 40) : rm.last ? pretty(rm.last) : "{people}" + rm.members); if (dr) sp.prepend(h("em", "ecdr", T("Черновик: ", "Draft: ", "Чернетка: "))); t.appendChild(sp) } r.appendChild(t);
       if (rm.unread) r.appendChild(badgeEl(rm.unread));
       r.onclick = () => roomOpen(rm.id, rm.name); l.appendChild(r);
     });
@@ -158,7 +160,7 @@
     const row = f => {
       const r = h("button", "ecrow"); r.type = "button"; r.dataset.k = f.spCode || f.username;
       r.appendChild(avatar(f.avatar || first(f.username), f.online, f.avatar ? null : tint(f.username), f.username));
-      const t = h("div", "ect"); t.appendChild(h("b", f.unread ? "ecnew" : "", f.username)); { const te = window.TagUI && TagUI.el(f.tag); if (te) t.firstChild.appendChild(te) } t.appendChild(h("span", "", f.unread ? T("новых: ", "new: ", "нових: ") + f.unread : f.online ? T("в сети", "online", "у мережі") : T("не в сети", "offline", "не в мережі"))); r.appendChild(t);
+      const t = h("div", "ect"); t.appendChild(h("b", f.unread ? "ecnew" : "", f.username)); { const te = window.TagUI && TagUI.el(f.tag); if (te) t.firstChild.appendChild(te) } { const dr = EchoKit.draft ? EchoKit.draft("d." + f.spCode) : ""; if (dr) { const sp = h("span", "", dr.slice(0, 40)); sp.prepend(h("em", "ecdr", T("Черновик: ", "Draft: ", "Чернетка: "))); t.appendChild(sp) } else t.appendChild(h("span", "", f.unread ? T("новых: ", "new: ", "нових: ") + f.unread : f.online ? T("в сети", "online", "у мережі") : T("не в сети", "offline", "не в мережі"))) } r.appendChild(t);
       if (f.unread) r.appendChild(badgeEl(f.unread));
       r.onclick = () => { const F = window.SlovopadFriends; if (F && F.chatOpen) { F.setBack(hubOpen); F.chatOpen(f) } };
       l.appendChild(r);
@@ -227,7 +229,7 @@
 
   /* ---------- комната ---------- */
   function roomOpen(id, name) {
-    build(); E.room = { id, name: name || "", mine: false, members: [] }; E.lastRoom = { id, name: name || "" }; E.last = 0; E.sure = 0; lastMsg = null; E.els = {}; E.msgs = {}; if (E.dn) E.dn.reset(); E.races = {}; E.react = {}; E.sel = null; E.reply = null; E.edit = null; E.since = 0; E.day = ""; kit.reset(); replyPaint(); g("rmSk").hidden = true; g("rmPin").hidden = true; g("rmAb").hidden = true;
+    build(); E.room = { id, name: name || "", mine: false, members: [] }; E.lastRoom = { id, name: name || "" }; E.last = 0; E.sure = 0; lastMsg = null; E.els = {}; E.msgs = {}; if (E.dn) E.dn.reset(); if (kit.S) kit.S.exit(); g("o17").classList.remove("chsm"); E.races = {}; E.react = {}; E.sel = null; E.reply = null; E.edit = null; E.since = 0; E.day = ""; kit.reset(); replyPaint(); g("rmSk").hidden = true; g("rmPin").hidden = true; g("rmAb").hidden = true;
     g("rmL").textContent = ""; g("rmSt").textContent = ""; g("rmMenu").hidden = true; g("rmIn").value = "";
     g("rmIn").placeholder = T("Написать в # ", "Message # ", "Написати в # ") + (name || "");
     g("rmT").textContent = "# " + E.room.name; g("rmS").textContent = " ";
@@ -235,6 +237,7 @@
     roomPoll(true); clearInterval(E.timer); E.timer = setInterval(() => roomPoll(false), 6000);
   }
   function roomClose() {
+    if (kit.S) kit.S.exit();
     clearInterval(E.timer); E.timer = 0; E.room = null;
     const o = g("o17"); o.style.height = ""; o.style.transform = ""; g("rmIn").blur();
     hubOpen();
@@ -284,6 +287,7 @@
     const mc = h("div", "mc"); body.appendChild(mc); row.appendChild(body);
     kit.msgs[m.id] = m; roomFill(row, m);
     if (E.live && !m.mine && window.EchoCall) EchoCall.sfx("msg");
+    if (E.live && EchoKit.fx && !m.dl) EchoKit.fx(g("o17"), m.body);
     l.appendChild(row); lastMsg = { who: m.who, t: m.t };
   }
 
@@ -303,12 +307,14 @@
     if (m.dl && was && !was.dl && kit.vanish) kit.vanish(row.querySelector(".mbody"), () => { const b = row.querySelector(".mbody"); if (b) { b.style.transition = ""; b.style.transform = ""; b.style.opacity = "" } fill() }); else fill();
   }
   function roomSheet(m) {
+    if (kit.S && kit.S.on) { kit.S.toggle(m.id); return }
     const rm = E.room, mod = rm && rm.canMod, acts = [[T("↩ Ответить", "↩ Reply", "↩ Відповісти"), () => { E.reply = m; E.edit = null; replyPaint(); try { g("rmIn").focus() } catch (e) { } }]];
     if (m.body) acts.push([T("Скопировать", "Copy", "Копіювати"), () => { try { navigator.clipboard.writeText(m.body) } catch (e) { } }]);
     if (m.mine && m.body) acts.push([T("✎ Изменить", "✎ Edit", "✎ Змінити"), () => { E.edit = m; E.reply = null; replyPaint(); const i = g("rmIn"); i.value = m.body; try { i.focus() } catch (e) { } }]);
     if (mod) acts.push([rm.pin && rm.pin.id === m.id ? T("📌 Открепить", "📌 Unpin", "📌 Відкріпити") : T("📌 Закрепить", "📌 Pin", "📌 Закріпити"), () => post("/api/echo/room/pin", { room: rm.id, id: rm.pin && rm.pin.id === m.id ? 0 : m.id }).then(() => { E.busy = false; roomPoll(false) }).catch(e => setHint("rmSt", e.message, true))]);
     const ow = ((rm && rm.members) || []).find(x => x.owner);
     if (m.mine || (mod && !(ow && ow.name === m.who))) acts.push([T("🗑 Удалить", "🗑 Delete", "🗑 Видалити"), () => post("/api/echo/room/del", { room: rm.id, id: m.id }).then(() => { E.busy = false; roomPoll(false) }).catch(e => setHint("rmSt", e.message, true)), true]);
+    acts.push([T("☑ Выбрать", "☑ Select", "☑ Обрати"), () => { if (kit.S) kit.S.enter(m) }]);
     kit.sheet(g("o17"), m, acts);
   }
   async function roomReact(id, emo) {
@@ -401,6 +407,7 @@
     try {
       if (E.edit) { await post("/api/echo/room/edit", { room: rm.id, id: E.edit.id, text }); E.edit = null; E.editWas = false; replyPaint() }
       else { await post("/api/echo/room/send", { room: rm.id, text, img: img || undefined, reply: E.reply ? E.reply.id : undefined }); E.reply = null; replyPaint() }
+      if (typeof sticker !== "string" && EchoKit.draft) EchoKit.draft("r." + rm.id, "");
       E.busy = false; await roomPoll(false); const l = g("rmL"); l.scrollTop = l.scrollHeight;
     } catch (e) { if (typeof sticker !== "string") inp.value = was; setHint("rmSt", e.message, true) }
   }

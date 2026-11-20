@@ -1,12 +1,12 @@
 {
-  "version": "4.8.0",
+  "version": "4.9.0",
   "notes": [
-    "Анимации как в Телеграме: реакции, отправка и удаление сообщений, кнопка «вниз», волны в голосовых, фото из миниатюры, свайп влево = ответ"
+    "Выбор нескольких сообщений, закреп в личных чатах, черновики, эффекты 🎉 и ❤️, плавный статус, сжимающаяся шапка чата"
   ],
   "notes_en": [
-    "Telegram-style animations: reactions, sending and deleting messages, scroll-down button, voice waveforms, photos from thumbnails, swipe left to reply"
+    "Multi-select messages, pins in private chats, drafts, 🎉 and ❤️ effects, smooth status, collapsing chat header"
   ],
   "notes_uk": [
-    "Анімації як у Телеграмі: реакції, надсилання й видалення повідомлень, кнопка «вниз», хвилі в голосових, фото з мініатюри, свайп вліво = відповідь"
+    "Вибір кількох повідомлень, закріп у приватних чатах, чернетки, ефекти 🎉 і ❤️, плавний статус, шапка чату що стискається"
   ]
 }

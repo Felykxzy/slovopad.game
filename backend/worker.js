@@ -9,6 +9,7 @@ const QR_MAX_TRIES = 3;               // сколько раз можно оши
 const QR_PER_IP = 5;                  // сколько живых QR-кодов может быть у одного адреса
 const QR_TOTAL = 500;                 // и сколько всего на сервере
 const MAX_PTS_PER_WORD = 150;
+const pairA = (x, y) => (String(x) < String(y) ? String(x) : String(y)), pairB = (x, y) => (String(x) < String(y) ? String(y) : String(x));
 const DUMMY_SALT = 'AAAAAAAAAAAAAAAAAAAAAA';   // для выравнивания времени входа, если ника нет
 
 const b64 = bytes => {
@@ -153,6 +154,7 @@ async function ensureSchema(env) {
     ]) { try { await env.DB.prepare(q).run(); } catch (_) {} }
     await env.DB.prepare("CREATE TABLE IF NOT EXISTS sp_react (sc TEXT NOT NULL, mid INTEGER NOT NULL, uid TEXT NOT NULL, emo TEXT NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (sc,mid,uid))").run();
     await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_react_t_idx ON sp_react(sc,t)').run();
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_dmpin (a TEXT NOT NULL, b TEXT NOT NULL, mid INTEGER NOT NULL, PRIMARY KEY (a,b))').run();
     await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_season (m TEXT NOT NULL, uid TEXT NOT NULL, score INTEGER NOT NULL DEFAULT 0, t INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (m,uid))').run();
     await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_season_s_idx ON sp_season(m,score)').run();
     await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_season_claim (m TEXT NOT NULL, uid TEXT NOT NULL, rk INTEGER NOT NULL, coins INTEGER NOT NULL, badge TEXT NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (m,uid))').run();
@@ -1674,7 +1676,11 @@ export default {
             const sy = await chatSync(env, { table: 'sp_msgs', room: false, where: '((a=? AND b=?) OR (a=? AND b=?))', args: [user.id, other.id, other.id, user.id], after, since, me: user.id, nameOf: id => names[id] || '?', sc: dmScope(user.id, other.id), now });
             await env.DB.prepare('UPDATE sp_msgs SET rd=1 WHERE a=? AND b=? AND rd=0').bind(other.id, user.id).run();
             const rd = await env.DB.prepare('SELECT MAX(id) AS m FROM sp_msgs WHERE a=? AND b=? AND rd=1').bind(user.id, other.id).first();
-            return reply({ with: other.username, blocked: !!iBlocked, messages: sy.messages, changed: sy.changed, react: sy.react, typing: sy.typing.length > 0, readTo: rd && rd.m ? rd.m : 0, now: sy.now });
+            let pin = null;
+            { const pk = await env.DB.prepare('SELECT mid FROM sp_dmpin WHERE a=? AND b=?').bind(pairA(user.id, other.id), pairB(user.id, other.id)).first();
+              if (pk) { const pm = await env.DB.prepare('SELECT id,a,body,img FROM sp_msgs WHERE id=? AND dl=0 AND ((a=? AND b=?) OR (a=? AND b=?))').bind(pk.mid, user.id, other.id, other.id, user.id).first();
+                if (pm) pin = { id: pm.id, who: names[pm.a] || '?', text: String(pm.body || (String(pm.img || '').startsWith('data:audio') ? '🎤' : '📷')).slice(0, 60) } } }
+            return reply({ with: other.username, blocked: !!iBlocked, messages: sy.messages, changed: sy.changed, react: sy.react, typing: sy.typing.length > 0, readTo: rd && rd.m ? rd.m : 0, now: sy.now, pin });
           }
 
           if (url.pathname === '/api/chat/img' && request.method === 'GET') {
@@ -1690,6 +1696,15 @@ export default {
             const r = await env.DB.prepare("SELECT id FROM sp_msgs WHERE id=? AND a=? AND b=? AND kind='text' AND dl=0").bind(id, user.id, other.id).first();
             if (!r) return reply({ error: 'Править можно только своё сообщение.' }, 403);
             await env.DB.prepare('UPDATE sp_msgs SET body=?, ed=1, upd=? WHERE id=?').bind(text, now, id).run();
+            return reply({ ok: true });
+          }
+          if (url.pathname === '/api/chat/pin' && post) {
+            if (!await allow(env, 'cp:' + user.id, 60, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+            const id = Math.floor(Number(body.id) || 0), pa = pairA(user.id, other.id), pb = pairB(user.id, other.id);
+            if (id <= 0) { await env.DB.prepare('DELETE FROM sp_dmpin WHERE a=? AND b=?').bind(pa, pb).run(); return reply({ ok: true }); }
+            const ok = await env.DB.prepare('SELECT 1 AS x FROM sp_msgs WHERE id=? AND dl=0 AND ((a=? AND b=?) OR (a=? AND b=?))').bind(id, user.id, other.id, other.id, user.id).first();
+            if (!ok) return reply({ error: 'Сообщение не найдено.' }, 404);
+            await env.DB.prepare('INSERT INTO sp_dmpin (a,b,mid) VALUES (?,?,?) ON CONFLICT(a,b) DO UPDATE SET mid=excluded.mid').bind(pa, pb, id).run();
             return reply({ ok: true });
           }
           if (url.pathname === '/api/chat/del' && post) {
