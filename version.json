@@ -1,12 +1,12 @@
 {
-  "version": "4.14.0",
+  "version": "4.15.0",
   "notes": [
-    "Магазин: 4 новых фона и 4 новых щита с очень детальной анимацией"
+    "Опросы в комнатах, подсказка @имён, закреплённые чаты; магазин: новые фоны, щиты и стили слов"
   ],
   "notes_en": [
-    "Shop: 4 new backgrounds and 4 new shields with highly detailed animation"
+    "Room polls, @name suggestions, pinned chats; shop: new backgrounds, shields and word styles"
   ],
   "notes_uk": [
-    "Магазин: 4 нових фони і 4 нових щити з дуже детальною анімацією"
+    "Опитування в кімнатах, підказка @імен, закріплені чати; магазин: нові фони, щити і стилі слів"
   ]
 }

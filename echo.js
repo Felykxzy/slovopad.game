@@ -15,7 +15,7 @@
 
   /* ---------- протокол: служебные сообщения в комнате (сервер хранит их как обычный текст) ---------- */
   try { g("rmL").addEventListener("scroll", () => { const l = g("rmL"); E.atB = l.scrollHeight - l.scrollTop - l.clientHeight < 80 }, { passive: true }) } catch (e) { }
-  const kit = EchoKit.create({ me: () => E.me || "", onsize: () => { const l = g("rmL"); if (l && E.atB !== false) l.scrollTop = l.scrollHeight }, img: id => cloudRequest("/api/echo/room/img?room=" + encodeURIComponent(E.room.id) + "&id=" + id).then(r => r.img), react: (id, emo) => roomReact(id, emo), onrec: () => { if (E.room) post("/api/echo/room/typing", { room: E.room.id, k: "voice" }).catch(() => { }) } });
+  const kit = EchoKit.create({ me: () => E.me || "", onsize: () => { const l = g("rmL"); if (l && E.atB !== false) l.scrollTop = l.scrollHeight }, img: id => cloudRequest("/api/echo/room/img?room=" + encodeURIComponent(E.room.id) + "&id=" + id).then(r => r.img), react: (id, emo) => roomReact(id, emo), poll: ids => cloudRequest("/api/echo/room/poll/get?room=" + encodeURIComponent(E.room.id) + "&ids=" + ids.join(",")).then(r => r.polls), vote: (pid, opt) => post("/api/echo/room/poll/vote", { room: E.room.id, poll: pid, opt }), onrec: () => { if (E.room) post("/api/echo/room/typing", { room: E.room.id, k: "voice" }).catch(() => { }) } });
   const PX = "§", EMO = ["👍", "❤️", "😂", "🔥", "😮"];
   function parse(body) {
     body = String(body || "");
@@ -29,6 +29,7 @@
   }
   function pretty(body) {
     { const SK = window.SlovopadStickers, GF = window.SlovopadGif, l = (SK && SK.label(body)) || (GF && GF.label(body)); if (l) return l }
+    if (/^:p:[a-z0-9]{8}:$/.test(String(body).trim())) return "📊 " + T("Опрос", "Poll", "Опитування");
     const p = parse(body);
     if (p.t === "K") return T("Заезд", "Race", "Заїзд");
     if (p.t === "S") return T("результат заезда", "race result", "результат заїзду");
@@ -94,6 +95,18 @@
     g("rmPh").onclick = () => kit.pick((e, img) => { if (e) { setHint("rmSt", e.message, true); return } roomSend(null, img) });
     g("rmIn").addEventListener("input", () => { if (E.room && !E.edit && EchoKit.draft) EchoKit.draft("r." + E.room.id, g("rmIn").value); const n = Date.now(); if (!E.room || !g("rmIn").value || n - E.typedAt < 3000) return; E.typedAt = n; post("/api/echo/room/typing", { room: E.room.id }).catch(() => { }) });
     g("rmIn").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); roomSend() } });
+    { // подсказка @имён: пишешь @ — над строкой ввода появляются участники комнаты
+      const bar = g("o17").querySelector(".chbar"), pop = h("div", "atp"); pop.hidden = true; bar.parentNode.insertBefore(pop, bar);
+      const upd = () => {
+        const i = g("rmIn"), pos = i.selectionStart == null ? i.value.length : i.selectionStart, m = /(^|\s)@([^\s@]*)$/.exec(i.value.slice(0, pos));
+        pop.textContent = ""; if (!m || !E.room) { pop.hidden = true; return }
+        const q = m[2].toLowerCase(), list = ((E.room.members || []).filter(x => !x.me && x.name.toLowerCase().startsWith(q))).slice(0, 6);
+        if (!list.length) { pop.hidden = true; return }
+        list.forEach(x => { const b = h("button", "atc", "@" + x.name); b.type = "button"; b.onpointerdown = e => e.preventDefault(); b.onclick = () => { const v = i.value, st = pos - m[2].length - 1; i.value = v.slice(0, st) + "@" + x.name + " " + v.slice(pos); const np = st + x.name.length + 2; i.focus(); try { i.setSelectionRange(np, np) } catch (e) { } pop.hidden = true; i.dispatchEvent(new Event("input")) }; pop.appendChild(b) });
+        pop.hidden = false;
+      };
+      g("rmIn").addEventListener("input", upd); g("rmIn").addEventListener("blur", () => setTimeout(() => { pop.hidden = true }, 150));
+    }
     g("rmCl").onclick = () => { const rm = E.room; if (rm && window.EchoCall) EchoCall.join(rm.id, rm.name, () => roomOpen(rm.id, rm.name)) };
     g("rmMn").onclick = () => { const m = g("rmMenu"); if (m.hidden) { E.sure = 0; E.panel = ""; menuPaint() } m.hidden = !m.hidden };
     if (window.visualViewport) {
@@ -170,6 +183,24 @@
   const prevU = {};
   function badgeEl(n, key) { const b = h("i", "bdg ecb", num(n)); if (key !== undefined) { if (prevU[key] !== undefined && n > prevU[key]) b.classList.add("bnc"); prevU[key] = n } return b }
   function paint() { const l = g("ecList"), sn = EchoKit.flipStart ? EchoKit.flipStart(l) : null; paintRaw(); if (sn && EchoKit.flipEnd) EchoKit.flipEnd(l, sn) }
+  /* закреплённые чаты: список на сервере, копия в памяти для быстрого показа */
+  E.pins = (() => { try { return JSON.parse(localStorage.getItem("spPins") || "[]").filter(x => typeof x === "string") } catch (e) { return [] } })();
+  const isPinned = k => E.pins.includes(k);
+  const savePins = () => { try { localStorage.setItem("spPins", JSON.stringify(E.pins)) } catch (e) { } };
+  async function togglePin(k) {
+    const on = !isPinned(k), was = E.pins.slice();
+    if (on && E.pins.length >= 5) { setHint("ecSt", T("Можно закрепить не больше 5 чатов.", "You can pin up to 5 chats.", "Можна закріпити не більше 5 чатів."), true); return }
+    E.pins = on ? [k].concat(E.pins) : E.pins.filter(x => x !== k); savePins(); E.sg = ""; paint();
+    try { await post("/api/my/pin", { key: k, on: on ? 1 : 0 }) } catch (e) { E.pins = was; savePins(); E.sg = ""; paint(); setHint("ecSt", (e && e.message) || "", true) }
+  }
+  function pinHold(r, k) {
+    let tm = 0, x0 = 0, y0 = 0;
+    const stop = () => { clearTimeout(tm); tm = 0 };
+    r.addEventListener("pointerdown", e => { r._held = false; x0 = e.clientX; y0 = e.clientY; stop(); tm = setTimeout(() => { tm = 0; r._held = true; try { navigator.vibrate && navigator.vibrate(15) } catch (x) { } togglePin(k); setTimeout(() => { r._held = false }, 400) }, 550) });
+    r.addEventListener("pointermove", e => { if (tm && (Math.abs(e.clientX - x0) > 8 || Math.abs(e.clientY - y0) > 8)) stop() });
+    ["pointerup", "pointercancel", "pointerleave"].forEach(n => r.addEventListener(n, stop));
+    r.addEventListener("contextmenu", e => { e.preventDefault(); togglePin(k) });
+  }
   function paintRaw() {
     const l = g("ecList"); l.textContent = "";
     const done = () => [...l.children].forEach((c, i) => c.style.setProperty("--i", Math.min(i, 10)));
@@ -177,31 +208,37 @@
     const at = h("div", "ect"); at.appendChild(h("b", "", T("ИИ-ПОМОЩНИК", "AI ASSISTANT", "ШІ-ПОМІЧНИК"))); at.appendChild(h("span", "", T("Свой ключ · выбор модели", "Your own key · pick a model", "Свій ключ · вибір моделі"))); ai.appendChild(at);
     ai.onclick = () => { if (window.EchoAI) window.EchoAI.open(hubOpen) }; l.appendChild(ai);
     if (!sidTok()) { l.appendChild(h("div", "chem", T("Чтобы писать друзьям и создавать комнаты, нужен аккаунт.", "You need an account to message friends and make rooms.", "Потрібен акаунт, щоб писати друзям і створювати кімнати."))); l.appendChild(btn("btn", T("ВОЙТИ В АККАУНТ", "SIGN IN", "УВІЙТИ В АКАУНТ"), () => sidOpen())); return }
-    section(l, T("КОМНАТЫ — ", "ROOMS — ", "КІМНАТИ — ") + E.rooms.length);
+    const rest = E.rooms.filter(rm => !isPinned("r:" + rm.id));
+    if (rest.length || !E.rooms.length) section(l, T("КОМНАТЫ — ", "ROOMS — ", "КІМНАТИ — ") + rest.length);
     if (!E.rooms.length) l.appendChild(h("div", "ecdim ecnone", T("Комнат пока нет. Нажми ＋ слева и позови друзей.", "No rooms yet. Tap ＋ on the left and invite friends.", "Кімнат поки немає. Натисни ＋ ліворуч і поклич друзів.")));
-    E.rooms.forEach(rm => {
-      const r = h("button", "ecrow"); r.type = "button"; r.dataset.k = rm.id; r.appendChild(avatar("#", false, tint(rm.id)));
+    const rrow = rm => {
+      const r = h("button", "ecrow"); r.type = "button"; r.dataset.k = rm.id; pinHold(r, "r:" + rm.id); r.appendChild(avatar("#", false, tint(rm.id)));
       const t = h("div", "ect"); t.appendChild(h("b", "", rm.name)); { const dr = EchoKit.draft ? EchoKit.draft("r." + rm.id) : ""; const sp = h("span", "", dr ? dr.slice(0, 40) : rm.last ? pretty(rm.last) : "{people}" + rm.members); if (dr) sp.prepend(h("em", "ecdr", T("Черновик: ", "Draft: ", "Чернетка: "))); t.appendChild(sp) } r.appendChild(t);
-      if (rm.unread) r.appendChild(badgeEl(rm.unread, "r" + rm.id)); else prevU["r" + rm.id] = 0;
-      r.onclick = () => roomOpen(rm.id, rm.name); l.appendChild(r);
-    });
+      if (rm.ment) r.appendChild(h("i", "ecat", "@")); if (rm.unread) r.appendChild(badgeEl(rm.unread, "r" + rm.id)); else prevU["r" + rm.id] = 0;
+      r.onclick = () => { if (r._held) return; roomOpen(rm.id, rm.name) }; l.appendChild(r);
+    };
+    const anchor = ai, after = () => { const ps = []; const st = l.children.length; E.pins.forEach(k => { if (k[0] === "r") { const rm = E.rooms.find(x => x.id === k.slice(2)); if (rm) ps.push(() => rrow(rm)) } else { const f = E.friends.find(x => String(x.spCode) === k.slice(2)); if (f) ps.push(() => row(f)) } }); if (!ps.length) return; section(l, "📌 " + T("ЗАКРЕПЛЁННЫЕ", "PINNED", "ЗАКРІПЛЕНІ")); ps.forEach(p => p()); const mv = [...l.children].slice(st), ref = anchor.nextSibling; mv.forEach(n => l.insertBefore(n, ref)) };
+    rest.forEach(rrow);
     const onl = E.friends.filter(f => f.online), off = E.friends.filter(f => !f.online);
     const row = f => {
-      const r = h("button", "ecrow"); r.type = "button"; r.dataset.k = f.spCode || f.username;
+      const r = h("button", "ecrow"); r.type = "button"; r.dataset.k = f.spCode || f.username; pinHold(r, "d:" + f.spCode);
       r.appendChild(avatar(f.avatar || first(f.username), f.online, f.avatar ? null : tint(f.username), f.username));
       const t = h("div", "ect"); t.appendChild(h("b", f.unread ? "ecnew" : "", f.username)); { const te = window.TagUI && TagUI.el(f.tag); if (te) t.firstChild.appendChild(te) } { const dr = EchoKit.draft ? EchoKit.draft("d." + f.spCode) : ""; if (dr) { const sp = h("span", "", dr.slice(0, 40)); sp.prepend(h("em", "ecdr", T("Черновик: ", "Draft: ", "Чернетка: "))); t.appendChild(sp) } else t.appendChild(h("span", "", f.unread ? T("новых: ", "new: ", "нових: ") + f.unread : f.online ? T("в сети", "online", "у мережі") : T("не в сети", "offline", "не в мережі"))) } r.appendChild(t);
       if (f.unread) r.appendChild(badgeEl(f.unread, "f" + f.spCode)); else prevU["f" + f.spCode] = 0;
-      r.onclick = () => { const F = window.SlovopadFriends; if (F && F.chatOpen) { F.setBack(hubOpen); F.chatOpen(f) } };
+      r.onclick = () => { if (r._held) return; const F = window.SlovopadFriends; if (F && F.chatOpen) { F.setBack(hubOpen); F.chatOpen(f) } };
       l.appendChild(r);
     };
     if (!E.friends.length) {
       section(l, T("ЛИЧНЫЕ", "DIRECT", "ОСОБИСТІ"));
       l.appendChild(h("div", "ecdim ecnone", T("Здесь будут чаты с друзьями. Сначала добавь друга.", "Chats with friends will appear here. Add a friend first.", "Тут будуть чати з друзями. Спершу додай друга.")));
       l.appendChild(btn("btn a", "{plus}" + T("ДОБАВИТЬ ДРУГА", "ADD A FRIEND", "ДОДАТИ ДРУГА"), () => { const F = window.SlovopadFriends; if (F) F.open() }));
-      done(); return;
+      after(); done(); return;
     }
-    if (onl.length) { section(l, T("В СЕТИ — ", "ONLINE — ", "У МЕРЕЖІ — ") + onl.length); onl.sort((a, b) => (b.unread || 0) - (a.unread || 0)).forEach(row) }
-    if (off.length) { section(l, T("НЕ В СЕТИ — ", "OFFLINE — ", "НЕ В МЕРЕЖІ — ") + off.length); off.sort((a, b) => (b.unread || 0) - (a.unread || 0)).forEach(row) }
+    const fp = f => !isPinned("d:" + f.spCode), onl2 = onl.filter(fp), off2 = off.filter(fp);
+    if (onl2.length) { section(l, T("В СЕТИ — ", "ONLINE — ", "У МЕРЕЖІ — ") + onl2.length); onl2.sort((a, b) => (b.unread || 0) - (a.unread || 0)).forEach(row) }
+    if (off2.length) { section(l, T("НЕ В СЕТИ — ", "OFFLINE — ", "НЕ В МЕРЕЖІ — ") + off2.length); off2.sort((a, b) => (b.unread || 0) - (a.unread || 0)).forEach(row) }
+    after();
+    if (!E.pins.length) l.appendChild(h("div", "ecdim ecnone", T("Зажми чат пальцем, чтобы закрепить его вверху.", "Hold a chat to pin it to the top.", "Затисни чат, щоб закріпити його вгорі.")));
     done();
   }
   async function refresh() {
@@ -209,7 +246,8 @@
     try {
       const [f, r] = await Promise.all([cloudRequest("/api/friends"), cloudRequest("/api/echo/rooms")]);
       E.friends = f.friends || []; E.rooms = r.rooms || []; setHint("ecSt", "");
-      const sg = JSON.stringify([E.friends.map(x => [x.username, x.online, x.unread, x.avatar]), E.rooms.map(x => [x.id, x.name, x.unread, x.last, x.members])]);
+      if (!E.pinsAt || Date.now() - E.pinsAt > 60000) { E.pinsAt = Date.now(); cloudRequest("/api/my/all").then(a => { if (Array.isArray(a.pins) && JSON.stringify(a.pins) !== JSON.stringify(E.pins)) { E.pins = a.pins; savePins(); E.sg = ""; paint() } }).catch(() => { }) }
+      const sg = JSON.stringify([E.friends.map(x => [x.username, x.online, x.unread, x.avatar]), E.rooms.map(x => [x.id, x.name, x.unread, x.ment, x.last, x.members]), E.pins]);
       if (sg === E.sg) { labels(); return }
       E.sg = sg;
     } catch (e) { setHint("ecSt", (e && e.message) || T("Нет связи с сервером.", "Can't reach the server.", "Немає зв'язку з сервером."), true) }
@@ -417,7 +455,7 @@
       const l = g("rmL"), stick = first || l.scrollHeight - l.scrollTop - l.clientHeight < 80;
       E.live = !first; r.messages.forEach(m => { E.last = Math.max(E.last, m.id); roomAdd(m) }); E.live = false;
       if (E.dn) { if (stick) E.dn.reset(); else { const k = r.messages.filter(m => !m.mine).length; if (k) E.dn.bump(k); else E.dn.upd() } }
-      (r.changed || []).forEach(roomChanged); if (r.react) kit.setReact(r.react);
+      (r.changed || []).forEach(roomChanged); if (r.react) kit.setReact(r.react); if (!first && kit.pollLoad) kit.pollLoad();
       { const pn = g("rmPin"), ab = g("rmAb"); pn.hidden = !rm.pin; if (rm.pin) { pn.textContent = ""; pn.appendChild(h("span", "", "📌 " + rm.pin.who + ": " + rm.pin.text)); pn.onclick = () => kit.jump(rm.pin.id) }
         ab.hidden = !rm.about; ab.textContent = rm.about || ""; }
       { let ty = l.querySelector(".chty"); if (r.typing && r.typing.length && !ty) { ty = h("div", "chty"); l.appendChild(ty) } else if ((!r.typing || !r.typing.length) && ty) { ty.remove(); ty = null } if (ty) { ty.textContent = r.typing.join(", ") + (r.typingK === "voice" ? T(" записывает голосовое", " is recording a voice message", " записує голосове") : T(" печатает", " is typing", " друкує")); if (EchoKit.dots) ty.appendChild(EchoKit.dots()); l.appendChild(ty) } }
@@ -475,6 +513,19 @@
       (typeof THEMES !== "undefined" ? THEMES : []).forEach(t => m.appendChild(btn("btn a", t.i + " " + tx(t.n), () => raceNew(t.id))));
       m.appendChild(btn("btn a", "←", () => { E.panel = ""; menuPaint() })); return;
     }
+    if (E.panel === "poll") {
+      const q = h("input", "inp"); q.placeholder = T("Вопрос", "Question", "Питання"); q.maxLength = 120; m.appendChild(q);
+      const os = []; for (let i = 0; i < 4; i++) { const o = h("input", "inp"); o.placeholder = T("Вариант ", "Option ", "Варіант ") + (i + 1); o.maxLength = 60; os.push(o); m.appendChild(o) }
+      const msg = h("div", "ecdim"); m.appendChild(msg);
+      m.appendChild(btn("btn", "📊 " + T("ОТПРАВИТЬ ОПРОС", "SEND POLL", "НАДІСЛАТИ ОПИТУВАННЯ"), async () => {
+        const opts = os.map(x => x.value.trim()).filter(Boolean);
+        if (!q.value.trim() || opts.length < 2) { msg.textContent = T("Нужен вопрос и минимум два варианта.", "Add a question and at least two options.", "Потрібне питання і мінімум два варіанти."); return }
+        try { await post("/api/echo/room/poll/new", { room: rm.id, q: q.value.trim(), opts }); E.panel = ""; g("rmMenu").hidden = true; roomPoll(false) } catch (e) { msg.textContent = (e && e.message) || "" }
+      }));
+      m.appendChild(btn("btn a", "←", () => { E.panel = ""; menuPaint() })); return;
+    }
+    m.appendChild(btn("btn", "📊 " + T("СОЗДАТЬ ОПРОС", "CREATE A POLL", "СТВОРИТИ ОПИТУВАННЯ"), () => { E.panel = "poll"; menuPaint() }));
+    m.appendChild(btn("btn a", "📌 " + (isPinned("r:" + rm.id) ? T("ОТКРЕПИТЬ ЧАТ", "UNPIN CHAT", "ВІДКРІПИТИ ЧАТ") : T("ЗАКРЕПИТЬ ЧАТ", "PIN CHAT", "ЗАКРІПИТИ ЧАТ")), () => { togglePin("r:" + rm.id); menuPaint() }));
     m.appendChild(btn("btn", "{flag}" + T("НАЧАТЬ ЗАЕЗД", "START A RACE", "ПОЧАТИ ЗАЇЗД"), () => { E.panel = "race"; menuPaint() }));
     m.appendChild(btn("btn a", "＋ " + T("ПРИГЛАСИТЬ ДРУГА", "INVITE A FRIEND", "ЗАПРОСИТИ ДРУГА"), () => { E.panel = "inv"; menuPaint() }));
     if (rm.canMod) m.appendChild(btn("btn a", "✎ " + T("ОПИСАНИЕ КОМНАТЫ", "ROOM DESCRIPTION", "ОПИС КІМНАТИ"), () => { E.panel = "about"; menuPaint() }));

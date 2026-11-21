@@ -163,6 +163,9 @@ async function ensureSchema(env) {
     await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_stk (id TEXT PRIMARY KEY, uid TEXT NOT NULL, img TEXT NOT NULL, t INTEGER NOT NULL)').run();
     await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_mystk (uid TEXT NOT NULL, id TEXT NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (uid,id))').run();
     await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_myfav (uid TEXT PRIMARY KEY, gifs TEXT NOT NULL, t INTEGER NOT NULL)').run();
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_poll (id TEXT PRIMARY KEY, room TEXT NOT NULL, uid TEXT NOT NULL, q TEXT NOT NULL, opts TEXT NOT NULL, t INTEGER NOT NULL)').run();
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_poll_vote (poll TEXT NOT NULL, uid TEXT NOT NULL, opt INTEGER NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (poll,uid))').run();
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_pinchat (uid TEXT NOT NULL, k TEXT NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (uid,k))').run();
   } catch (e) { console.error('friends schema', e); }
   schemaReady = true;
 }
@@ -833,13 +836,13 @@ async function wipeUser(env, id) {
   for (const [t, w] of [['qr_login', 'user_id=?'], ['sp_friends', 'a=? OR b=?'], ['sp_msgs', 'a=? OR b=?'], ['sp_blocks', 'a=? OR b=?'], ['sp_reports', 'reporter=? OR target=?'], ['sp_challenges', 'from_id=? OR to_id=?'], ['sp_room_members', 'uid=?'], ['sp_room_msgs', 'uid=?'], ['sp_tg', 'uid=?'], ['sp_tglogin', 'uid=?'], ['sp_grants', 'uid=?'], ['sp_bans', 'uid=?']]) {
     try { await db.prepare('DELETE FROM ' + t + ' WHERE ' + w).bind(...(w.includes('OR') ? [id, id] : [id])).run(); } catch (_) {}
   }
-  for (const t of ['sp_mystk', 'sp_myfav', 'sp_stk', 'sp_typing']) { try { await db.prepare('DELETE FROM ' + t + ' WHERE uid=?').bind(id).run(); } catch (_) {} }
+  for (const t of ['sp_mystk', 'sp_myfav', 'sp_stk', 'sp_typing', 'sp_pinchat', 'sp_poll_vote']) { try { await db.prepare('DELETE FROM ' + t + ' WHERE uid=?').bind(id).run(); } catch (_) {} }
   try { await db.prepare('DELETE FROM sp_rooms WHERE id NOT IN (SELECT room FROM sp_room_members)').run(); } catch (_) {}
   await db.prepare('DELETE FROM users WHERE id=?').bind(id).run();
 }
 
 /* ---------- Панель управления: что можно выдавать и что можно делать ---------- */
-const CATALOG = [["s0","НЕОН",0],["s1","ОГОНЬ",120],["s2","ЯД",120],["s3","САКУРА",250],["s4","ЗОЛОТО",400],["s5","РАДУГА",700],["s6","ЛЁД",300],["s7","ПЛАЗМА",500],["s8","МОЛНИЯ",450],["s9","ЛАВА",550],["s10","КОМЕТЫ",800],["s11","КИБЕР",350],["s12","ВОДА",450],["s13","СЕРДЦА",550],["s14","ЗВЁЗДНЫЙ ПУТЬ",650],["s15","ТЬМА",750],["s16","ГЛИТЧ",900],["s17","ДРАКОН",1400],["s18","ГАЛАКТИКА",1500],["s19","ФЕНИКС",1600],["s20","ГОЛОГРАММА",1300],["b0","КОСМОС",0],["b1","ЗАКАТ",150],["b2","АВРОРА",150],["b3","СНЕГОПАД",300],["b4","САКУРА",450],["b5","ДОЖДЬ КОДА",600],["b6","СИНТВЕЙВ",500],["b7","СВЕТЛЯЧКИ",350],["b8","ОКЕАН",550],["b9","ПУСТЫНЯ",550],["b10","НОЧНОЙ ГОРОД",650],["b11","ГОРНОЕ ОЗЕРО",700],["b12","ВУЛКАН",750],["b13","КРИСТАЛЛЫ",800],["b14","ЗИМНИЙ ДОМИК",750],["b15","ТУМАННОСТЬ",700],["b16","МЕТЕОРНЫЙ ДОЖДЬ",650],["b17","ПОДВОДНОЕ ЦАРСТВО",1500],["b18","ДРЕВНИЙ ЛЕС",1400],["b19","ГОРИЗОНТ СОБЫТИЙ",1800],["b20","НЕОНОВЫЙ ДОЖДЬ",1600]];   // [id, название, цена] — те же фоны и щиты, что в магазине игры
+const CATALOG = [["s0","НЕОН",0],["s1","ОГОНЬ",120],["s2","ЯД",120],["s3","САКУРА",250],["s4","ЗОЛОТО",400],["s5","РАДУГА",700],["s6","ЛЁД",300],["s7","ПЛАЗМА",500],["s8","МОЛНИЯ",450],["s9","ЛАВА",550],["s10","КОМЕТЫ",800],["s11","КИБЕР",350],["s12","ВОДА",450],["s13","СЕРДЦА",550],["s14","ЗВЁЗДНЫЙ ПУТЬ",650],["s15","ТЬМА",750],["s16","ГЛИТЧ",900],["s17","ДРАКОН",1400],["s18","ГАЛАКТИКА",1500],["s19","ФЕНИКС",1600],["s20","ГОЛОГРАММА",1300],["s21","ГРОЗОВОЙ РАЗРЯД",1500],["s22","ЛЕДНИК",1400],["s23","ЯДОВИТЫЙ ПЛЮЩ",1500],["b0","КОСМОС",0],["b1","ЗАКАТ",150],["b2","АВРОРА",150],["b3","СНЕГОПАД",300],["b4","САКУРА",450],["b5","ДОЖДЬ КОДА",600],["b6","СИНТВЕЙВ",500],["b7","СВЕТЛЯЧКИ",350],["b8","ОКЕАН",550],["b9","ПУСТЫНЯ",550],["b10","НОЧНОЙ ГОРОД",650],["b11","ГОРНОЕ ОЗЕРО",700],["b12","ВУЛКАН",750],["b13","КРИСТАЛЛЫ",800],["b14","ЗИМНИЙ ДОМИК",750],["b15","ТУМАННОСТЬ",700],["b16","МЕТЕОРНЫЙ ДОЖДЬ",650],["b17","ПОДВОДНОЕ ЦАРСТВО",1500],["b18","ДРЕВНИЙ ЛЕС",1400],["b19","ГОРИЗОНТ СОБЫТИЙ",1800],["b20","НЕОНОВЫЙ ДОЖДЬ",1600],["b21","КОСМИЧЕСКИЙ ХРАМ",2000],["b22","ВУЛКАН",1900],["b23","ЗИМНИЙ ЗАМОК",1900],["w0","ОБЫЧНЫЕ",0],["w1","ОГНЕННЫЕ",600],["w2","ЛЕДЯНЫЕ",600],["w3","ЗОЛОТЫЕ",900],["w4","КОМЕТНЫЙ ШЛЕЙФ",800],["w5","НЕОНОВЫЕ",700]];   // [id, название, цена] — те же фоны и щиты, что в магазине игры
 const BOOSTS = [["f","❄️ ЗАМОРОЗКА"],["s","🐢 ЗАМЕДЛЕНИЕ"],["b","💥 ВЗРЫВ"],["h","❤️ ЖИЗНЬ"]];   // [буква буста, название] — как в магазине игры
 const manageState = s => ({ off: s.off, msg: s.msg, epoch: s.epoch, since: s.since, news: s.news, newsId: s.newsId });
 const oneLine = (v, max) => String(v || '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
@@ -898,7 +901,7 @@ async function manageDo(env, body) {
     const d = parse(u.data_json, {}), ban = await db.prepare('SELECT reason,t FROM sp_bans WHERE uid=?').bind(u.id).first();
     return {
       id: u.id, username: u.username, code: u.sp_code || '', best: u.best_score || 0, words: u.total_words || 0, seen: u.updated_at,
-      coins: Number(d.co) || 0, owned: Array.isArray(d.ow) ? d.ow.filter(x => typeof x === 'string').slice(0, 60) : [], eq: d.eq && typeof d.eq === 'object' ? { s: String(d.eq.s || ''), b: String(d.eq.b || '') } : {},
+      coins: Number(d.co) || 0, owned: Array.isArray(d.ow) ? d.ow.filter(x => typeof x === 'string').slice(0, 120) : [], eq: d.eq && typeof d.eq === 'object' ? { s: String(d.eq.s || ''), b: String(d.eq.b || ''), w: String(d.eq.w || '') } : {},
       friends: await cnt("SELECT COUNT(*) AS n FROM sp_friends WHERE (a=? OR b=?) AND state='accepted'", u.id, u.id),
       rooms: await cnt('SELECT COUNT(*) AS n FROM sp_room_members WHERE uid=?', u.id),
       reports: await cnt('SELECT COUNT(*) AS n FROM sp_reports WHERE target=?', u.id),
@@ -1284,7 +1287,8 @@ export default {
         if (url.pathname === '/api/my/all' && !isPost) {
           const stk = ((await env.DB.prepare('SELECT s.id, s.img FROM sp_mystk m JOIN sp_stk s ON s.id=m.id WHERE m.uid=? ORDER BY m.t DESC LIMIT 24').bind(user.id).all()).results || []);
           const fv = await env.DB.prepare('SELECT gifs FROM sp_myfav WHERE uid=?').bind(user.id).first();
-          return reply({ stk, gifs: fv ? parse(fv.gifs, []) : [] });
+          const pins = ((await env.DB.prepare('SELECT k FROM sp_pinchat WHERE uid=? ORDER BY t DESC LIMIT 20').bind(user.id).all()).results || []).map(r => r.k);
+          return reply({ stk, gifs: fv ? parse(fv.gifs, []) : [], pins });
         }
         if (url.pathname === '/api/my/stk/add' && isPost) {
           if (!await allow(env, 'ms:' + user.id, 40, 60 * 60 * 1000)) return reply(TOO_MANY, 429);
@@ -1305,6 +1309,16 @@ export default {
           if (!await allow(env, 'mg:' + user.id, 120, 60 * 60 * 1000)) return reply(TOO_MANY, 429);
           const list = (Array.isArray(body.gifs) ? body.gifs : []).filter(x => x && /^[A-Za-z0-9]{5,24}$/.test(String(x.id))).slice(0, 40).map(x => ({ id: String(x.id), w: Math.min(2000, Math.max(1, Math.floor(Number(x.w)) || 100)), h: Math.min(2000, Math.max(1, Math.floor(Number(x.h)) || 100)) }));
           await env.DB.prepare('INSERT INTO sp_myfav (uid,gifs,t) VALUES (?,?,?) ON CONFLICT(uid) DO UPDATE SET gifs=excluded.gifs, t=excluded.t').bind(user.id, JSON.stringify(list), Date.now()).run();
+          return reply({ ok: true });
+        }
+        if (url.pathname === '/api/my/pin' && isPost) {
+          if (!await allow(env, 'mp:' + user.id, 60, 60 * 60 * 1000)) return reply(TOO_MANY, 429);
+          const k = String(body.key || '');
+          if (!/^[dr]:[A-Za-z0-9_-]{1,64}$/.test(k)) return reply({ error: 'Чат не найден.' }, 400);
+          if (!body.on) { await env.DB.prepare('DELETE FROM sp_pinchat WHERE uid=? AND k=?').bind(user.id, k).run(); return reply({ ok: true }); }
+          const n = ((await env.DB.prepare('SELECT COUNT(*) c FROM sp_pinchat WHERE uid=?').bind(user.id).first()) || {}).c || 0;
+          if (n >= 5) return reply({ error: 'Можно закрепить не больше 5 чатов.' }, 400);
+          await env.DB.prepare('INSERT INTO sp_pinchat (uid,k,t) VALUES (?,?,?) ON CONFLICT(uid,k) DO UPDATE SET t=excluded.t').bind(user.id, k, Date.now()).run();
           return reply({ ok: true });
         }
         if (url.pathname === '/api/stk/get' && !isPost) {
@@ -1487,9 +1501,9 @@ export default {
 
           if (url.pathname === '/api/echo/rooms' && request.method === 'GET') {
             if (!await allow(env, 'er:' + user.id, 80, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
-            const rows = (await env.DB.prepare('SELECT r.id,r.name,r.owner,m.last,(SELECT COUNT(*) FROM sp_room_members x WHERE x.room=r.id) AS members,(SELECT COUNT(*) FROM sp_room_msgs g WHERE g.room=r.id AND g.id>m.last AND g.uid<>?) AS unread,(SELECT body FROM sp_room_msgs g WHERE g.room=r.id ORDER BY g.id DESC LIMIT 1) AS lastbody,(SELECT t FROM sp_room_msgs g WHERE g.room=r.id ORDER BY g.id DESC LIMIT 1) AS lastt FROM sp_room_members m JOIN sp_rooms r ON r.id=m.room WHERE m.uid=? AND r.name NOT LIKE \'Зв:%\' ORDER BY COALESCE(lastt,r.t) DESC LIMIT 30')
-              .bind(user.id, user.id).all()).results || [];
-            return reply({ rooms: rows.map(r => ({ id: r.id, name: r.name, mine: r.owner === user.id, members: r.members, unread: r.unread, last: r.lastbody ? String(r.lastbody).slice(0, 60) : '', t: r.lastt || 0 })) });
+            const rows = (await env.DB.prepare('SELECT r.id,r.name,r.owner,m.last,(SELECT COUNT(*) FROM sp_room_members x WHERE x.room=r.id) AS members,(SELECT COUNT(*) FROM sp_room_msgs g WHERE g.room=r.id AND g.id>m.last AND g.uid<>?) AS unread,(SELECT COUNT(*) FROM sp_room_msgs g WHERE g.room=r.id AND g.id>m.last AND g.uid<>? AND g.dl=0 AND g.body LIKE ? ESCAPE \'\\\') AS ment,(SELECT body FROM sp_room_msgs g WHERE g.room=r.id ORDER BY g.id DESC LIMIT 1) AS lastbody,(SELECT t FROM sp_room_msgs g WHERE g.room=r.id ORDER BY g.id DESC LIMIT 1) AS lastt FROM sp_room_members m JOIN sp_rooms r ON r.id=m.room WHERE m.uid=? AND r.name NOT LIKE \'Зв:%\' ORDER BY COALESCE(lastt,r.t) DESC LIMIT 30')
+              .bind(user.id, user.id, '%@' + String(user.username || '').replace(/[%_\\]/g, '\\$&') + '%', user.id).all()).results || [];
+            return reply({ rooms: rows.map(r => ({ id: r.id, name: r.name, mine: r.owner === user.id, members: r.members, unread: r.unread, ment: r.ment || 0, last: r.lastbody ? String(r.lastbody).slice(0, 60) : '', t: r.lastt || 0 })) });
           }
 
           if (url.pathname === '/api/echo/room' && post) {
@@ -1608,6 +1622,44 @@ export default {
             }
             if (!/^§[RS]\|/.test(text)) for (const o of others) push(ctx, notify(env, o.uid, called.has(o.uid) ? '@ Эхо · ' + room.name + ': ' + user.username + ' упомянул тебя' : '💬 Эхо · ' + room.name + ': новое сообщение'));
             return reply({ ok: true, id });
+          }
+
+          if (url.pathname === '/api/echo/room/poll/new' && post) {
+            if (!await allow(env, 'pn:' + user.id, 10, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+            const q = cleanText(String(body.q || ''), 120);
+            const opts = (Array.isArray(body.opts) ? body.opts : []).map(x => cleanText(String(x || ''), 60)).filter(Boolean).slice(0, 6);
+            if (!q || opts.length < 2) return reply({ error: 'Нужен вопрос и минимум 2 варианта.' }, 400);
+            const pid = Array.from(random(8)).map(b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join('');
+            await env.DB.prepare('INSERT INTO sp_poll (id,room,uid,q,opts,t) VALUES (?,?,?,?,?,?)').bind(pid, roomId, user.id, q, JSON.stringify(opts), now).run();
+            const text = ':p:' + pid + ':';
+            const ins = await env.DB.prepare('INSERT INTO sp_room_msgs (room,uid,body,t,rp,img,upd) VALUES (?,?,?,?,0,?,?)').bind(roomId, user.id, text, now, '', now).run();
+            const id = ins && ins.meta ? ins.meta.last_row_id || 0 : 0;
+            await env.DB.prepare('UPDATE sp_room_members SET last=? WHERE room=? AND uid=?').bind(id, roomId, user.id).run();
+            const others = ((await env.DB.prepare('SELECT uid FROM sp_room_members WHERE room=? AND uid<>?').bind(roomId, user.id).all()).results || []).slice(0, ROOM_MAX_MEMBERS);
+            for (const o of others) push(ctx, notify(env, o.uid, '📊 Эхо · ' + room.name + ': опрос «' + q.slice(0, 40) + '»'));
+            return reply({ ok: true, id, poll: pid });
+          }
+          if (url.pathname === '/api/echo/room/poll/get' && !post) {
+            const ids = String(url.searchParams.get('ids') || '').split(',').filter(x => /^[a-z0-9]{8}$/.test(x)).slice(0, 20);
+            const out = {};
+            for (const pid of ids) {
+              const p = await env.DB.prepare('SELECT q,opts,uid FROM sp_poll WHERE id=? AND room=?').bind(pid, roomId).first();
+              if (!p) continue;
+              const opts = parse(p.opts, []), cnt = opts.map(() => 0);
+              for (const v of ((await env.DB.prepare('SELECT opt, COUNT(*) n FROM sp_poll_vote WHERE poll=? GROUP BY opt').bind(pid).all()).results || [])) if (v.opt >= 0 && v.opt < cnt.length) cnt[v.opt] = v.n;
+              const my = await env.DB.prepare('SELECT opt FROM sp_poll_vote WHERE poll=? AND uid=?').bind(pid, user.id).first();
+              out[pid] = { q: p.q, opts, cnt, my: my ? my.opt : -1 };
+            }
+            return reply({ polls: out });
+          }
+          if (url.pathname === '/api/echo/room/poll/vote' && post) {
+            if (!await allow(env, 'pv:' + user.id, 60, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+            const pid = String(body.poll || ''), p = await env.DB.prepare('SELECT opts FROM sp_poll WHERE id=? AND room=?').bind(pid, roomId).first();
+            if (!p) return reply({ error: 'Опрос не найден.' }, 404);
+            const n = parse(p.opts, []).length, opt = Math.floor(Number(body.opt));
+            if (!(opt >= 0 && opt < n)) return reply({ error: 'Такого варианта нет.' }, 400);
+            await env.DB.prepare('INSERT INTO sp_poll_vote (poll,uid,opt,t) VALUES (?,?,?,?) ON CONFLICT(poll,uid) DO UPDATE SET opt=excluded.opt, t=excluded.t').bind(pid, user.id, opt, now).run();
+            return reply({ ok: true });
           }
 
           if (url.pathname === '/api/echo/room/edit' && post) {

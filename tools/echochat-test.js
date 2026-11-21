@@ -298,6 +298,39 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
   await p.waitForTimeout(700);
   ok(await p.evaluate(() => document.querySelectorAll('#o17 .mav.hasph').length > 0), 'в комнате у сообщений Bobby видна его фото-аватарка');
   await p.screenshot({ path: shots + '/room-avatars.png' });
+  {
+    console.log('Опрос, @-подсказка, закреп (экран)');
+    await p.evaluate(() => { const m = document.getElementById('rmMenu'); if (m.hidden) document.getElementById('rmMn').click() }); await p.waitForTimeout(300);
+    await p.evaluate(() => { const b = [...document.querySelectorAll('#rmMenu button')].find(x => /^(↩|←)/.test(x.textContent)); if (b) b.click() }); await p.waitForTimeout(200);
+    await p.evaluate(() => [...document.querySelectorAll('#rmMenu button')].find(x => /СОЗДАТЬ ОПРОС|CREATE A POLL/.test(x.textContent)).click()); await p.waitForTimeout(300);
+    const ins = p.locator('#rmMenu input'); await ins.nth(0).fill('Что играем?'); await ins.nth(1).fill('Заезд'); await ins.nth(2).fill('Дуэль');
+    await p.evaluate(() => [...document.querySelectorAll('#rmMenu button')].find(x => /ОТПРАВИТЬ ОПРОС|SEND POLL/.test(x.textContent)).click()); await p.waitForTimeout(2200);
+    ok(await p.evaluate(() => document.querySelectorAll('#rmL .poll .po').length === 2 && /Что играем/.test(document.querySelector('#rmL .poll .pq').textContent)), 'опрос появился карточкой с двумя вариантами');
+    await p.evaluate(() => document.querySelectorAll('#rmL .poll .po')[1].click()); await p.waitForTimeout(900);
+    ok(await p.evaluate(() => document.querySelectorAll('#rmL .poll .po')[1].classList.contains('my') && /1/.test(document.querySelectorAll('#rmL .poll .pc')[1].textContent)), 'голос засчитан и подсвечен');
+    ok(await p.evaluate(() => !!document.querySelector('#rmL .poll .pn') && /1/.test(document.querySelector('#rmL .poll .pn').textContent)), 'под опросом счётчик голосов');
+    await p.evaluate(() => document.getElementById('rmL').scrollTop = 99999); await p.waitForTimeout(300);
+    await p.screenshot({ path: shots + '/poll.png' });
+    await p.fill('#rmIn', 'смотри @Bo'); await p.waitForTimeout(300);
+    ok(await p.evaluate(() => [...document.querySelectorAll('#o17 .atp .atc')].map(x => x.textContent).join() === '@Bobby'), 'при вводе @ видна подсказка с именем участника');
+    await p.screenshot({ path: shots + '/at.png' });
+    await p.evaluate(() => document.querySelector('#o17 .atp .atc').click()); await p.waitForTimeout(250);
+    ok(await p.evaluate(() => document.getElementById('rmIn').value === 'смотри @Bobby ' && document.querySelector('#o17 .atp').hidden), 'выбор подсказки вставляет имя');
+    await p.fill('#rmIn', ''); await p.waitForTimeout(150);
+    await p.evaluate(() => document.getElementById('o17').querySelector('.ib').click()); await p.waitForTimeout(500);
+    await api('/api/echo/room/send', { room: rid, text: 'эй @Alice тут' }, B.token);
+    await p.evaluate(() => SlovopadEcho.open()); await p.waitForTimeout(2500);
+    await p.evaluate(() => SlovopadEcho.refresh && SlovopadEcho.refresh()); await p.waitForTimeout(1200);
+    const rowSel = '#ecList .ecrow[data-k="' + rid + '"]';
+    ok(await p.evaluate(s => !!document.querySelector(s + ' .ecat'), rowSel), 'в списке у комнаты значок @ про упоминание');
+    const bb = await p.locator(rowSel).boundingBox(); await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await p.mouse.down(); await p.waitForTimeout(800); await p.mouse.up(); await p.waitForTimeout(900);
+    ok(await p.evaluate(() => { const sec = [...document.querySelectorAll('#ecList .ecsec')][0]; return !!sec && /ЗАКРЕП|PINNED/.test(sec.textContent) }), 'зажатый чат поднялся в раздел «Закреплённые»');
+    ok(((await api('/api/my/all', null, A.token)).pins || []).includes('r:' + rid), 'закреп сохранился на сервере');
+    await p.screenshot({ path: shots + '/hub-pin.png' });
+    await p.mouse.move(bb.x + 20, bb.y + 10); const bb2 = await p.locator(rowSel).boundingBox(); await p.mouse.move(bb2.x + bb2.width / 2, bb2.y + bb2.height / 2); await p.mouse.down(); await p.waitForTimeout(800); await p.mouse.up(); await p.waitForTimeout(900);
+    ok(!((await api('/api/my/all', null, A.token)).pins || []).includes('r:' + rid), 'повторное зажатие открепляет');
+    await p.evaluate(id => SlovopadEcho.roomOpen(id, 'Словари'), rid); await p.waitForTimeout(1800);
+  }
   await p.evaluate(() => { const m = [...document.querySelectorAll('#o17 .mav.tap')].find(x => x.classList.contains('hasph')); if (m) m.click() }); await p.waitForTimeout(1200);
   ok(await p.evaluate(() => !!document.querySelector('#ewho .fav.hasph')), 'в карточке игрока (по нажатию на ник) видно фото, а не эмодзи');
   await p.screenshot({ path: shots + '/who-photo.png' });
@@ -325,6 +358,31 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
     const got = await p.evaluate(() => JSON.parse(localStorage.getItem('bst') || '{}'));
     ok(got.f === 4 && got.h === 2, 'подаренные бусты упали в инвентарь игрока (' + JSON.stringify(got) + ')');
     ok(await p.evaluate(() => /❄️/.test(document.body.innerText)), 'игрок видит уведомление о подарке');
+  }
+  {
+    console.log('Опросы, закреплённые чаты, упоминания');
+    const np = await api('/api/echo/room/poll/new', { room: rid, q: 'Во сколько играем?', opts: ['19:00', '20:00', '21:00'] }, A.token);
+    ok(!!np.poll && np.id > 0, 'опрос создан');
+    ok(!!(await api('/api/echo/room/poll/new', { room: rid, q: 'Один вариант', opts: ['да'] }, A.token)).error, 'опрос с одним вариантом не создаётся');
+    await api('/api/echo/room/poll/vote', { room: rid, poll: np.poll, opt: 1 }, B.token);
+    await api('/api/echo/room/poll/vote', { room: rid, poll: np.poll, opt: 1 }, C.token);
+    await api('/api/echo/room/poll/vote', { room: rid, poll: np.poll, opt: 2 }, C.token);
+    ok(!!(await api('/api/echo/room/poll/vote', { room: rid, poll: np.poll, opt: 9 }, B.token)).error, 'несуществующий вариант не принимается');
+    const pg = await api('/api/echo/room/poll/get?room=' + rid + '&ids=' + np.poll, null, B.token);
+    const P = pg.polls[np.poll];
+    ok(P && P.cnt.join() === '0,1,1' && P.my === 1, 'голоса считаются, переголосование заменяет выбор (' + (P && P.cnt) + ')');
+    ok((await api('/api/echo/room/poll/get?room=' + rid + '&ids=' + np.poll, null, A.token)).polls[np.poll].my === -1, 'у не голосовавшего нет выбора');
+    await api('/api/echo/room/send', { room: rid, text: 'эй @Carol глянь' }, B.token);
+    const rr = await api('/api/echo/rooms', null, C.token);
+    ok(((rr.rooms || []).find(x => x.id === rid) || {}).ment >= 1, 'в списке комнат видно непрочитанное упоминание');
+    ok(((await api('/api/echo/rooms', null, A.token)).rooms.find(x => x.id === rid) || {}).ment === 0, 'другим упоминания не показываются');
+    ok((await api('/api/my/pin', { key: 'r:' + rid, on: 1 }, A.token)).ok, 'чат закреплён');
+    await api('/api/my/pin', { key: 'd:' + B.code.replace(/[^A-Za-z0-9_-]/g, ''), on: 1 }, A.token);
+    ok(((await api('/api/my/all', null, A.token)).pins || []).includes('r:' + rid), 'закреплённые приходят списком');
+    ok(!!(await api('/api/my/pin', { key: 'bad key', on: 1 }, A.token)).error, 'мусорный ключ не принимается');
+    await api('/api/my/pin', { key: 'r:' + rid, on: 0 }, A.token);
+    ok(!((await api('/api/my/all', null, A.token)).pins || []).includes('r:' + rid), 'чат откреплён');
+    await api('/api/my/pin', { key: 'd:' + B.code.replace(/[^A-Za-z0-9_-]/g, ''), on: 0 }, A.token);
   }
   {
     console.log('Постоянные стикеры, избранное, поиск, голос');

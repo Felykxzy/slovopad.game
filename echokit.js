@@ -151,6 +151,7 @@
       const t = String(m.body || ""), sp = h("span", "mt");
       if (t.trim() === ":ms:") { if (m.im) { sp.className = "mt mystk0"; return sp } sp.textContent = "🖼 " + T("Стикер устарел", "Sticker expired", "Стікер застарів"); return sp }
       { const SK = window.SlovopadStickers, mid = SK && SK.myParse(t); if (mid) { sp.className = "mt stki"; const im = h("img", "stkimg"); im.alt = T("Стикер", "Sticker", "Стікер"); im.draggable = false; im.style.minHeight = "60px"; SK.myImg(mid).then(u => { if (u) { im.onload = () => { im.style.minHeight = ""; if (K.onsize) K.onsize() }; im.src = u } else { sp.className = "mt"; sp.textContent = "🖼 " + T("Стикер", "Sticker", "Стікер") } }); sp.appendChild(im); return sp } }
+      { const pm = cfg.poll && /^:p:([a-z0-9]{8}):$/.exec(t.trim()); if (pm) { sp.className = "mt pollw"; sp.appendChild(K.pollCard(pm[1])); return sp } }
       { const GF = window.SlovopadGif, gid = GF && GF.parse(t); if (gid) { sp.className = "mt stki"; const im = h("img", "gifimg"); im.src = GF.url(gid); im.alt = "GIF"; im.draggable = false; im.loading = "lazy"; im.onerror = () => { sp.textContent = "GIF"; sp.className = "mt" }; im.onload = () => { if (K.onsize) K.onsize() }; sp.appendChild(im); return sp } }
       { const SK = window.SlovopadStickers, sid = SK && SK.parse(t); if (sid && SK.has(sid)) { sp.className = "mt stki"; const im = h("img", "stkimg"); im.src = SK.uri(sid); im.alt = SK.label(t); im.draggable = false; sp.appendChild(im); return sp } }
       if (t && bigRe.test(t)) { sp.className = "mt big"; sp.textContent = t; return sp }
@@ -162,6 +163,32 @@
       if (last < t.length) sp.appendChild(document.createTextNode(t.slice(last)));
       return x ? sp : sp;
     };
+    // опросы: карточка с вариантами, голоса считает сервер
+    K.pollEls = {}; K.pollData = {}; let pollTm = 0;
+    K.pollPaint = pid => {
+      const d = K.pollData[pid], list = K.pollEls[pid] || [];
+      list.forEach(box => {
+        box.textContent = ""; if (!d) { box.appendChild(h("div", "pq", "📊 …")); return }
+        const tot = d.cnt.reduce((a, b) => a + b, 0);
+        box.appendChild(h("div", "pq", "📊 " + d.q));
+        d.opts.forEach((o, i) => {
+          const b = h("button", "po" + (d.my === i ? " my" : "")); b.type = "button";
+          const fill = h("i", "pf"); fill.style.width = (tot ? Math.round(d.cnt[i] / tot * 100) : 0) + "%"; b.appendChild(fill);
+          b.appendChild(h("span", "pl", (d.my === i ? "✓ " : "") + o)); b.appendChild(h("span", "pc", d.cnt[i] ? String(d.cnt[i]) : ""));
+          b.onclick = async e => { e.stopPropagation(); if (d.my === i) return; const old = d.my; if (old >= 0) d.cnt[old]--; d.cnt[i]++; d.my = i; K.pollPaint(pid); try { await cfg.vote(pid, i) } catch (x) { d.cnt[i]--; if (old >= 0) d.cnt[old]++; d.my = old; K.pollPaint(pid) } K.pollLoad() };
+          box.appendChild(b);
+        });
+        box.appendChild(h("div", "pn", tot + " " + (tot % 10 === 1 && tot % 100 !== 11 ? T("голос", "vote", "голос") : tot % 10 >= 2 && tot % 10 <= 4 && (tot % 100 < 12 || tot % 100 > 14) ? T("голоса", "votes", "голоси") : T("голосов", "votes", "голосів"))));
+      });
+    };
+    K.pollLoad = () => {
+      clearTimeout(pollTm);
+      pollTm = setTimeout(async () => {
+        const ids = Object.keys(K.pollEls).filter(p => (K.pollEls[p] = K.pollEls[p].filter(e => e.isConnected)).length).slice(-20); if (!ids.length || !cfg.poll) return;
+        try { const r = await cfg.poll(ids); Object.keys(r || {}).forEach(p => { K.pollData[p] = r[p]; K.pollPaint(p) }); if (K.onsize) K.onsize() } catch (e) { }
+      }, 30);
+    };
+    K.pollCard = pid => { const box = h("div", "poll"); (K.pollEls[pid] || (K.pollEls[pid] = [])).push(box); K.pollPaint(pid); K.pollLoad(); return box };
     K.meta = m => (m.ed && !m.dl ? T("изм. ", "edited ", "зм. ") : "") + clock(m.t) + (cfg.ticks && m.mine && !m.dl ? (K.readTo >= m.id ? " ✓✓" : " ✓") : "");
     K.reg = (id, row, rxbox) => { K.els[id] = row; if (rxbox) K.rxbox[id] = rxbox; K.drawReact(id) };
     K.setReact = list => {
