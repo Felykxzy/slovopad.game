@@ -1572,4 +1572,4 @@ html.lite.beta #o1 #seB{animation:none}
 #app{--top:0px}
 #fw{margin-top:calc(-1 * var(--top))}
 #hud{background:rgba(5,7,22,.6);-webkit-backdrop-filter:blur(1.5px);backdrop-filter:blur(1.5px)}
-#bst{background:rgba(5,7,22,.6)}
+#bst.emp{visibility:hidden}

@@ -89,7 +89,8 @@ if(bi!==fgLast){const dt=$("dt");if(fgLast>=0&&state==="idle")snd(620+bi%6*45,.0
 $("fg").addEventListener("scroll",()=>{if(!fgBusy){fgBusy=1;requestAnimationFrame(()=>fgUpd())}},{passive:true});
 addEventListener("resize",()=>{fgGeo=null});
 /* поле игры идёт под верхней панелью (она полупрозрачная): отступ считаем по её высоте */
-function hudPad(){const h=$("hud"),b=$("bst");if(!h)return;const v=(getComputedStyle(h).display==="none"?0:h.offsetHeight)+(b.hidden||getComputedStyle(b).display==="none"?0:b.offsetHeight);const a=$("app");if(a.style.getPropertyValue("--top")!==v+"px"){a.style.setProperty("--top",v+"px");requestAnimationFrame(()=>{try{size()}catch(e){}})}}
+var topPx=0;
+function hudPad(){const h=$("hud"),b=$("bst");if(!h)return;const v=(getComputedStyle(h).display==="none"?0:h.offsetHeight)+(b.hidden||getComputedStyle(b).display==="none"?0:b.offsetHeight);topPx=v;const a=$("app");if(a.style.getPropertyValue("--top")!==v+"px"){a.style.setProperty("--top",v+"px");requestAnimationFrame(()=>{try{size()}catch(e){}})}}
 if(window.ResizeObserver){const ro=new ResizeObserver(hudPad);ro.observe($("hud"));ro.observe($("bst"))}addEventListener("resize",hudPad);document.addEventListener("DOMContentLoaded",hudPad);
 (()=>{const o=$("o5");let x0=0,y0=0;o.addEventListener("touchstart",e=>{const t=e.touches[0];x0=t.clientX;y0=t.clientY},{passive:true});o.addEventListener("touchmove",e=>{const t=e.touches[0];if(Math.abs(t.clientY-y0)>Math.abs(t.clientX-x0)&&e.cancelable)e.preventDefault()},{passive:false})})();
 function menu(){RACE=null;if(window.ACH)ACH.check();shUI();app.classList.add("inmenu");pfUI();$("vr").textContent="v"+VER;const g=$("fg");g.innerHTML="";$("dt").innerHTML="";fgGeo=null;fgLast=-1;logo();stats();THEMES.forEach((t,n)=>{const b=gbest(t);
@@ -105,6 +106,13 @@ addEventListener("resize",()=>requestAnimationFrame(menuFit));addEventListener("
 function raceBegin(rc){const t=THEMES.find(x=>x.id===rc.theme);if(!t)return false;RACE={id:rc.id,seed:rc.seed|0,room:rc.room,theme:rc.theme,lang:rc.lang};TH=t;GL=rc.lang;const old=CFG.wl;CFG.wl=rc.lang;try{WL=lw(t).split(" ")}finally{CFG.wl=old}best=gbest(t);size();start();return true}
 function pickTheme(t){RACE=null;TH=t;GL=CFG.wl;WL=lw(t).split(" ");best=gbest(t);size();start()}
 function toMenu(){const wp=PR;PR=0;if(wp&&prHook)prHook("menu");pfSave();state="idle";bstUI();bkv(0);ti.blur();items=[];P=[];R=[];F=[];Sh=[];G=[];X=[];CR=[];target=null;buf="";ti.value="";menu();upCheck();arp([523,659,784],.07,"sine",.03)}
+/* Опыт: поле ввода игры как contenteditable — на iPhone у него может не быть серой панели со стрелками.
+   Включается ссылкой ?kbce=1 (запоминается), выключается ?kbce=0. По умолчанию — обычное поле. */
+(function(){let on=false;try{const m=/[?&]kbce=([01])/.exec(location.search);if(m)localStorage.setItem("kbce",m[1]);on=localStorage.getItem("kbce")==="1"}catch(e){}
+const o=document.getElementById("ti");if(!on||!o)return;const d=document.createElement("div");d.id="ti";d.setAttribute("contenteditable","true");d.setAttribute("role","textbox");d.setAttribute("autocapitalize","off");d.setAttribute("autocorrect","off");d.setAttribute("spellcheck","false");d.setAttribute("enterkeyhint","done");
+Object.defineProperty(d,"value",{get(){return d.textContent},set(v){d.textContent=v}});
+d.addEventListener("keydown",e=>{if(e.key==="Enter")e.preventDefault()});d.addEventListener("paste",e=>e.preventDefault());d.addEventListener("drop",e=>e.preventDefault());
+o.replaceWith(d)})();
 const ti=$("ti"),app=$("app");
 function foc(){try{ti.focus({preventScroll:true})}catch(e){ti.focus()}}
 ti.addEventListener("input",()=>{if(state!=="play"){ti.value="";return}
@@ -612,11 +620,11 @@ function pick(){const mx=4+level*2+rki(tw());for(let pass=0;pass<3;pass++){for(l
 function spawn(){let ty="n",w;
 if(lives<3&&level>1&&Math.random()<.07&&!items.some(i=>i.type==="h")){ty="h";w=HW[GL]}
 else{w=pick();if(!w)return;if(level>1&&Math.random()<.09)ty="g"}
-const lanes=Math.max(2,W/140|0),free=[];for(let l=0;l<lanes;l++)if(!items.some(i=>i.lane===l&&i.y<170))free.push(l);
+const lanes=Math.max(2,W/140|0),free=[];for(let l=0;l<lanes;l++)if(!items.some(i=>i.lane===l&&i.y<170+topPx))free.push(l);
 if(!free.length){spawnT=.25;return}
 const lane=free[Math.random()*free.length|0],x=Math.min(W-80,Math.max(80,(lane+.5)*W/lanes+Math.random()*30-15));
 ctx.font=FONT;const up=w.toUpperCase(),lx=[];let a=0;for(const c of up){lx.push(a);a+=ctx.measureText(c).width+2}
-items.push({name:w,up,type:ty,lx,pw:a+20,x,cx:x,y:-70,lane,v:.88+Math.random()*.3,ph:Math.random()*6,k:0})}
+items.push({name:w,up,type:ty,lx,pw:a+20,x,cx:x,y:-70+topPx,lane,v:.88+Math.random()*.3,ph:Math.random()*6,k:0})}
 function setT(it,k){if(target&&target!==it)target.k=0;target=it;if(it){if(k>it.k){burst(it.cx,it.y+24,3,T[it.type]);it.pt=gt;if(CFG.q){const lx=it.cx-it.pw/2+10+(it.lx[k-1]||0)+8;spark(lx,it.y+38,7,"255,255,255",150,.35);spark(lx,it.y+38,5,T[it.type],210,.4)}}it.k=k}}
 function kill(it){items.splice(items.indexOf(it),1);if(target===it)target=null;buf="";
 Sh.push({x:it.cx,y:it.y,l:.16});R.push({x:it.cx,y:it.y,r:8,l:.4,c:T[it.type]});
@@ -639,7 +647,7 @@ function back(){if(state!=="play"||!buf)return;buf=buf.slice(0,-1);snd(260,.04,"
 
 document.addEventListener("contextmenu",e=>e.preventDefault());
 function update(dt){if(!PR)PF.t+=dt;if(frz>0){frz-=dt;if(frz<=0)fxUI();return}for(const it of items)if(!it.dz&&it.y>H*.7&&it.type!=="h"){it.dz=1;snd(880,.05,"square",.02)}hbt(dt);const sl=slw>0?.5:1;if(slw>0){slw-=dt;if(slw<=0)fxUI()}spawnT-=dt*sl;if(spawnT<=0){spawn();spawnT=Math.max(.6,2-level*.14-rki(tw())*.1)*[1.25,1,.8][CFG.spd]}
-const sp=sl*H*Math.min(.32,.085+level*.012)*[.7,1,1.4][CFG.spd]*(1+rki(tw())*.12);
+const sp=sl*(H-topPx)*Math.min(.32,.085+level*.012)*[.7,1,1.4][CFG.spd]*(1+rki(tw())*.12);
 for(let i=items.length-1;i>=0;i--){const it=items[i];it.age=(it.age||0)+dt;it.y+=sp*it.v*dt;it.cx=it.x+Math.sin(gt*2+it.ph)*8;
 if(it.y+58>=H-SY){lose(i);if(state!=="play")return}}}
 function fx(dt){shake=Math.max(0,shake-dt);flashA=Math.max(0,flashA-dt*1.4);hitT=Math.max(0,hitT-dt);
@@ -780,7 +788,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");glassSet((e.clientX/innerWidth-.5)/.55,(e.clientY/innerHeight-.5)/.5)},{passive:true});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="4.17.0";let upLater=false;
+const VER="4.17.1";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if($("spl")||state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
@@ -974,7 +982,7 @@ function bsG(){let o={f:0,s:0,b:0,h:0};try{Object.assign(o,JSON.parse(localStora
 function bsS(o){try{localStorage.setItem("bst",JSON.stringify(o))}catch(e){}}
 function fxUI(){const f=$("fw");if(!f)return;f.classList.toggle("frz",frz>0);f.classList.toggle("slw",slw>0)}
 function bstUI(){const b=$("bst");if(!b)return;const bs=bsG(),on=(state==="play"||state==="pause")&&!PR&&!RACE;b.textContent="";if(!on){b.hidden=true;bstKeep=0;return}
-BST.forEach(x=>{const n=bs[x[0]];if(!n)return;const e=document.createElement("button");e.type="button";e.className="bsb";e.setAttribute("aria-label",L3(...x[2]));const i=document.createElement("span");i.textContent=x[1];const c=document.createElement("b");c.textContent=n;e.append(i,c);e.addEventListener("pointerdown",ev=>{ev.preventDefault();ev.stopPropagation();bstUse(x[0])});b.appendChild(e)});b.hidden=!b.children.length&&!bstKeep}
+BST.forEach(x=>{const n=bs[x[0]];if(!n)return;const e=document.createElement("button");e.type="button";e.className="bsb";e.setAttribute("aria-label",L3(...x[2]));const i=document.createElement("span");i.textContent=x[1];const c=document.createElement("b");c.textContent=n;e.append(i,c);e.addEventListener("pointerdown",ev=>{ev.preventDefault();ev.stopPropagation();bstUse(x[0])});b.appendChild(e)});b.hidden=false;b.classList.toggle("emp",!b.children.length&&!bstKeep)}
 function bstUse(k){if(state!=="play"||PR||RACE)return;const bs=bsG();if(!bs[k])return;
 if(k==="h"&&lives>=3){flo(W/2,H*.35,L3("Жизни полные","Lives are full","Життя повні"),18,T.n,1.4);return}
 bs[k]--;bsS(bs);
