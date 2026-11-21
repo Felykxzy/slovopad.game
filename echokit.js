@@ -149,7 +149,7 @@
     K.text = m => {
       if (m.dl) return h("span", "mdel", T("Сообщение удалено", "Message deleted", "Повідомлення видалено"));
       const t = String(m.body || ""), sp = h("span", "mt");
-      if (t.trim() === ":ms:" && m.im) { sp.className = "mt mystk0"; return sp }
+      if (t.trim() === ":ms:") { if (m.im) { sp.className = "mt mystk0"; return sp } sp.textContent = "🖼 " + T("Стикер устарел", "Sticker expired", "Стікер застарів"); return sp }
       { const SK = window.SlovopadStickers, mid = SK && SK.myParse(t); if (mid) { sp.className = "mt stki"; const im = h("img", "stkimg"); im.alt = T("Стикер", "Sticker", "Стікер"); im.draggable = false; im.style.minHeight = "60px"; SK.myImg(mid).then(u => { if (u) { im.onload = () => { im.style.minHeight = ""; if (K.onsize) K.onsize() }; im.src = u } else { sp.className = "mt"; sp.textContent = "🖼 " + T("Стикер", "Sticker", "Стікер") } }); sp.appendChild(im); return sp } }
       { const GF = window.SlovopadGif, gid = GF && GF.parse(t); if (gid) { sp.className = "mt stki"; const im = h("img", "gifimg"); im.src = GF.url(gid); im.alt = "GIF"; im.draggable = false; im.loading = "lazy"; im.onerror = () => { sp.textContent = "GIF"; sp.className = "mt" }; im.onload = () => { if (K.onsize) K.onsize() }; sp.appendChild(im); return sp } }
       { const SK = window.SlovopadStickers, sid = SK && SK.parse(t); if (sid && SK.has(sid)) { sp.className = "mt stki"; const im = h("img", "stkimg"); im.src = SK.uri(sid); im.alt = SK.label(t); im.draggable = false; sp.appendChild(im); return sp } }
@@ -213,15 +213,20 @@
     const pend = [];
     K.pend = {
       add: (list, label, fn, after) => {
-        const el = h("div", "chm me pend"), b = h("span", "chb"), meta = h("i", "cht"), rt = h("button", "pendr", "⟳ " + T("Повторить", "Retry", "Повторити")); rt.type = "button"; b.textContent = label;
-        meta.append(T("Не отправлено", "Not sent", "Не надіслано") + " · ", rt); el.append(b, meta); list.appendChild(el); list.scrollTop = list.scrollHeight;
+        const el = h("div", "chm me pend"), b = h("span", "chb"), meta = h("i", "cht"), rt = h("button", "pendr", "⟳ " + T("Повторить", "Retry", "Повторити")), cx = h("button", "pendr pendx", "✕"); rt.type = cx.type = "button"; b.textContent = label; cx.setAttribute("aria-label", "cancel");
+        const note = h("span", "", T("Не отправлено", "Not sent", "Не надіслано") + " · "); meta.append(note, rt, " ", cx); el.append(b, meta); list.appendChild(el); list.scrollTop = list.scrollHeight;
         const it = { el, busy: false };
         it.run = async () => { if (it.busy) return false; it.busy = true; el.classList.add("busy");
           try { await fn(); el.classList.add("gone"); setTimeout(() => el.remove(), 220); const k = pend.indexOf(it); if (k >= 0) pend.splice(k, 1); if (after) { try { await after() } catch (e) { } } return true }
-          catch (e) { el.classList.remove("busy"); return false } finally { it.busy = false } };
-        rt.onclick = e => { e.stopPropagation(); it.run() }; pend.push(it); return it;
+          catch (e) { el.classList.remove("busy");
+            if (e && e.net) return false;
+            // сервер ответил отказом (заблокировали, комнаты нет): повторять бесполезно, убираем из очереди и показываем причину
+            const k = pend.indexOf(it); if (k >= 0) pend.splice(k, 1); el.classList.add("dead"); note.textContent = ((e && e.message) || T("Не отправлено", "Not sent", "Не надіслано")) + " "; rt.remove(); return "dead" } finally { it.busy = false } };
+        rt.onclick = e => { e.stopPropagation(); it.run() };
+        cx.onclick = e => { e.stopPropagation(); const k = pend.indexOf(it); if (k >= 0) pend.splice(k, 1); el.classList.add("gone"); setTimeout(() => el.remove(), 220) };
+        pend.push(it); return it;
       },
-      flush: async () => { for (const it of pend.slice()) { if (!(await it.run())) break } },
+      flush: async () => { for (const it of pend.slice()) { if ((await it.run()) === false) break } },
       count: () => pend.length
     };
     window.addEventListener("online", () => K.pend.flush()); setInterval(() => { if (pend.length && !document.hidden) K.pend.flush() }, 10000);
@@ -229,7 +234,7 @@
     K.fwd = (m, pre) => {
       const b = String(m.body || "").trim(), SK = window.SlovopadStickers, GF = window.SlovopadGif;
       if ((SK && (SK.parse(b) || SK.myParse(b))) || (GF && GF.parse(b))) return { text: b };
-      if (b === ":ms:" && m.im && K.imgs[m.id]) return { text: b, img: K.imgs[m.id] };
+      if (b === ":ms:") return m.im && K.imgs[m.id] ? { text: b, img: K.imgs[m.id] } : { text: pre + "\n🖼 " + T("Стикер", "Sticker", "Стікер") };
       return { text: pre + "\n" + m.body };
     };
     K.forward = (host, m, targets, send, from) => {
@@ -415,7 +420,7 @@
         (async () => {
           try {
             const r = await cloudRequest("/api/my/all"); list = r.stk || []; 
-            try { const old = JSON.parse(localStorage.getItem("spMyStk") || "[]"); if (Array.isArray(old) && old.length) { for (const u of old.slice(0, 24 - list.length)) { try { const a = await cloudRequest("/api/my/stk/add", { method: "POST", body: JSON.stringify({ img: u }) }); list.unshift({ id: a.id, img: u }) } catch (e) { break } } localStorage.removeItem("spMyStk") } } catch (e) { }
+            try { const old = (JSON.parse(localStorage.getItem("spMyStk") || "[]") || []).filter(u => typeof u === "string" && u.startsWith("data:image/")); let left = old.slice(); while (left.length && list.length < 24) { try { const a = await cloudRequest("/api/my/stk/add", { method: "POST", body: JSON.stringify({ img: left[0] }) }); list.unshift({ id: a.id, img: left[0] }); left.shift() } catch (e) { if (e && e.net || /много/.test(e.message || "")) break; left.shift() } } if (left.length && list.length >= 24) left = []; if (left.length) localStorage.setItem("spMyStk", JSON.stringify(left)); else localStorage.removeItem("spMyStk") } catch (e) { }
             lsW("spMyStk2", list); draw();
             const srv = r.gifs || [], loc = favs(), merged = srv.concat(loc.filter(x => !srv.some(y => y.id === x.id))).slice(0, 40);
             lsW("spFavGif", merged); if (merged.length !== srv.length) pushFav(); drawF();

@@ -347,6 +347,10 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
     const sr = await api('/api/search?q=' + encodeURIComponent('уникальноеслово'), null, B.token);
     ok(sr.results.length === 1 && sr.results[0].kind === 'dm' && sr.results[0].name === 'Alice', 'поиск находит сообщение в личном чате');
     ok((await api('/api/search?q=' + encodeURIComponent('уникальноеслово'), null, C.token)).results.length === 0, 'чужие переписки поиск не показывает');
+    ok((await api('/api/search?q=' + encodeURIComponent('УНИКАЛЬНОЕСЛОВО'), null, B.token)).results.length === 1, 'поиск не зависит от заглавных букв в русском тексте');
+    ok((await api('/api/search?q=' + encodeURIComponent('Уникальноеслово'), null, B.token)).results.length === 1, 'и от заглавной первой буквы');
+    await api('/api/chat/send', { to: B.code, text: ':s:okok:' }, A.token);
+    ok((await api('/api/search?q=okok', null, B.token)).results.length === 0, 'служебные коды стикеров в поиске не показываются');
     ok((await api('/api/search?q=a', null, B.token)).results.length === 0, 'слишком короткий запрос ничего не ищет');
     ok((await api('/api/search?q=' + encodeURIComponent('100%'), null, B.token)).results.length === 0, 'знак % ищется буквально');
     await api('/api/chat/typing', { to: B.code, k: 'voice' }, A.token);

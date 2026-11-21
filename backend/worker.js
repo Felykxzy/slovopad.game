@@ -784,6 +784,7 @@ async function runCron(env) {
   await step('sp_room_msgs_img', "UPDATE sp_room_msgs SET img='' WHERE img<>'' AND t<?", now - IMG_DAYS * DAY);
   await step('sp_react', 'DELETE FROM sp_react WHERE t<?', now - 30 * DAY);
   await step('sp_typing', 'DELETE FROM sp_typing WHERE t<?', now - 60 * 1000);
+  await step('sp_stk', 'DELETE FROM sp_stk WHERE t<? AND id NOT IN (SELECT id FROM sp_mystk)', now - 60 * DAY);
   await step('sp_friends', "DELETE FROM sp_friends WHERE state='pending' AND t>0 AND t<?", now - 90 * DAY);
   // аккаунты, в которые не играли ни разу и не заходили 120 дней
   let removed = 0;
@@ -832,6 +833,7 @@ async function wipeUser(env, id) {
   for (const [t, w] of [['qr_login', 'user_id=?'], ['sp_friends', 'a=? OR b=?'], ['sp_msgs', 'a=? OR b=?'], ['sp_blocks', 'a=? OR b=?'], ['sp_reports', 'reporter=? OR target=?'], ['sp_challenges', 'from_id=? OR to_id=?'], ['sp_room_members', 'uid=?'], ['sp_room_msgs', 'uid=?'], ['sp_tg', 'uid=?'], ['sp_tglogin', 'uid=?'], ['sp_grants', 'uid=?'], ['sp_bans', 'uid=?']]) {
     try { await db.prepare('DELETE FROM ' + t + ' WHERE ' + w).bind(...(w.includes('OR') ? [id, id] : [id])).run(); } catch (_) {}
   }
+  for (const t of ['sp_mystk', 'sp_myfav', 'sp_stk', 'sp_typing']) { try { await db.prepare('DELETE FROM ' + t + ' WHERE uid=?').bind(id).run(); } catch (_) {} }
   try { await db.prepare('DELETE FROM sp_rooms WHERE id NOT IN (SELECT room FROM sp_room_members)').run(); } catch (_) {}
   await db.prepare('DELETE FROM users WHERE id=?').bind(id).run();
 }
@@ -1314,9 +1316,10 @@ export default {
           if (!await allow(env, 'sr:' + user.id, 40, 60 * 1000)) return reply(TOO_MANY, 429);
           const q = String(url.searchParams.get('q') || '').trim().slice(0, 40);
           if (q.length < 2) return reply({ results: [] });
-          const like = '%' + q.replace(/[\\%_]/g, '\\$&') + '%';
-          const dm = (await env.DB.prepare("SELECT id,a,b,body,t FROM sp_msgs WHERE (a=? OR b=?) AND dl=0 AND kind='text' AND img='' AND body LIKE ? ESCAPE '\\' ORDER BY id DESC LIMIT 15").bind(user.id, user.id, like).all()).results || [];
-          const rm = (await env.DB.prepare("SELECT m.id,m.room,m.uid,m.body,m.t,r.name FROM sp_room_msgs m JOIN sp_room_members mm ON mm.room=m.room AND mm.uid=? JOIN sp_rooms r ON r.id=m.room WHERE m.dl=0 AND m.img='' AND m.room NOT LIKE 'dm\\_%' ESCAPE '\\' AND m.body LIKE ? ESCAPE '\\' ORDER BY m.id DESC LIMIT 15").bind(user.id, like).all()).results || [];
+          const vs = [...new Set([q, q.toLowerCase(), q.toUpperCase(), q.charAt(0).toUpperCase() + q.slice(1).toLowerCase()])].map(v => '%' + v.replace(/[\\%_]/g, '\\$&') + '%');
+          const lk = col => '(' + vs.map(() => col + " LIKE ? ESCAPE '\\'").join(' OR ') + ')', nc = col => "substr(" + col + ",1,1) NOT IN (':','§')";
+          const dm = (await env.DB.prepare("SELECT id,a,b,body,t FROM sp_msgs WHERE (a=? OR b=?) AND dl=0 AND kind='text' AND img='' AND " + nc('body') + " AND " + lk('body') + " ORDER BY id DESC LIMIT 15").bind(user.id, user.id, ...vs).all()).results || [];
+          const rm = (await env.DB.prepare("SELECT m.id,m.room,m.uid,m.body,m.t,r.name FROM sp_room_msgs m JOIN sp_room_members mm ON mm.room=m.room AND mm.uid=? JOIN sp_rooms r ON r.id=m.room WHERE m.dl=0 AND m.img='' AND m.room NOT LIKE 'dm\\_%' ESCAPE '\\' AND " + nc('m.body') + " AND " + lk('m.body') + " ORDER BY m.id DESC LIMIT 15").bind(user.id, ...vs).all()).results || [];
           const ids = [...new Set(dm.map(r => r.a === user.id ? r.b : r.a))], us = {};
           for (const id of ids) { const u = await env.DB.prepare('SELECT username, sp_code FROM users WHERE id=?').bind(id).first(); if (u) us[id] = u; }
           const results = [
