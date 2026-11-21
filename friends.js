@@ -12,7 +12,7 @@
   const REACTS = ["🔥", "👏", "😂", "😎", "💪", "🎯", "❤️", "👋", "🤯", "🥳"];
   const chat = { p: null, last: 0, since: 0, timer: 0, blocked: false, busy: false, sure: 0, reply: null, edit: null, typedAt: 0 };
   try { g("chL").addEventListener("scroll", () => { const l = g("chL"); chat.atB = l.scrollHeight - l.scrollTop - l.clientHeight < 80 }, { passive: true }) } catch (e) { }
-  const kit = EchoKit.create({ me: () => { try { return (sidInfo() || {}).username || "" } catch (e) { return "" } }, ticks: true, onsize: () => { const l = g("chL"); if (l && chat.atB !== false) l.scrollTop = l.scrollHeight }, img: id => cloudRequest("/api/chat/img?with=" + encodeURIComponent(chat.p.spCode) + "&id=" + id).then(r => r.img), react: (id, emo) => chatReact(id, emo) });
+  const kit = EchoKit.create({ me: () => { try { return (sidInfo() || {}).username || "" } catch (e) { return "" } }, ticks: true, onsize: () => { const l = g("chL"); if (l && chat.atB !== false) l.scrollTop = l.scrollHeight }, img: id => cloudRequest("/api/chat/img?with=" + encodeURIComponent(chat.p.spCode) + "&id=" + id).then(r => r.img), react: (id, emo) => chatReact(id, emo), onrec: () => { if (chat.p) post("/api/chat/typing", { to: chat.p.spCode, k: "voice" }).catch(() => { }) } });
 
   function h(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
   function btn(cls, text, fn) { const b = h("button", cls, text); b.type = "button"; b.onclick = fn; return b; }
@@ -409,7 +409,7 @@
       if (Date.now() - (chat.stAt || 0) > 30000) { chat.stAt = Date.now(); load(true).then(() => { const f = data && data.friends.find(x => x.spCode === who.spCode); if (f && chat.p === who) { who.online = f.online; who.seen = f.seen; EchoKit.swap(g("chS"), status(who) || " ") } }).catch(() => { }) }
       if (!l.querySelector(".chm") && !l.querySelector(".chem")) { const e = h("div", "chem", T("Напиши первым или отправь стикер 😊", "Write first or send a sticker 😊", "Напиши першим або надішли стікер 😊")); l.appendChild(e) }
       else if (r.messages.length && l.querySelector(".chem")) l.querySelector(".chem").remove();
-      let ty = l.querySelector(".chty"); if (r.typing && !ty) { ty = h("div", "chty", T("печатает", "typing", "друкує")); if (EchoKit.dots) ty.appendChild(EchoKit.dots()); l.appendChild(ty) } else if (!r.typing && ty) ty.remove(); else if (ty) l.appendChild(ty);
+      let ty = l.querySelector(".chty"); const tlab = r.typingK === "voice" ? T("записывает голосовое", "recording a voice message", "записує голосове") : T("печатает", "typing", "друкує"); if (r.typing && ty && ty.dataset.k !== (r.typingK || "")) { ty.remove(); ty = null } if (r.typing && !ty) { ty = h("div", "chty", tlab); ty.dataset.k = r.typingK || ""; if (EchoKit.dots) ty.appendChild(EchoKit.dots()); l.appendChild(ty) } else if (!r.typing && ty) ty.remove(); else if (ty) l.appendChild(ty);
       if (stick) l.scrollTop = l.scrollHeight;
       g("chIn").disabled = g("chSn").disabled = g("chRx").disabled = g("chPh").disabled = g("chMc").disabled = chat.blocked;
       g("chSt").textContent = chat.blocked ? T("Ты заблокировал этого игрока.", "You blocked this player.", "Ти заблокував цього гравця.") : "";
@@ -429,9 +429,12 @@
     g("chSn").disabled = true;
     try {
       if (chat.edit) { await post("/api/chat/edit", { to: chat.p.spCode, id: chat.edit.id, text }); chat.edit = null; chat.editWas = false; chatBar() }
-      else { await post("/api/chat/send", { to: chat.p.spCode, text, img: img || undefined, reply: chat.reply ? chat.reply.id : undefined }); chat.reply = null; chatBar() }
+      else { const pl = { to: chat.p.spCode, text, img: img || undefined, reply: chat.reply ? chat.reply.id : undefined };
+        try { await post("/api/chat/send", pl) }
+        catch (e) { if (!(e && e.net)) throw e; const SKx = window.SlovopadStickers; kit.pend.add(g("chL"), img ? (/^data:audio/.test(img) ? "🎤" : "📷") : ((SKx && SKx.label(text)) || (window.SlovopadGif && SlovopadGif.label(text)) || text), () => post("/api/chat/send", pl), () => chatPoll(false)); g("chSt").textContent = "" }
+        chat.reply = null; chatBar() }
       if (typeof sticker !== "string") { inp.value = ""; if (EchoKit.draft) EchoKit.draft("d." + chat.p.spCode, "") }
-      g("chSt").textContent = ""; chat.busy = false; await chatPoll(false);
+      g("chSt").textContent = ""; chat.busy = false; try { await chatPoll(false) } catch (e) { }
       const l = g("chL"); l.scrollTop = l.scrollHeight;
     } catch (e) { g("chSt").textContent = e.message }
     finally { g("chSn").disabled = chat.blocked }

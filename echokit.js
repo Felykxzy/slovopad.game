@@ -105,12 +105,12 @@
     };
     // голосовое: кнопка ▶, полоска и время; звук скачиваем только когда нажали
     const mmss = s => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
-    let cur = null;
+    let cur = null, voiceSpd = 1; try { voiceSpd = [1, 1.5, 2].includes(Number(localStorage.getItem("spVoiceSpd"))) ? Number(localStorage.getItem("spVoiceSpd")) : 1 } catch (e) { }
     K.voice = m => {
-      const box = h("div", "mvo"), bt = h("button", "mvb", "▶"), bar = h("div", "mvbar"), tm = h("span", "mvt", mmss(m.au));
+      const box = h("div", "mvo"), bt = h("button", "mvb", "▶"), bar = h("div", "mvbar"), tm = h("span", "mvt", mmss(m.au)), spb = h("button", "mvs", voiceSpd + "×");
       const bars = []; { let z = (m.id | 0) * 2654435761 >>> 0 || 7; for (let k = 0; k < 30; k++) { z = (z * 1103515245 + 12345) >>> 0; const q = h("s"); q.style.height = (22 + (z >> 8) % 78) + "%"; bars.push(q); bar.appendChild(q) } }
       const fill = { style: {} }; Object.defineProperty(fill.style, "width", { set: v => { const f = parseFloat(v) / 100 || 0; bars.forEach((q, k) => q.classList.toggle("pl", k / bars.length < f)) } });
-      bt.type = "button"; box.appendChild(bt); box.appendChild(bar); box.appendChild(tm);
+      bt.type = "button"; spb.type = "button"; spb.setAttribute("aria-label", "speed"); box.appendChild(bt); box.appendChild(bar); box.appendChild(tm); box.appendChild(spb);
       let a = null;
       const stopUI = () => { bt.textContent = "▶"; box.classList.remove("on") };
       const play = async () => {
@@ -120,7 +120,7 @@
           bt.textContent = "…";
           let src = K.imgs[m.id]; if (src === undefined) { src = await cfg.img(m.id) || ""; K.imgs[m.id] = src }
           if (!src) { bt.textContent = "✕"; tm.textContent = T("устарело", "expired", "застаріло"); return }
-          a = new Audio(src); a.preload = "auto";
+          a = new Audio(src); a.preload = "auto"; a.playbackRate = voiceSpd;
           a.ontimeupdate = () => { fill.style.width = Math.min(100, a.currentTime / m.au * 100) + "%"; tm.textContent = mmss(Math.max(0, m.au - a.currentTime)) };
           a.onended = () => { stopUI(); fill.style.width = "0"; tm.textContent = mmss(m.au); cur = null };
           a.onpause = stopUI; a.onplay = () => { bt.textContent = "❚❚"; box.classList.add("on"); cur = a };
@@ -128,7 +128,12 @@
         try { await a.play() } catch (e) { bt.textContent = "⚠" }
       };
       bt.onclick = e => { e.stopPropagation(); play() };
-      bar.onclick = e => { e.stopPropagation(); if (a && a.duration && isFinite(a.duration)) { const r = bar.getBoundingClientRect(); a.currentTime = a.duration * Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) } };
+      spb.onclick = e => { e.stopPropagation(); voiceSpd = voiceSpd === 1 ? 1.5 : voiceSpd === 1.5 ? 2 : 1; try { localStorage.setItem("spVoiceSpd", String(voiceSpd)) } catch (x) { } spb.textContent = voiceSpd + "×"; if (a) a.playbackRate = voiceSpd };
+      let drag = false; const seekTo = x => { if (a && a.duration && isFinite(a.duration)) { const r = bar.getBoundingClientRect(); a.currentTime = a.duration * Math.min(1, Math.max(0, (x - r.left) / r.width)) } };
+      bar.addEventListener("pointerdown", e => { e.stopPropagation(); if (!a) return; drag = true; try { bar.setPointerCapture(e.pointerId) } catch (x) { } seekTo(e.clientX) });
+      bar.addEventListener("pointermove", e => { if (drag) seekTo(e.clientX) });
+      ["pointerup", "pointercancel"].forEach(n => bar.addEventListener(n, () => { drag = false }));
+      bar.onclick = e => e.stopPropagation();
       return box;
     };
     K.media = m => {
@@ -145,6 +150,7 @@
       if (m.dl) return h("span", "mdel", T("Сообщение удалено", "Message deleted", "Повідомлення видалено"));
       const t = String(m.body || ""), sp = h("span", "mt");
       if (t.trim() === ":ms:" && m.im) { sp.className = "mt mystk0"; return sp }
+      { const SK = window.SlovopadStickers, mid = SK && SK.myParse(t); if (mid) { sp.className = "mt stki"; const im = h("img", "stkimg"); im.alt = T("Стикер", "Sticker", "Стікер"); im.draggable = false; im.style.minHeight = "60px"; SK.myImg(mid).then(u => { if (u) { im.onload = () => { im.style.minHeight = ""; if (K.onsize) K.onsize() }; im.src = u } else { sp.className = "mt"; sp.textContent = "🖼 " + T("Стикер", "Sticker", "Стікер") } }); sp.appendChild(im); return sp } }
       { const GF = window.SlovopadGif, gid = GF && GF.parse(t); if (gid) { sp.className = "mt stki"; const im = h("img", "gifimg"); im.src = GF.url(gid); im.alt = "GIF"; im.draggable = false; im.loading = "lazy"; im.onerror = () => { sp.textContent = "GIF"; sp.className = "mt" }; im.onload = () => { if (K.onsize) K.onsize() }; sp.appendChild(im); return sp } }
       { const SK = window.SlovopadStickers, sid = SK && SK.parse(t); if (sid && SK.has(sid)) { sp.className = "mt stki"; const im = h("img", "stkimg"); im.src = SK.uri(sid); im.alt = SK.label(t); im.draggable = false; sp.appendChild(im); return sp } }
       if (t && bigRe.test(t)) { sp.className = "mt big"; sp.textContent = t; return sp }
@@ -203,10 +209,26 @@
       K.S = S; return S;
     };
     // пересылка: выбираешь, кому, сообщение «улетает» вверх, внизу выезжает подтверждение
+    // «не отправлено»: сообщение, которое не ушло из-за сети, остаётся в чате с кнопкой «повторить» и уходит само, когда связь вернётся
+    const pend = [];
+    K.pend = {
+      add: (list, label, fn, after) => {
+        const el = h("div", "chm me pend"), b = h("span", "chb"), meta = h("i", "cht"), rt = h("button", "pendr", "⟳ " + T("Повторить", "Retry", "Повторити")); rt.type = "button"; b.textContent = label;
+        meta.append(T("Не отправлено", "Not sent", "Не надіслано") + " · ", rt); el.append(b, meta); list.appendChild(el); list.scrollTop = list.scrollHeight;
+        const it = { el, busy: false };
+        it.run = async () => { if (it.busy) return false; it.busy = true; el.classList.add("busy");
+          try { await fn(); el.classList.add("gone"); setTimeout(() => el.remove(), 220); const k = pend.indexOf(it); if (k >= 0) pend.splice(k, 1); if (after) { try { await after() } catch (e) { } } return true }
+          catch (e) { el.classList.remove("busy"); return false } finally { it.busy = false } };
+        rt.onclick = e => { e.stopPropagation(); it.run() }; pend.push(it); return it;
+      },
+      flush: async () => { for (const it of pend.slice()) { if (!(await it.run())) break } },
+      count: () => pend.length
+    };
+    window.addEventListener("online", () => K.pend.flush()); setInterval(() => { if (pend.length && !document.hidden) K.pend.flush() }, 10000);
     // что отправлять при пересылке: стикер, гифка и свой стикер уходят как есть, обычный текст получает подпись «от кого»
     K.fwd = (m, pre) => {
       const b = String(m.body || "").trim(), SK = window.SlovopadStickers, GF = window.SlovopadGif;
-      if ((SK && SK.parse(b)) || (GF && GF.parse(b))) return { text: b };
+      if ((SK && (SK.parse(b) || SK.myParse(b))) || (GF && GF.parse(b))) return { text: b };
       if (b === ":ms:" && m.im && K.imgs[m.id]) return { text: b, img: K.imgs[m.id] };
       return { text: pre + "\n" + m.body };
     };
@@ -340,12 +362,13 @@
         const er = h("div", "stke"); STK.forEach(s => { const b = h("button", "stk", s); b.type = "button"; b.onclick = () => { box.hidden = true; send(s) }; er.appendChild(b) }); body.appendChild(er);
       };
       const favs = () => lsR("spFavGif", []);
+      let pf = 0; const pushFav = () => { clearTimeout(pf); pf = setTimeout(() => { try { cloudRequest("/api/my/gifs", { method: "POST", body: JSON.stringify({ gifs: favs() }) }).catch(() => { }) } catch (e) { } }, 500) };
       const gifTile = (x, k, onStar) => {
         const w = h("div", "gifw"), b = h("button", "gifb"); b.type = "button"; b.style.animationDelay = Math.min(k, 12) * 20 + "ms";
         const im = h("img"); im.src = GF.thumb(x.id); im.alt = "GIF"; im.loading = "lazy"; im.draggable = false; im.style.aspectRatio = (x.w || 100) + "/" + (x.h || 100); b.appendChild(im);
         b.onclick = () => { box.hidden = true; send(GF.token(x.id)) };
         const on = () => favs().some(f => f.id === x.id), st = h("button", "gifst" + (on() ? " on" : ""), on() ? "★" : "☆"); st.type = "button"; st.setAttribute("aria-label", "favorite");
-        st.onclick = e => { e.stopPropagation(); let l = favs(); if (on()) l = l.filter(f => f.id !== x.id); else l = [{ id: x.id, w: x.w, h: x.h }].concat(l).slice(0, 40); lsW("spFavGif", l); st.classList.toggle("on", on()); st.textContent = on() ? "★" : "☆"; if (onStar) onStar() };
+        st.onclick = e => { e.stopPropagation(); let l = favs(); if (on()) l = l.filter(f => f.id !== x.id); else l = [{ id: x.id, w: x.w, h: x.h }].concat(l).slice(0, 40); lsW("spFavGif", l); pushFav(); st.classList.toggle("on", on()); st.textContent = on() ? "★" : "☆"; if (onStar) onStar() };
         w.append(b, st); return w;
       };
       const gifs = () => {
@@ -367,24 +390,37 @@
         const msg = h("div", "hint stkh");
         body.appendChild(h("div", "stks", T("Мои стикеры", "My stickers", "Мої стікери")));
         const g = h("div", "stkg stkmy"); body.append(g, msg);
+        let list = lsR("spMyStk2", []);
         const draw = () => {
-          g.textContent = ""; const list = lsR("spMyStk", []);
+          g.textContent = "";
           const add = h("button", "stkb stkadd", "＋"); add.type = "button"; add.setAttribute("aria-label", "add");
           add.onclick = () => { if (list.length >= 24) { msg.textContent = T("Хватит, максимум 24. Удали лишний.", "Enough, max 24. Remove one first.", "Досить, максимум 24. Видали зайвий."); return }
             const i = h("input"); i.type = "file"; i.accept = "image/*"; i.style.display = "none";
-            i.onchange = async () => { const f = i.files && i.files[0]; i.remove(); if (!f) return; try { const u = await mkSticker(f); const l = lsR("spMyStk", []); l.unshift(u); if (!lsW("spMyStk", l)) throw new Error(T("Не хватило места на устройстве.", "Not enough storage.", "Не вистачило місця.")); msg.textContent = ""; draw() } catch (e) { msg.textContent = e.message } };
+            i.onchange = async () => { const f = i.files && i.files[0]; i.remove(); if (!f) return; msg.textContent = T("Сохраняю…", "Saving…", "Зберігаю…");
+              try { const u = await mkSticker(f); const r = await cloudRequest("/api/my/stk/add", { method: "POST", body: JSON.stringify({ img: u }) }); list.unshift({ id: r.id, img: u }); lsW("spMyStk2", list); msg.textContent = ""; draw() } catch (e) { msg.textContent = e.message } };
             document.body.appendChild(i); i.click() };
           g.appendChild(add);
-          list.forEach((u, k) => { const w = h("div", "gifw"), b = h("button", "stkb"); b.type = "button"; const im = h("img"); im.src = u; im.alt = ""; im.draggable = false; b.appendChild(im); b.onclick = () => { box.hidden = true; send(":ms:", u) };
-            const x = h("button", "gifst on", "✕"); x.type = "button"; x.setAttribute("aria-label", "remove"); x.onclick = e => { e.stopPropagation(); const l = lsR("spMyStk", []); l.splice(k, 1); lsW("spMyStk", l); draw() }; w.append(b, x); g.appendChild(w) });
+          list.forEach(x => { const w = h("div", "gifw"), b = h("button", "stkb"); b.type = "button"; const im = h("img"); im.src = x.img; im.alt = ""; im.draggable = false; b.appendChild(im); b.onclick = () => { box.hidden = true; send(SK.myToken(x.id)) };
+            const d = h("button", "gifst on", "✕"); d.type = "button"; d.setAttribute("aria-label", "remove"); d.onclick = async e => { e.stopPropagation(); list = list.filter(y => y.id !== x.id); lsW("spMyStk2", list); draw(); try { await cloudRequest("/api/my/stk/del", { method: "POST", body: JSON.stringify({ id: x.id }) }) } catch (er) { } }; w.append(b, d); g.appendChild(w) });
         };
         draw();
+        let drawF = () => { };
         if (GF) {
           body.appendChild(h("div", "stks", "★ " + T("Избранные гифки", "Favorite GIFs", "Обрані гіфки")));
           const fg = h("div", "gifg"); body.appendChild(fg);
-          const drawF = () => { fg.textContent = ""; const l = favs(); if (!l.length) { fg.appendChild(h("div", "hint", T("Нажми ☆ на гифке, и она появится здесь.", "Tap ☆ on a GIF and it shows up here.", "Натисни ☆ на гіфці, і вона з'явиться тут."))); return } l.forEach((x, k) => fg.appendChild(gifTile(x, k, () => setTimeout(drawF, 120)))) };
+          drawF = () => { fg.textContent = ""; const l = favs(); if (!l.length) { fg.appendChild(h("div", "hint", T("Нажми ☆ на гифке, и она появится здесь.", "Tap ☆ on a GIF and it shows up here.", "Натисни ☆ на гіфці, і вона з'явиться тут."))); return } l.forEach((x, k) => fg.appendChild(gifTile(x, k, () => setTimeout(drawF, 120)))) };
           drawF();
         }
+        // сверяем с сервером: стикеры и избранное живут в аккаунте и есть на всех устройствах
+        (async () => {
+          try {
+            const r = await cloudRequest("/api/my/all"); list = r.stk || []; 
+            try { const old = JSON.parse(localStorage.getItem("spMyStk") || "[]"); if (Array.isArray(old) && old.length) { for (const u of old.slice(0, 24 - list.length)) { try { const a = await cloudRequest("/api/my/stk/add", { method: "POST", body: JSON.stringify({ img: u }) }); list.unshift({ id: a.id, img: u }) } catch (e) { break } } localStorage.removeItem("spMyStk") } } catch (e) { }
+            lsW("spMyStk2", list); draw();
+            const srv = r.gifs || [], loc = favs(), merged = srv.concat(loc.filter(x => !srv.some(y => y.id === x.id))).slice(0, 40);
+            lsW("spFavGif", merged); if (merged.length !== srv.length) pushFav(); drawF();
+          } catch (e) { }
+        })();
       };
       const first = tab("🖼 " + T("Стикеры", "Stickers", "Стікери"), stickers); tab("GIF", gifs); tab("⭐ " + T("Мои", "Mine", "Мої"), mine); first.click();
     };
@@ -397,12 +433,12 @@
       md.getUserMedia({ audio: true }).then(stream => {
         const mt = ["audio/webm;codecs=opus", "audio/mp4", "audio/webm", "audio/ogg"].find(t => MediaRecorder.isTypeSupported(t)) || "";
         let rec; try { rec = new MediaRecorder(stream, Object.assign(mt ? { mimeType: mt } : {}, { audioBitsPerSecond: 24000 })) } catch (e) { stream.getTracks().forEach(t => t.stop()); done(e); return }
-        const chunks = [], t0 = Date.now(); let send = false, dead = false;
+        const chunks = [], t0 = Date.now(); let send = false, dead = false, pi = 0;
         const ui = h("div", "ekrec"), dot = h("i", "ekdot"), tm = h("span", "ekt", "0:00"), no = h("button", "ib ekno", "✕"), ok = h("button", "btn ekok", "➤");
         no.type = ok.type = "button"; no.setAttribute("aria-label", "cancel"); ok.setAttribute("aria-label", "send");
         [dot, tm, no, ok].forEach(x => ui.appendChild(x)); bar.appendChild(ui);
         const tick = setInterval(() => { const s = (Date.now() - t0) / 1000; tm.textContent = mmss(s); if (s >= 30) fin(true) }, 250);
-        const fin = go => { if (dead) return; dead = true; send = go; clearInterval(tick); bar.__rc = null; ui.remove(); try { rec.stop() } catch (e) { } stream.getTracks().forEach(t => t.stop()) };
+        const fin = go => { if (dead) return; dead = true; send = go; clearInterval(tick); clearInterval(pi); bar.__rc = null; ui.remove(); try { rec.stop() } catch (e) { } stream.getTracks().forEach(t => t.stop()) };
         no.onclick = () => fin(false); ok.onclick = () => fin(true);
         const hintEl = h("span", "ekhl", "⬆ " + T("замок", "lock", "замок") + "   ⬅ " + T("отмена", "cancel", "скасувати")); ui.insertBefore(hintEl, no);
         bar.__rc = { fin, lock: () => { ui.classList.add("locked"); hintEl.textContent = "🔒 " + T("запись закреплена", "recording locked", "запис закріплено") }, slide: (dx, dy) => { if (!ui.classList.contains("locked")) { ui.style.setProperty("--ekx", Math.max(-120, Math.min(0, dx)) + "px"); ui.style.setProperty("--eky", Math.max(-80, Math.min(0, dy)) + "px") } }, ui };
@@ -416,7 +452,7 @@
           fr.onload = () => { const b64 = String(fr.result).split(",")[1] || ""; const url = "data:audio/" + kind + ";d=" + Math.min(59, Math.max(1, sec)) + ";base64," + b64; if (url.length > 400000) done(new Error(T("Голосовое слишком длинное.", "Voice message is too long.", "Голосове задовге."))); else done(null, url) };
           fr.onerror = () => done(new Error("read")); fr.readAsDataURL(new Blob(chunks, { type: rec.mimeType || mt || "audio/webm" }));
         };
-        rec.start(250);
+        rec.start(250); const ping = () => { try { cfg.onrec && cfg.onrec() } catch (e) { } }; ping(); pi = setInterval(ping, 3000);
       }).catch(() => done(new Error(T("Нет доступа к микрофону. Разреши его в настройках.", "No microphone access. Allow it in settings.", "Немає доступу до мікрофона. Дозволь його в налаштуваннях."))));
     };
     // микрофон как в Телеграме: зажал и говори, отпустил — отправилось; вверх — замок; влево — отмена; короткое нажатие включает запись с кнопками

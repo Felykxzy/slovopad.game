@@ -1,12 +1,12 @@
 {
-  "version": "4.12.2",
+  "version": "4.13.0",
   "notes": [
-    "Исправлено: стикер и гифка при пересылке уходили текстом с кодом"
+    "Стикеры живут в аккаунте, «не отправлено» с повтором, поиск по всем чатам, скорость голоса, «записывает голосовое»"
   ],
   "notes_en": [
-    "Fixed: stickers and GIFs were forwarded as plain text with a code"
+    "Stickers live in your account, Not sent with retry, search across all chats, voice speed, recording indicator"
   ],
   "notes_uk": [
-    "Виправлено: стікер і гіфка при пересиланні йшли текстом із кодом"
+    "Стікери живуть в акаунті, «не надіслано» з повтором, пошук по всіх чатах, швидкість голосу, «записує голосове»"
   ]
 }

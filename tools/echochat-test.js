@@ -171,9 +171,9 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
       const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVR4nGP8z8Dwn4GBgYEJRDACAB4QAgOLB6mhAAAAAElFTkSuQmCC', 'base64');
       const [fc] = await Promise.all([p.waitForEvent('filechooser'), p.click('#chSk .stkadd')]);
       await fc.setFiles({ name: 'm.png', mimeType: 'image/png', buffer: png }); await p.waitForTimeout(700);
-      ok(await p.evaluate(() => JSON.parse(localStorage.getItem('spMyStk') || '[]').length === 1), 'свой стикер сохранился в «Мои»');
-      await p.click('#chSk .stkmy .gifw .stkb'); await p.waitForSelector('#chL .chm.me .mystk img', { timeout: 6000 }); await p.waitForTimeout(800);
-      ok(await p.evaluate(() => { const i = document.querySelector('#chL .chm.me:last-child .mystk img'); return !!i && i.naturalWidth > 0 && !document.querySelector('#chL .chm.me:last-child .chb').textContent.includes(':ms:') }), 'свой стикер ушёл в чат картинкой без подписи');
+      ok(await p.evaluate(() => JSON.parse(localStorage.getItem('spMyStk2') || '[]').length === 1) && ((await api('/api/my/all', null, A.token)).stk || []).length === 1, 'свой стикер сохранён и на устройстве, и на сервере');
+      await p.click('#chSk .stkmy .gifw .stkb'); await p.waitForTimeout(2500);
+      ok(await p.evaluate(() => { const i = document.querySelector('#chL .chm.me:last-child .stkimg'); return !!i && i.naturalWidth > 0 && !document.querySelector('#chL .chm.me:last-child .chb').textContent.includes(':m:') }), 'свой стикер ушёл в чат картинкой без подписи (через сервер)');
       { const gb = await p.locator('#chL .chm.me .gifimg').last().boundingBox();
         await p.mouse.move(gb.x + gb.width / 2, gb.y + gb.height / 2); await p.mouse.down(); await p.waitForTimeout(650); await p.mouse.up(); await p.waitForTimeout(1200);
         await p.screenshot({ path: shots + '/gifmenu.png' });
@@ -181,7 +181,7 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
         ok(g.e.length >= 2 && g.e.every(x => x[1] >= g.ol - 1 && x[2] <= g.ol + g.ow + 1), 'меню на гифке целиком на экране');
         await p.evaluate(() => { const e = document.querySelector('#o15 .eksh'); if (e) e.click() }); await p.waitForTimeout(300); }
       await p.screenshot({ path: shots + '/mystk.png' });
-      const bb = await p.locator('#chL .chm.me .mystk img').last().boundingBox();
+      const bb = await p.locator('#chL .chm.me .stkimg').last().boundingBox();
       await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await p.mouse.down(); await p.waitForTimeout(650); await p.mouse.up(); await p.waitForTimeout(350);
       ok(await p.evaluate(() => !!document.querySelector('#o15 .eksh .esre')), 'долгое нажатие по стикеру открывает реакции');
       await p.locator('#o15 .eksh .esre').first().click(); await p.waitForTimeout(900);
@@ -212,7 +212,7 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
     await hold2('#chL .chm.me .stkimg');
     await p.locator('#o15 .eksh .esa', { hasText: 'Переслать' }).click(); await p.waitForTimeout(500);
     await p.locator('#o15 .ekft', { hasText: 'Carol' }).click(); await p.waitForTimeout(1200);
-    ok(((await api('/api/chat?with=' + A.code, null, C.token)).messages || []).some(m => /^:s:[a-z0-9-]+:$/.test(m.body || '')), 'стикер пересылается стикером, а не текстом с подписью');
+    ok(((await api('/api/chat?with=' + A.code, null, C.token)).messages || []).some(m => /^:[sm]:[a-z0-9-]+:$/.test(m.body || '')), 'стикер пересылается стикером, а не текстом с подписью');
     await p.click('#chSrb'); await p.waitForTimeout(400);
     await p.fill('.eksr input', 'длины чата'); await p.waitForTimeout(500);
     ok(await p.evaluate(() => /^\d+ \/ \d+$/.test(document.querySelector('.eksc').textContent) && document.querySelectorAll('#chL .ekhit').length >= 2), 'поиск нашёл несколько сообщений и подсветил их');
@@ -327,6 +327,34 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
     ok(await p.evaluate(() => /❄️/.test(document.body.innerText)), 'игрок видит уведомление о подарке');
   }
   {
+    console.log('Постоянные стикеры, избранное, поиск, голос');
+    const img = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFklEQVR4nGP8z8Dwn4GBgYEJRDACAB4QAgOLB6mhAAAAAElFTkSuQmCC';
+    const add = await api('/api/my/stk/add', { img }, C.token);
+    ok(!!add.id && /^[a-z0-9]{8}$/.test(add.id), 'свой стикер сохранён на сервере');
+    ok(!!(await api('/api/my/stk/add', { img: 'data:text/html;base64,AAAA' }, C.token)).error, 'не-картинку сервер не принимает');
+    const all = await api('/api/my/all', null, C.token);
+    ok(all.stk.length === 1 && all.stk[0].id === add.id, 'стикеры игрока приходят списком');
+    ok((await api('/api/stk/get?id=' + add.id, null, B.token)).img === img, 'другой игрок получает картинку стикера по коду');
+    ok(!!(await api('/api/stk/get?id=nope', null, B.token)).error, 'несуществующий стикер даёт ошибку');
+    await api('/api/my/gifs', { gifs: [{ id: 'abc12345', w: 100, h: 80 }, { id: '<bad>', w: 1, h: 1 }] }, C.token);
+    const g2 = await api('/api/my/all', null, C.token);
+    ok(g2.gifs.length === 1 && g2.gifs[0].id === 'abc12345', 'избранные гифки сохраняются, мусор отбрасывается');
+    ok((await api('/api/my/all', null, B.token)).stk.length === 0, 'чужие стикеры в списке не видны');
+    await api('/api/my/stk/del', { id: add.id }, C.token);
+    ok((await api('/api/my/all', null, C.token)).stk.length === 0, 'удалённый стикер пропал из списка');
+    ok((await api('/api/stk/get?id=' + add.id, null, B.token)).img === img, 'но в старых сообщениях картинка остаётся');
+    await api('/api/chat/send', { to: B.code, text: 'уникальноеслово привет' }, A.token);
+    const sr = await api('/api/search?q=' + encodeURIComponent('уникальноеслово'), null, B.token);
+    ok(sr.results.length === 1 && sr.results[0].kind === 'dm' && sr.results[0].name === 'Alice', 'поиск находит сообщение в личном чате');
+    ok((await api('/api/search?q=' + encodeURIComponent('уникальноеслово'), null, C.token)).results.length === 0, 'чужие переписки поиск не показывает');
+    ok((await api('/api/search?q=a', null, B.token)).results.length === 0, 'слишком короткий запрос ничего не ищет');
+    ok((await api('/api/search?q=' + encodeURIComponent('100%'), null, B.token)).results.length === 0, 'знак % ищется буквально');
+    await api('/api/chat/typing', { to: B.code, k: 'voice' }, A.token);
+    ok((await api('/api/chat?with=' + A.code, null, B.token)).typingK === 'voice', 'второй игрок видит «записывает голосовое»');
+    await api('/api/chat/typing', { to: B.code }, A.token);
+    ok((await api('/api/chat?with=' + A.code, null, B.token)).typingK === '', 'обычная печать сбрасывает пометку голоса');
+  }
+  {
     console.log('Сезон');
     for (const X of [A, B, C]) await api('/api/sync', { profile: {}, data: {}, totalWords: 100, bestScore: 900 }, X.token);
     ok((await api('/api/season/score', { score: 300 }, B.token)).rank === 1, 'сезон: Bobby первый со 300');
@@ -354,6 +382,33 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
     await p.evaluate(() => { pickTheme(SlovopadSeason.monthTheme()) }); await p.waitForTimeout(400);
     await p.evaluate(() => { score = 120; state = 'play'; over(false) }); await p.waitForTimeout(900);
     ok((await api('/api/season', null, A.token)).me.score >= 200, 'сезон: игра в тему месяца не сломала таблицу');
+  }
+  {
+    console.log('Не отправлено, скорость голоса, запись, поиск везде');
+    await p.evaluate(() => { const o = window.fetch.bind(window); window.fetch = (...a) => window.__off ? Promise.reject(new TypeError('offline')) : o(...a) });
+    await p.evaluate(() => SlovopadFriends.chatOpen(SlovopadFriends.list().find(f => f.username === 'Bobby'))); await p.waitForTimeout(900);
+    await p.evaluate(() => { window.__off = true }); await p.fill('#chIn', 'сообщение без сети'); await p.click('#chSn'); await p.waitForTimeout(700);
+    ok(await p.evaluate(() => !!document.querySelector('#chL .chm.pend') && document.getElementById('chIn').value === ''), 'без сети сообщение осталось в чате как «не отправлено», поле очищено');
+    await p.screenshot({ path: shots + '/pending.png' });
+    ok(!((await api('/api/chat?with=' + B.code, null, A.token)).messages || []).some(m => m.body === 'сообщение без сети'), 'на сервер оно ещё не попало');
+    await p.evaluate(() => { window.__off = false }); await p.click('#chL .chm.pend .pendr'); await p.waitForTimeout(1200);
+    ok(await p.evaluate(() => !document.querySelector('#chL .chm.pend')), 'по «Повторить» сообщение ушло, пометка исчезла');
+    ok(((await api('/api/chat?with=' + B.code, null, A.token)).messages || []).some(m => m.body === 'сообщение без сети'), 'сообщение дошло до сервера один раз');
+    ok(((await api('/api/chat?with=' + B.code, null, A.token)).messages || []).filter(m => m.body === 'сообщение без сети').length === 1, 'и без дубликатов');
+    await p.evaluate(() => { window.__off = true }); await p.fill('#chIn', 'само уйдёт'); await p.click('#chSn'); await p.waitForTimeout(500);
+    await p.evaluate(() => { window.__off = false; window.dispatchEvent(new Event('online')) }); await p.waitForTimeout(1500);
+    ok(((await api('/api/chat?with=' + B.code, null, A.token)).messages || []).some(m => m.body === 'само уйдёт'), 'когда связь вернулась, сообщение ушло само');
+    ok(await p.evaluate(() => { const b = document.querySelector('#chL .mvs'); return !b || b.textContent === '1×' }), 'кнопка скорости голоса показывает 1×');
+    if (await p.evaluate(() => !!document.querySelector('#chL .mvs'))) { await p.locator('#chL .mvs').first().click(); ok(await p.evaluate(() => document.querySelector('#chL .mvs').textContent === '1.5×'), 'нажатие переключает скорость на 1.5×'); }
+    await api('/api/chat/typing', { to: A.code, k: 'voice' }, B.token); await p.waitForTimeout(4500);
+    ok(await p.evaluate(() => { const t = document.querySelector('#chL .chty'); return !!t && /записывает голосовое/.test(t.textContent) }), 'в чате видно «записывает голосовое»');
+    await p.evaluate(() => SlovopadEcho.open()); await p.waitForTimeout(600); await p.click('#ecSb'); await p.fill('#ecSrI', 'уникальноеслово'); await p.waitForSelector('#ecSrL .ecsrr', { timeout: 6000 });
+    ok(await p.evaluate(() => !!document.querySelector('#ecSrL .ecsrr mark') && document.querySelector('#ecList').hidden), 'поиск по всем чатам нашёл сообщение и подсветил слово');
+    await p.screenshot({ path: shots + '/search-all.png' });
+    await p.evaluate(() => document.querySelector('#ecSrL .ecsrr').click()); await p.waitForTimeout(900);
+    ok(await p.evaluate(() => document.getElementById('o15').classList.contains('s') && document.getElementById('chT').textContent === 'Bobby'), 'нажатие на результат открывает нужный чат');
+    await p.evaluate(() => ov('o1')); await p.waitForTimeout(300);
+    await p.evaluate(() => { SlovopadStickers.myImg('zzzzzzzz'); });
   }
   {
     await p.evaluate(() => { score = 250; state = 'play'; over(false) }); await p.waitForTimeout(150);

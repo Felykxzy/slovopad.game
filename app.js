@@ -576,7 +576,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");glassSet((e.clientX/innerWidth-.5)/.55,(e.clientY/innerHeight-.5)/.5)},{passive:true});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="4.12.2";let upLater=false;
+const VER="4.13.0";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if($("spl")||state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
@@ -658,7 +658,7 @@ if(acc.privacy&&!localStorage.getItem(SID_PRIV))localStorage.setItem(SID_PRIV,JS
 if(acc.username)localStorage.setItem(SID_KEY,JSON.stringify({username:acc.username,spCode:acc.spCode||""}));sidCard()}
 function sidLogoutLocal(){try{accForget((sidInfo()||{}).spCode)}catch(e){}localStorage.removeItem(CLOUD_TOKEN_KEY);localStorage.removeItem(SID_KEY);sidCard()}
 async function cloudRequest(path,options={}){const headers={...(options.headers||{})},token=sidTok();if(token)headers.authorization="Bearer "+token;if(options.body)headers["content-type"]="application/json";
-const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),20000);let response;try{response=await fetch(CLOUD_URL+path,{...options,headers,signal:ctl.signal})}catch(e){throw new Error(tx("Нет связи с сервером. Проверь интернет."))}finally{clearTimeout(tm)}
+const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),20000);let response;try{response=await fetch(CLOUD_URL+path,{...options,headers,signal:ctl.signal})}catch(e){throw Object.assign(new Error(tx("Нет связи с сервером. Проверь интернет.")),{net:1})}finally{clearTimeout(tm)}
 let data={};try{data=await response.json()}catch(e){}
 if(response.status===401&&token&&!/\/api\/(login|register)/.test(path)){sidLogoutLocal();sidRender();throw new Error(tx("Сессия истекла. Войди снова."))}
 if(!response.ok)throw new Error((data.error||("Ошибка сервера: "+response.status))+(data.detail?" ["+data.detail+"]":""));return data}

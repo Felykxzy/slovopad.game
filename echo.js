@@ -15,7 +15,7 @@
 
   /* ---------- протокол: служебные сообщения в комнате (сервер хранит их как обычный текст) ---------- */
   try { g("rmL").addEventListener("scroll", () => { const l = g("rmL"); E.atB = l.scrollHeight - l.scrollTop - l.clientHeight < 80 }, { passive: true }) } catch (e) { }
-  const kit = EchoKit.create({ me: () => E.me || "", onsize: () => { const l = g("rmL"); if (l && E.atB !== false) l.scrollTop = l.scrollHeight }, img: id => cloudRequest("/api/echo/room/img?room=" + encodeURIComponent(E.room.id) + "&id=" + id).then(r => r.img), react: (id, emo) => roomReact(id, emo) });
+  const kit = EchoKit.create({ me: () => E.me || "", onsize: () => { const l = g("rmL"); if (l && E.atB !== false) l.scrollTop = l.scrollHeight }, img: id => cloudRequest("/api/echo/room/img?room=" + encodeURIComponent(E.room.id) + "&id=" + id).then(r => r.img), react: (id, emo) => roomReact(id, emo), onrec: () => { if (E.room) post("/api/echo/room/typing", { room: E.room.id, k: "voice" }).catch(() => { }) } });
   const PX = "§", EMO = ["👍", "❤️", "😂", "🔥", "😮"];
   function parse(body) {
     body = String(body || "");
@@ -50,7 +50,7 @@
     if (g("o16")) return;
     const hub = h("div", "ov"); hub.id = "o16";
     hub.innerHTML = '<div class="ecw"><nav class="ecrail" id="ecR16"></nav><section class="ecpan"><div class="ecph" id="ecP16"></div>' +
-      '<div class="ecset gl" id="ecSetP" hidden></div><div class="frlist" id="ecList"></div><div class="hint" id="ecSt"></div></section></div>';
+      '<div class="ecset gl" id="ecSetP" hidden></div><div class="ecsr" id="ecSr" hidden><input id="ecSrI" type="search" maxlength="40" autocomplete="off"><div class="frlist" id="ecSrL"></div></div><div class="frlist" id="ecList"></div><div class="hint" id="ecSt"></div></section></div>';
     const rm = h("div", "ov"); rm.id = "o17";
     rm.innerHTML = '<div class="frh ecrh"><button class="ib" id="rmBk" type="button" aria-label="back">'+IC.html("back")+'</button><div class="frt"><h2 id="rmT"></h2><div class="sub" id="rmS"></div></div><button class="ib" id="rmCl" type="button" aria-label="call">'+IC.html("phone")+'</button><button class="ib" id="rmMn" type="button" aria-label="menu">'+IC.html("dots")+'</button></div>' +
       '<div class="chmenu" id="rmMenu" hidden></div><div class="pinb" id="rmPin" hidden></div><div class="rmabout" id="rmAb" hidden></div>' +
@@ -126,6 +126,31 @@
     add("bell", "{bell}", T("Уведомления", "Notifications", "Сповіщення"), () => { E.panel = E.panel === "tg" ? "" : "tg"; hubOpen(); if (E.panel) loadTg() });
   }
   function hubOut() { clearInterval(E.hub); E.hub = 0; ov("o1") }
+  // поиск по всем чатам и комнатам сразу
+  function hubSearch() {
+    const sr = g("ecSr"), inp = g("ecSrI"), list = g("ecList"); if (!sr) return;
+    sr.hidden = !sr.hidden; list.hidden = !sr.hidden; { const sp = g("ecSetP"); if (sp) sp.style.display = sr.hidden ? "" : "none" } g("ecSb").classList.toggle("on", !sr.hidden);
+    if (sr.hidden) return; inp.placeholder = T("Искать во всех чатах", "Search all chats", "Шукати в усіх чатах"); inp.value = ""; g("ecSrL").textContent = ""; try { inp.focus() } catch (e) { }
+    if (inp.__w) return; inp.__w = 1; let tm = 0, seq = 0;
+    const when = t => { const d = new Date(t), now = new Date(); return d.toDateString() === now.toDateString() ? d.toTimeString().slice(0, 5) : d.toLocaleDateString(undefined, { day: "numeric", month: "short" }) };
+    const hl = (box, text, q) => { const i = text.toLowerCase().indexOf(q.toLowerCase()); if (i < 0) { box.textContent = text; return } box.append(text.slice(0, i)); const m = h("mark", "", text.slice(i, i + q.length)); box.append(m, text.slice(i + q.length)) };
+    inp.addEventListener("input", () => { clearTimeout(tm); const q = inp.value.trim(), L = g("ecSrL"), my = ++seq;
+      if (q.length < 2) { L.textContent = ""; return }
+      tm = setTimeout(async () => {
+        try {
+          const r = await cloudRequest("/api/search?q=" + encodeURIComponent(q)); if (my !== seq) return; L.textContent = "";
+          if (!r.results.length) { L.appendChild(h("div", "hint", T("Ничего не нашлось.", "Nothing found.", "Нічого не знайшлось."))); return }
+          r.results.forEach((x, k) => {
+            const row = h("button", "ecrow ecsrr"); row.type = "button"; row.style.setProperty("--i", Math.min(k, 10));
+            row.appendChild(avatar(x.kind === "room" ? "#" : (x.name || "?").slice(0, 1).toUpperCase(), false, x.kind === "room" ? tint(x.room) : undefined));
+            const t = h("div", "ect"), top = h("b", "", (x.kind === "room" ? "# " : "") + x.name), sn = h("span", ""); hl(sn, (x.mine ? T("Вы: ", "You: ", "Ви: ") : "") + x.text, q); t.append(top, sn); row.appendChild(t); row.appendChild(h("i", "ecsrt", when(x.t)));
+            row.onclick = () => { if (x.kind === "room") roomOpen(x.room, x.name); else { const F = window.SlovopadFriends, f = F && F.list().find(y => y.spCode === x.code); if (f && F.chatOpen) { F.setBack(hubOpen); F.chatOpen(f) } } };
+            L.appendChild(row);
+          });
+        } catch (e) { if (my === seq) { L.textContent = ""; L.appendChild(h("div", "hint bad", e.message)) } }
+      }, 400);
+    });
+  }
   function paintHead(box, title, sub) {
     if (!box) return; box.textContent = "";
     box.appendChild(btn("ib", "{back}", hubOut));
@@ -135,6 +160,7 @@
     const mine = E.room ? "r:" + E.room.id : "";
     paintRail(g("ecR16"), "home"); paintRail(g("ecR13"), "fr");
     paintHead(g("ecP16"), "{echo}" + T("ЭХО", "ECHO", "ЕХО"), T("ЛИЧНЫЕ · КОМНАТЫ", "DIRECT · ROOMS", "ОСОБИСТІ · КІМНАТИ"));
+    { const sb = btn("ib ecsb", "🔍", hubSearch); sb.id = "ecSb"; sb.setAttribute("aria-label", "search"); g("ecP16").appendChild(sb) }
     paintHead(g("ecP13"), "{people}" + T("ДРУЗЬЯ", "FRIENDS", "ДРУЗІ"), T("ЗАПРОСЫ · ТОП · ВЫЗОВЫ", "REQUESTS · TOP · CHALLENGES", "ЗАПИТИ · ТОП · ВИКЛИКИ"));
   }
   function avatar(txt, on, bg, user) { const a = h("div", "fav" + (on ? " on" : ""), txt); a.style.width = a.style.height = "42px"; a.style.fontSize = "20px"; if (bg) a.style.background = bg; if (user) try { spPhoto(a, user) } catch (e) { } return a }
@@ -394,7 +420,7 @@
       (r.changed || []).forEach(roomChanged); if (r.react) kit.setReact(r.react);
       { const pn = g("rmPin"), ab = g("rmAb"); pn.hidden = !rm.pin; if (rm.pin) { pn.textContent = ""; pn.appendChild(h("span", "", "📌 " + rm.pin.who + ": " + rm.pin.text)); pn.onclick = () => kit.jump(rm.pin.id) }
         ab.hidden = !rm.about; ab.textContent = rm.about || ""; }
-      { let ty = l.querySelector(".chty"); if (r.typing && r.typing.length && !ty) { ty = h("div", "chty"); l.appendChild(ty) } else if ((!r.typing || !r.typing.length) && ty) { ty.remove(); ty = null } if (ty) { ty.textContent = r.typing.join(", ") + T(" печатает", " is typing", " друкує"); if (EchoKit.dots) ty.appendChild(EchoKit.dots()); l.appendChild(ty) } }
+      { let ty = l.querySelector(".chty"); if (r.typing && r.typing.length && !ty) { ty = h("div", "chty"); l.appendChild(ty) } else if ((!r.typing || !r.typing.length) && ty) { ty.remove(); ty = null } if (ty) { ty.textContent = r.typing.join(", ") + (r.typingK === "voice" ? T(" записывает голосовое", " is recording a voice message", " записує голосове") : T(" печатает", " is typing", " друкує")); if (EchoKit.dots) ty.appendChild(EchoKit.dots()); l.appendChild(ty) } }
       if (!l.querySelector(".msg") && !l.querySelector(".race") && !l.querySelector(".chem")) l.appendChild(h("div", "chem", T("Здесь пока тихо. Напиши первым", "It's quiet here. Write first", "Тут поки тихо. Напиши першим")));
       else if (r.messages.length && l.querySelector(".chem")) l.querySelector(".chem").remove();
       if (stick) l.scrollTop = l.scrollHeight;
@@ -410,9 +436,12 @@
     const was = inp.value; if (typeof sticker !== "string") { inp.value = ""; if (!img) inp.focus() }
     try {
       if (E.edit) { await post("/api/echo/room/edit", { room: rm.id, id: E.edit.id, text }); E.edit = null; E.editWas = false; replyPaint() }
-      else { await post("/api/echo/room/send", { room: rm.id, text, img: img || undefined, reply: E.reply ? E.reply.id : undefined }); E.reply = null; replyPaint() }
+      else { const pl = { room: rm.id, text, img: img || undefined, reply: E.reply ? E.reply.id : undefined };
+        try { await post("/api/echo/room/send", pl) }
+        catch (e) { if (!(e && e.net)) throw e; const SKx = window.SlovopadStickers; kit.pend.add(g("rmL"), img ? (/^data:audio/.test(img) ? "🎤" : "📷") : ((SKx && SKx.label(text)) || (window.SlovopadGif && SlovopadGif.label(text)) || text), () => post("/api/echo/room/send", pl), () => roomPoll(false)); setHint("rmSt", "", false) }
+        E.reply = null; replyPaint() }
       if (typeof sticker !== "string" && EchoKit.draft) EchoKit.draft("r." + rm.id, "");
-      E.busy = false; await roomPoll(false); const l = g("rmL"); l.scrollTop = l.scrollHeight;
+      E.busy = false; try { await roomPoll(false) } catch (e) { } const l = g("rmL"); l.scrollTop = l.scrollHeight;
     } catch (e) { if (typeof sticker !== "string") inp.value = was; setHint("rmSt", e.message, true) }
   }
 

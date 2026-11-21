@@ -55,7 +55,7 @@
   const hueOf = c => { const [r, g, b] = String(c).split(",").map(x => (+x || 0) / 255), mx = Math.max(r, g, b), d = mx - Math.min(r, g, b); if (!d) return 200; const k = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return Math.round((k * 60 + 360) % 360) };
   const TH = () => (typeof THEMES !== "undefined" && THEMES) || [];
   const SEAS = []; TH().forEach(t => { const caps = SEC(String(t.n).slice(0, 8)); for (let k = 0; k < 6; k++) SEAS.push(["t-" + t.id + "-" + k, caps[k], hueOf(t.c), SEF[k], t.i, 0, t.id]) });
-  const cache = {}, byId = {}; LIST.concat(REW, SEAS).forEach(x => { byId[x[0]] = x });
+  const MY = {}, cache = {}, byId = {}; LIST.concat(REW, SEAS).forEach(x => { byId[x[0]] = x });
   const achN = () => { try { return Object.keys(JSON.parse(localStorage.getItem("ach") || "{}") || {}).length } catch (e) { return 0 } };
   const curTheme = () => { const L = TH(); if (!L.length) return null; const d = new Date(); return L[(d.getUTCFullYear() * 12 + d.getUTCMonth()) % L.length] };
   window.SlovopadStickers = {
@@ -66,7 +66,10 @@
     seasonal: () => { const t = curTheme(); return t ? { name: t.n, icon: t.i, list: SEAS.filter(x => x[6] === t.id).map(x => ({ id: x[0], cap: x[1] })) } : null },
     achCount: achN,
     token: id => ":s:" + id + ":",
+    myToken: id => ":m:" + id + ":",
+    myParse: body => { const m = /^:m:([a-z0-9]{8}):$/.exec(String(body || "").trim()); return m ? m[1] : "" },
+    myImg: id => MY[id] || (MY[id] = cloudRequest("/api/stk/get?id=" + id).then(r => r.img || "").catch(() => { delete MY[id]; return "" })),
     parse: body => { const m = /^:s:([a-z0-9-]{1,24}):$/.exec(String(body || "").trim()); return m ? m[1] : "" },
-    label: body => { if (String(body || "").trim() === ":ms:") return "🖼 " + (typeof CFG !== "undefined" && CFG.lang === 1 ? "Sticker" : "Стикер"); const id = window.SlovopadStickers.parse(body); return id && byId[id] ? "🖼 " + byId[id][1] : "" }
+    label: body => { if (String(body || "").trim() === ":ms:" || window.SlovopadStickers.myParse(body)) return "🖼 " + (typeof CFG !== "undefined" && CFG.lang === 1 ? "Sticker" : "Стикер"); const id = window.SlovopadStickers.parse(body); return id && byId[id] ? "🖼 " + byId[id][1] : "" }
   };
 })();

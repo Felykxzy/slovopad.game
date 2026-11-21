@@ -1525,3 +1525,19 @@ html.lite.beta #o1 #seB{animation:none}
 .eksh:not(.lift) .esre button{padding:4px 6px;font-size:24px}
 .eksh:not(.lift) .eskc{flex:0 1 auto}
 .eksh:not(.lift) .eskc{box-sizing:border-box}
+/* 4.13: не отправлено, скорость голоса, поиск по всем чатам, запись голосового */
+.chm.pend .chb{opacity:.6;border-style:dashed}
+.chm.pend .cht{color:#ffb454}
+.pendr{border:0;background:rgba(255,180,84,.18);color:#ffb454;border-radius:99px;padding:2px 10px;font:inherit;font-size:12px;cursor:pointer}
+.chm.pend.busy .pendr{opacity:.4;pointer-events:none}
+.chm.pend.gone{opacity:0;transform:scale(.9);transition:opacity .2s,transform .2s}
+.mvs{border:0;background:rgba(255,255,255,.14);color:inherit;border-radius:99px;padding:2px 7px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;flex:none;margin-left:6px}
+.mvbar{touch-action:none;cursor:pointer}
+.ecsb.on{background:rgba(94,242,255,.22)}
+.ecsr{display:flex;flex-direction:column;gap:8px;min-height:0;flex:1}
+.ecsr[hidden]{display:none}
+.ecsr input{width:100%;box-sizing:border-box;border-radius:16px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:var(--ink);font:inherit;font-size:15px;padding:10px 14px;outline:0}
+.ecsrr .ect span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ecsrr mark{background:rgba(255,216,79,.35);color:inherit;border-radius:4px;padding:0 2px}
+.ecsrt{font-style:normal;font-size:11px;opacity:.6;flex:none}
+#ecList[hidden]{display:none}

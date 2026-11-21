@@ -159,6 +159,10 @@ async function ensureSchema(env) {
     await env.DB.prepare('CREATE INDEX IF NOT EXISTS sp_season_s_idx ON sp_season(m,score)').run();
     await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_season_claim (m TEXT NOT NULL, uid TEXT NOT NULL, rk INTEGER NOT NULL, coins INTEGER NOT NULL, badge TEXT NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (m,uid))').run();
     await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_typing (sc TEXT NOT NULL, uid TEXT NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (sc,uid))').run();
+    try { await env.DB.prepare("ALTER TABLE sp_typing ADD COLUMN k TEXT NOT NULL DEFAULT ''").run(); } catch (_) {}
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_stk (id TEXT PRIMARY KEY, uid TEXT NOT NULL, img TEXT NOT NULL, t INTEGER NOT NULL)').run();
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_mystk (uid TEXT NOT NULL, id TEXT NOT NULL, t INTEGER NOT NULL, PRIMARY KEY (uid,id))').run();
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS sp_myfav (uid TEXT PRIMARY KEY, gifs TEXT NOT NULL, t INTEGER NOT NULL)').run();
   } catch (e) { console.error('friends schema', e); }
   schemaReady = true;
 }
@@ -291,8 +295,9 @@ async function chatSync(env, o) {
   const lr = await env.DB.prepare('SELECT MAX(t) AS m FROM sp_react WHERE sc=?').bind(o.sc).first();
   let react = null;
   if (!o.since || (lr && lr.m >= o.since)) react = ((await env.DB.prepare("SELECT mid,uid,emo FROM sp_react WHERE sc=? AND emo<>'' ORDER BY mid DESC LIMIT 400").bind(o.sc).all()).results || []).map(r => [r.mid, r.emo, o.nameOf(r.uid)]);
-  const typing = ((await env.DB.prepare('SELECT uid FROM sp_typing WHERE sc=? AND uid<>? AND t>?').bind(o.sc, o.me, o.now - 6000).all()).results || []).map(r => o.nameOf(r.uid));
-  return { messages: rows.map(shape), changed: chg.filter(r => !rows.some(x => x.id === r.id)).map(shape), react, typing, now: o.now };
+  const tyRows = (await env.DB.prepare('SELECT uid,k FROM sp_typing WHERE sc=? AND uid<>? AND t>?').bind(o.sc, o.me, o.now - 6000).all()).results || [];
+  const typing = tyRows.map(r => o.nameOf(r.uid)), typingK = tyRows.some(r => r.k === 'voice') ? 'voice' : '';
+  return { messages: rows.map(shape), changed: chg.filter(r => !rows.some(x => x.id === r.id)).map(shape), react, typing, typingK, now: o.now };
 }
 async function chatReact(env, sc, mid, uid, emo, now) {
   if (!CHAT_EMO.includes(emo)) return false;
@@ -1269,6 +1274,60 @@ export default {
         return reply(out);
       }
 
+      /* свои стикеры (живут, пока их не удалит хозяин), избранные гифки и поиск по своим чатам */
+      if (url.pathname.startsWith('/api/my/') || url.pathname === '/api/stk/get' || url.pathname === '/api/search') {
+        const user = await userFrom(request, env);
+        if (!user) return reply({ error: 'Нужно войти в аккаунт.' }, 401);
+        const isPost = request.method === 'POST', body = isPost ? ((await request.json().catch(() => null)) || {}) : {};
+        if (url.pathname === '/api/my/all' && !isPost) {
+          const stk = ((await env.DB.prepare('SELECT s.id, s.img FROM sp_mystk m JOIN sp_stk s ON s.id=m.id WHERE m.uid=? ORDER BY m.t DESC LIMIT 24').bind(user.id).all()).results || []);
+          const fv = await env.DB.prepare('SELECT gifs FROM sp_myfav WHERE uid=?').bind(user.id).first();
+          return reply({ stk, gifs: fv ? parse(fv.gifs, []) : [] });
+        }
+        if (url.pathname === '/api/my/stk/add' && isPost) {
+          if (!await allow(env, 'ms:' + user.id, 40, 60 * 60 * 1000)) return reply(TOO_MANY, 429);
+          const img = String(body.img || '');
+          if (!(img.length <= 70000 && /^data:image\/(webp|png|jpeg);base64,[A-Za-z0-9+\/=]+$/.test(img))) return reply({ error: 'Картинка не подходит.' }, 400);
+          const n = ((await env.DB.prepare('SELECT COUNT(*) c FROM sp_mystk WHERE uid=?').bind(user.id).first()) || {}).c || 0;
+          if (n >= 24) return reply({ error: 'Хватит, максимум 24 стикера. Удали лишний.' }, 400);
+          const id = Array.from(random(8)).map(b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join(''), now = Date.now();
+          await env.DB.prepare('INSERT INTO sp_stk (id,uid,img,t) VALUES (?,?,?,?)').bind(id, user.id, img, now).run();
+          await env.DB.prepare('INSERT INTO sp_mystk (uid,id,t) VALUES (?,?,?)').bind(user.id, id, now).run();
+          return reply({ ok: true, id });
+        }
+        if (url.pathname === '/api/my/stk/del' && isPost) {
+          await env.DB.prepare('DELETE FROM sp_mystk WHERE uid=? AND id=?').bind(user.id, String(body.id || '').slice(0, 20)).run();
+          return reply({ ok: true });
+        }
+        if (url.pathname === '/api/my/gifs' && isPost) {
+          if (!await allow(env, 'mg:' + user.id, 120, 60 * 60 * 1000)) return reply(TOO_MANY, 429);
+          const list = (Array.isArray(body.gifs) ? body.gifs : []).filter(x => x && /^[A-Za-z0-9]{5,24}$/.test(String(x.id))).slice(0, 40).map(x => ({ id: String(x.id), w: Math.min(2000, Math.max(1, Math.floor(Number(x.w)) || 100)), h: Math.min(2000, Math.max(1, Math.floor(Number(x.h)) || 100)) }));
+          await env.DB.prepare('INSERT INTO sp_myfav (uid,gifs,t) VALUES (?,?,?) ON CONFLICT(uid) DO UPDATE SET gifs=excluded.gifs, t=excluded.t').bind(user.id, JSON.stringify(list), Date.now()).run();
+          return reply({ ok: true });
+        }
+        if (url.pathname === '/api/stk/get' && !isPost) {
+          if (!await allow(env, 'sg:' + user.id, 600, 10 * 60 * 1000)) return reply(TOO_MANY, 429);
+          const r = await env.DB.prepare('SELECT img FROM sp_stk WHERE id=?').bind(String(url.searchParams.get('id') || '').slice(0, 20)).first();
+          return r ? reply({ img: r.img }) : reply({ error: 'Стикер не найден.' }, 404);
+        }
+        if (url.pathname === '/api/search' && !isPost) {
+          if (!await allow(env, 'sr:' + user.id, 40, 60 * 1000)) return reply(TOO_MANY, 429);
+          const q = String(url.searchParams.get('q') || '').trim().slice(0, 40);
+          if (q.length < 2) return reply({ results: [] });
+          const like = '%' + q.replace(/[\\%_]/g, '\\$&') + '%';
+          const dm = (await env.DB.prepare("SELECT id,a,b,body,t FROM sp_msgs WHERE (a=? OR b=?) AND dl=0 AND kind='text' AND img='' AND body LIKE ? ESCAPE '\\' ORDER BY id DESC LIMIT 15").bind(user.id, user.id, like).all()).results || [];
+          const rm = (await env.DB.prepare("SELECT m.id,m.room,m.uid,m.body,m.t,r.name FROM sp_room_msgs m JOIN sp_room_members mm ON mm.room=m.room AND mm.uid=? JOIN sp_rooms r ON r.id=m.room WHERE m.dl=0 AND m.img='' AND m.room NOT LIKE 'dm\\_%' ESCAPE '\\' AND m.body LIKE ? ESCAPE '\\' ORDER BY m.id DESC LIMIT 15").bind(user.id, like).all()).results || [];
+          const ids = [...new Set(dm.map(r => r.a === user.id ? r.b : r.a))], us = {};
+          for (const id of ids) { const u = await env.DB.prepare('SELECT username, sp_code FROM users WHERE id=?').bind(id).first(); if (u) us[id] = u; }
+          const results = [
+            ...dm.map(r => { const o = us[r.a === user.id ? r.b : r.a]; return o ? { kind: 'dm', id: r.id, code: o.sp_code, name: o.username, text: String(r.body).slice(0, 120), t: r.t, mine: r.a === user.id } : null }).filter(Boolean),
+            ...rm.map(r => ({ kind: 'room', id: r.id, room: r.room, name: r.name, text: String(r.body).slice(0, 120), t: r.t, mine: r.uid === user.id }))
+          ].sort((x, y) => y.t - x.t).slice(0, 25);
+          return reply({ results });
+        }
+        return reply({ error: 'Не найдено.' }, 404);
+      }
+
       /* ---------- друзья ---------- */
       /* сезон: тема месяца одна для всех, таблица лидеров месяца, награды за прошлый месяц */
       if (url.pathname.startsWith('/api/season')) {
@@ -1512,7 +1571,7 @@ export default {
             }
             return reply({ room: { id: room.id, name: room.name, mine: isOwner, mod: isMod, about: room.about || '', pin },
               members: mrows.map(r => ({ name: nm(r.uid), owner: r.uid === room.owner, mod: r.role === 'mod', me: r.uid === user.id, tag: cleanTag((people.get(r.uid) || {}).tg) })),
-              messages: sy.messages, changed: sy.changed, react: sy.react, typing: sy.typing, now: sy.now });
+              messages: sy.messages, changed: sy.changed, react: sy.react, typing: sy.typing, typingK: sy.typingK, now: sy.now });
           }
 
           // картинка из сообщения (в списке сообщений только отметка, сама картинка грузится отдельно)
@@ -1574,7 +1633,7 @@ export default {
           }
           if (url.pathname === '/api/echo/room/typing' && post) {
             if (!await allow(env, 'et:' + user.id, 40, 60 * 1000)) return reply({ ok: true });
-            await env.DB.prepare('INSERT INTO sp_typing (sc,uid,t) VALUES (?,?,?) ON CONFLICT(sc,uid) DO UPDATE SET t=excluded.t').bind('r:' + roomId, user.id, now).run();
+            await env.DB.prepare('INSERT INTO sp_typing (sc,uid,t,k) VALUES (?,?,?,?) ON CONFLICT(sc,uid) DO UPDATE SET t=excluded.t, k=excluded.k').bind('r:' + roomId, user.id, now, body.k === 'voice' ? 'voice' : '').run();
             return reply({ ok: true });
           }
           // закрепить сообщение, описание комнаты, помощник — только создатель и помощники
@@ -1680,7 +1739,7 @@ export default {
             { const pk = await env.DB.prepare('SELECT mid FROM sp_dmpin WHERE a=? AND b=?').bind(pairA(user.id, other.id), pairB(user.id, other.id)).first();
               if (pk) { const pm = await env.DB.prepare('SELECT id,a,body,img FROM sp_msgs WHERE id=? AND dl=0 AND ((a=? AND b=?) OR (a=? AND b=?))').bind(pk.mid, user.id, other.id, other.id, user.id).first();
                 if (pm) pin = { id: pm.id, who: names[pm.a] || '?', text: String(pm.body || (String(pm.img || '').startsWith('data:audio') ? '🎤' : '📷')).slice(0, 60) } } }
-            return reply({ with: other.username, blocked: !!iBlocked, messages: sy.messages, changed: sy.changed, react: sy.react, typing: sy.typing.length > 0, readTo: rd && rd.m ? rd.m : 0, now: sy.now, pin, call: (await env.DB.prepare('SELECT 1 AS x FROM sp_rooms WHERE id=?').bind('dm_' + pairA(user.id, other.id) + '_' + pairB(user.id, other.id)).first()) ? 'dm_' + pairA(user.id, other.id) + '_' + pairB(user.id, other.id) : '' });
+            return reply({ with: other.username, blocked: !!iBlocked, messages: sy.messages, changed: sy.changed, react: sy.react, typing: sy.typing.length > 0, typingK: sy.typingK, readTo: rd && rd.m ? rd.m : 0, now: sy.now, pin, call: (await env.DB.prepare('SELECT 1 AS x FROM sp_rooms WHERE id=?').bind('dm_' + pairA(user.id, other.id) + '_' + pairB(user.id, other.id)).first()) ? 'dm_' + pairA(user.id, other.id) + '_' + pairB(user.id, other.id) : '' });
           }
 
           if (url.pathname === '/api/chat/img' && request.method === 'GET') {
@@ -1735,7 +1794,7 @@ export default {
           }
           if (url.pathname === '/api/chat/typing' && post) {
             if (!await allow(env, 'ct:' + user.id, 40, 60 * 1000)) return reply({ ok: true });
-            await env.DB.prepare('INSERT INTO sp_typing (sc,uid,t) VALUES (?,?,?) ON CONFLICT(sc,uid) DO UPDATE SET t=excluded.t').bind(dmScope(user.id, other.id), user.id, now).run();
+            await env.DB.prepare('INSERT INTO sp_typing (sc,uid,t,k) VALUES (?,?,?,?) ON CONFLICT(sc,uid) DO UPDATE SET t=excluded.t, k=excluded.k').bind(dmScope(user.id, other.id), user.id, now, body.k === 'voice' ? 'voice' : '').run();
             return reply({ ok: true });
           }
 
