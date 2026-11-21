@@ -1,12 +1,12 @@
 {
-  "version": "4.13.1",
+  "version": "4.14.0",
   "notes": [
-    "Исправления: поиск по русским словам с любой заглавной, очередь «не отправлено» не застревает, чистка данных на сервере"
+    "Магазин: 4 новых фона и 4 новых щита с очень детальной анимацией"
   ],
   "notes_en": [
-    "Fixes: case-insensitive search, the Not sent queue no longer gets stuck, server data cleanup"
+    "Shop: 4 new backgrounds and 4 new shields with highly detailed animation"
   ],
   "notes_uk": [
-    "Виправлення: пошук без урахування регістру, черга «не надіслано» не застрягає, чистка даних на сервері"
+    "Магазин: 4 нових фони і 4 нових щити з дуже детальною анімацією"
   ]
 }
