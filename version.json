@@ -1,12 +1,12 @@
 {
-  "version": "4.15.0",
+  "version": "4.16.0",
   "notes": [
-    "Опросы в комнатах, подсказка @имён, закреплённые чаты; магазин: новые фоны, щиты и стили слов"
+    "Красивее геймплей: искры на буквах, взрыв слова, свечение комбо"
   ],
   "notes_en": [
-    "Room polls, @name suggestions, pinned chats; shop: new backgrounds, shields and word styles"
+    "Prettier gameplay: letter sparks, word explosions, combo glow"
   ],
   "notes_uk": [
-    "Опитування в кімнатах, підказка @імен, закріплені чати; магазин: нові фони, щити і стилі слів"
+    "Гарніший геймплей: іскри на літерах, вибух слова, сяйво комбо"
   ]
 }
