@@ -1558,3 +1558,18 @@ html.lite.beta #o1 #seB{animation:none}
 .atp[hidden]{display:none}
 .atc{border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;border-radius:14px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
 .ecat{position:absolute;right:46px;top:50%;transform:translateY(-50%);min-width:20px;height:20px;border-radius:10px;background:#3cf0ff;color:#04121a;font-size:12px;font-weight:800;font-style:normal;display:flex;align-items:center;justify-content:center}
+
+/* 4.17: верхняя панель со счётом — компактнее и чуть прозрачнее */
+#hud{padding-top:calc(6px + var(--sat));padding-bottom:3px}
+#hud #score{font-size:27px;opacity:.82}
+#hud .lab{font-size:9px;margin-top:3px;opacity:.45}
+#hud #lv{font-size:11px;opacity:.75}
+#hud #bar{width:96px;margin-top:5px;opacity:.8}
+#hud .ib{width:34px;height:34px;font-size:13px;border-radius:11px;opacity:.72;background:rgba(255,255,255,.035)}
+#hud .ib svg{width:15px;height:15px}
+
+/* 4.17: панель со счётом на 40% прозрачная — игровое поле видно под ней */
+#app{--top:0px}
+#fw{margin-top:calc(-1 * var(--top))}
+#hud{background:rgba(5,7,22,.6);-webkit-backdrop-filter:blur(1.5px);backdrop-filter:blur(1.5px)}
+#bst{background:rgba(5,7,22,.6)}
