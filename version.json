@@ -1,12 +1,12 @@
 {
-  "version": "4.19.1",
+  "version": "4.19.2",
   "notes": [
-    "Красивая загрузка и плавный переход в меню"
+    "В настройках можно размыть фон на 10% или 15%"
   ],
   "notes_en": [
-    "Prettier loading screen and smooth transition to the menu"
+    "New setting: blur the background by 10% or 15%"
   ],
   "notes_uk": [
-    "Гарне завантаження та плавний перехід у меню"
+    "У налаштуваннях можна розмити фон на 10% або 15%"
   ]
 }
