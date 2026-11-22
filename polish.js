@@ -82,7 +82,29 @@
     sb.parentNode.insertBefore(b, sb.nextSibling); theme(); return true;
   }
 
-  window.SlovopadPolish = { themeBtn: themeBtn, theme: theme, stars: stars };
+
+  /* 4.20: сундук с наградой */
+  function chest(o) {
+    const old = $("chO"); if (old) old.remove();
+    const el = document.createElement("div"); el.id = "chO";
+    el.innerHTML = '<div class="chRays"></div><div class="chStage"><div class="chBox"><i class="chBody"></i><i class="chBand"></i><i class="chLid"></i><i class="chLock"></i></div><div class="chGlow"></div><div class="chCard"><canvas></canvas><b></b><span></span></div></div><div class="chBt"><button type="button" class="btn" id="chEq"></button><button type="button" class="btn sec" id="chOk"></button></div>';
+    el.querySelector("b").textContent = o.title || ""; el.querySelector(".chCard span").textContent = o.name || "";
+    el.querySelector("#chOk").textContent = o.ok || "OK"; const eqb = el.querySelector("#chEq"); eqb.textContent = o.eq || "";
+    if (!o.onEq) eqb.style.display = "none";
+    document.body.appendChild(el);
+    const cv = el.querySelector("canvas"), D = 2; cv._D = D; cv.width = 260 * D; cv.height = 150 * D; cv.style.width = "260px"; cv.style.height = "150px";
+    let alive = true; const t0 = performance.now();
+    const loop = () => { if (!alive) return; try { shPrev(cv, shI(o.id), (performance.now() - t0) / 1000 + 2) } catch (e) { } requestAnimationFrame(loop) };
+    if (o.id) loop();
+    try { if (typeof arp === "function") { arp([392, 494, 587], .1); setTimeout(() => arp([784, 988, 1175, 1568], .07), 1100) } } catch (e) { }
+    requestAnimationFrame(() => el.classList.add("s"));
+    setTimeout(() => el.classList.add("open"), 900);
+    const close = fn => { alive = false; el.classList.remove("s"); setTimeout(() => { el.remove(); if (fn) fn() }, 350) };
+    el.querySelector("#chOk").onclick = () => close(o.done);
+    eqb.onclick = () => { try { o.onEq() } catch (e) { } close(o.done) };
+    if (!calm()) setTimeout(() => stars(), 1000);
+  }
+  window.SlovopadPolish = { chest: chest, themeBtn: themeBtn, theme: theme, stars: stars };
   function init() {
     theme();
     rankFrames(); flame(); overFx();

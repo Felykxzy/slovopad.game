@@ -1573,3 +1573,8 @@ html.lite.beta #o1 #seB{animation:none}
 #fw{margin-top:calc(-1 * var(--top))}
 #hud{background:rgba(5,7,22,.6);-webkit-backdrop-filter:blur(1.5px);backdrop-filter:blur(1.5px)}
 #bst.emp{visibility:hidden}
+
+/* 4.20: идеальный уровень — надпись «УРОВЕНЬ» золотая, пока нет ошибок */
+#lv.perf{color:#ffd166;text-shadow:0 0 10px rgba(255,190,80,.7);animation:plPerf 1.8s ease-in-out infinite}
+@keyframes plPerf{0%,100%{text-shadow:0 0 6px rgba(255,190,80,.5)}50%{text-shadow:0 0 16px rgba(255,220,120,1)}}
+@media (prefers-reduced-motion:reduce){#lv.perf{animation:none}}
