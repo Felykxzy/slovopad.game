@@ -1,12 +1,12 @@
 {
-  "version": "4.18.0",
+  "version": "4.19.0",
   "notes": [
-    "Красивее интерфейс: заставка, огонь серии, конец игры, золотые рамки в магазине, рамки аватарок, темы чатов"
+    "Новые фоны: Песчаная буря, Листопад, Плавучие острова, Маяк в шторм; щиты: Шестерёнки, Бабочки"
   ],
   "notes_en": [
-    "Prettier interface: splash, streak flame, game over, gold shop frames, avatar frames, chat themes"
+    "New backgrounds: Sandstorm, Falling Leaves, Floating Islands, Storm Lighthouse; shields: Clockwork, Butterflies"
   ],
   "notes_uk": [
-    "Гарніший інтерфейс: заставка, вогонь серії, кінець гри, золоті рамки в магазині, рамки аватарок, теми чатів"
+    "Нові фони: Піщана буря, Листопад, Плавучі острови, Маяк у шторм; щити: Шестерні, Метелики"
   ]
 }
