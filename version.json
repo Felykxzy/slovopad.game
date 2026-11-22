@@ -1,12 +1,12 @@
 {
-  "version": "4.20.0",
+  "version": "4.21.0",
   "notes": [
-    "Миры по уровням, идеальный уровень дарит фон, сундук, эффекты нажатий и цвет интерфейса"
+    "Коллекция миров в магазине"
   ],
   "notes_en": [
-    "Level worlds, perfect level gives a background, chest, tap effects and interface color"
+    "World collection in the shop"
   ],
   "notes_uk": [
-    "Світи за рівнями, ідеальний рівень дарує фон, скриня, ефекти натискань і колір інтерфейсу"
+    "Колекція світів у магазині"
   ]
 }

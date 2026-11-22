@@ -125,3 +125,23 @@ body[data-ct="space"] .chm.me .chb{background:linear-gradient(135deg,rgba(94,242
 #chO.open .chBt{opacity:1;transform:none}
 .chBt .btn{min-width:120px}
 @media (prefers-reduced-motion:reduce){.chRays{animation:none}.chBox,#chO:not(.open) .chBox{animation:none}#chO.open .chGlow{animation:none;opacity:.4;transform:none}}
+
+/* 4.21: коллекция миров */
+.wHd{grid-column:1/-1;margin:2px 2px 12px;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center}
+.wHd b{font-size:13px;letter-spacing:.14em;color:#ffd166}
+.wHd span{font-size:15px;font-weight:700}
+.wHd i{grid-column:1/-1;display:block;height:6px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden}
+.wHd u{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#ffd166,#ff9d4d);box-shadow:0 0 10px rgba(255,190,80,.7);transition:width .6s}
+.wGr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.wc{position:relative}
+.wc canvas{width:100%;height:auto;display:block}
+.wc.lk2 canvas{filter:grayscale(.85) brightness(.45) blur(1px)}
+.wN{position:absolute;left:8px;top:8px;font-style:normal;font-size:10px;font-weight:700;letter-spacing:.14em;padding:3px 8px;border-radius:9px;background:rgba(6,8,26,.72);color:#e8ecff}
+.wLk{position:absolute;left:0;right:0;top:0;height:calc(100% - 44px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;padding:0 10px}
+.wLk span{font-size:26px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))}
+.wLk small{font-size:11px;line-height:1.25;color:#e8ecff;text-shadow:0 1px 6px rgba(0,0,0,.8)}
+.wc.perf{box-shadow:0 0 0 1.5px rgba(255,209,102,.9),0 0 16px rgba(255,190,80,.38)}
+.wc.perf .wN{background:linear-gradient(90deg,#ffd166,#ff9d4d);color:#2a1606}
+.wGr{grid-column:1/-1}
+.shtb{gap:5px}.shtb button{min-width:0;padding:12px 2px;font-size:10px;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:clip}
+.shtb button{font-size:15px;letter-spacing:.02em;flex:1 1 0}.shtb button.on{flex:2.6 1 0;font-size:11px;letter-spacing:.1em}
