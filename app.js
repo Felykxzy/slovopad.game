@@ -754,11 +754,14 @@ function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h
 const CMB=["94,242,255","94,242,255","255,79,216","255,170,70","255,230,110"];
 const AW=[];function amb(){if(!AW.length)for(let i=0;i<14;i++)AW.push({t:(lbase())[Math.random()*lbase().length|0].toUpperCase(),x:Math.random(),y:Math.random(),v:.02+Math.random()*.035,s:11+Math.random()*8,c:["94,242,255","255,79,216","255,209,102","184,255,92","160,130,255"][i%5]});
 ctx.save();ctx.globalAlpha=.4;for(const a of AW){const y=((a.y+gt*a.v)%1.2)*(H+80)-40;ctx.font="500 "+a.s+"px -apple-system,system-ui,sans-serif";ctx.fillStyle="rgb("+a.c+")";ctx.fillText(a.t,a.x*(W-90)+12,y)}ctx.restore()}
-let blc=null,blx=null,blK="";
+let blc=null,blx=null,bl2=null,bx2=null,blK="";
 function bgDraw(){if(!CFG.bl){ctx.drawImage(bgc,-10,-10,W+20,H+20);if(CFG.q)bgFx(ctx,EQ.b,W,H,gt);return}
-const s=CFG.bl===1?.5:.34,k=W+"x"+H+"@"+s;if(blK!==k||!blc){blc=document.createElement("canvas");blc.width=Math.max(2,Math.ceil(W*s));blc.height=Math.max(2,Math.ceil(H*s));blx=blc.getContext("2d");blK=k}
+const s=CFG.bl===1?.5:.4,r=CFG.bl===1?1.1:1.7,k=W+"x"+H+"@"+s;if(blK!==k||!blc){const mk=()=>{const c=document.createElement("canvas");c.width=Math.max(2,Math.ceil(W*s));c.height=Math.max(2,Math.ceil(H*s));return c};blc=mk();blx=blc.getContext("2d");bl2=mk();bx2=bl2.getContext("2d");blK=k}
 blx.setTransform(s,0,0,s,0,0);blx.clearRect(-10,-10,W+20,H+20);blx.drawImage(bgc,-10,-10,W+20,H+20);if(CFG.q)bgFx(blx,EQ.b,W,H,gt);
-ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";ctx.drawImage(blc,-10,-10,W+20,H+20)}
+const w2=bl2.width,h2=bl2.height;bx2.setTransform(1,0,0,1,0,0);bx2.clearRect(0,0,w2,h2);bx2.imageSmoothingEnabled=true;
+if(typeof bx2.filter==="string"){bx2.filter="blur("+r+"px)";bx2.drawImage(blc,0,0);bx2.filter="none"}
+else{const o=[[0,0],[r,0],[-r,0],[0,r],[0,-r],[r*.7,r*.7],[-r*.7,r*.7],[r*.7,-r*.7],[-r*.7,-r*.7]];o.forEach((d,n)=>{bx2.globalAlpha=1/(n+1);bx2.drawImage(blc,d[0],d[1])});bx2.globalAlpha=1}
+ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";ctx.drawImage(bl2,-10,-10,W+20,H+20)}
 function draw(){ctx.save();if(shake>0)ctx.translate((Math.random()-.5)*shake*28,(Math.random()-.5)*shake*28);
 bgDraw();
 {const o=(gt*34)%512;for(let y=o-512;y<H;y+=512)for(let x=0;x<W;x+=512)ctx.drawImage(pat2c,x,y,512,512)}
@@ -884,7 +887,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");glassSet((e.clientX/innerWidth-.5)/.55,(e.clientY/innerHeight-.5)/.5)},{passive:true});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="4.19.2";let upLater=false;
+const VER="4.19.3";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if($("spl")||state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();

@@ -1,12 +1,12 @@
 {
-  "version": "4.19.2",
+  "version": "4.19.3",
   "notes": [
-    "В настройках можно размыть фон на 10% или 15%"
+    "Размытие фона стало мягким, без пикселей"
   ],
   "notes_en": [
-    "New setting: blur the background by 10% or 15%"
+    "Background blur is now smooth, no pixelation"
   ],
   "notes_uk": [
-    "У налаштуваннях можна розмити фон на 10% або 15%"
+    "Розмиття фону стало м’яким, без пікселів"
   ]
 }
