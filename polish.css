@@ -1,0 +1,71 @@
+/* 4.18: красота вне геймплея */
+
+/* 9. заставка: буквы СЛОВОПАД падают по одной */
+#splL.lt{background:none;-webkit-background-clip:border-box;background-clip:border-box;color:inherit;animation:splpulse 2s ease-in-out infinite;display:flex;justify-content:center}
+#splL.lt i{font-style:normal;display:inline-block;background:linear-gradient(100deg,var(--ac) 0%,var(--mg) 60%,var(--ac) 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:plDrop .7s calc(var(--i) * .08s + .1s) cubic-bezier(.2,.9,.3,1.35) both,plSheen 3.4s linear infinite}
+@keyframes plDrop{0%{opacity:0;transform:translateY(-46px) rotate(-12deg) scale(1.3)}60%{opacity:1}100%{opacity:1;transform:none}}
+@keyframes plSheen{to{background-position:-300% 0}}
+
+/* 7. плавные переходы: окна-страницы выезжают снизу */
+.ov.sc{transform:translateY(16px) scale(.985)}
+.ov.s.sc{transform:none}
+#o3.s>h2,#o3.s>.sub,#o3.s>.btn,#o2.s>*{animation:plKid .42s cubic-bezier(.2,.8,.3,1) both}
+#o3.s>.sub{animation-delay:.3s}#o3.s>.btn:nth-of-type(1){animation-delay:.4s}#o3.s>.btn:nth-of-type(2){animation-delay:.46s}#o3.s>.btn:nth-of-type(3){animation-delay:.52s}
+@keyframes plKid{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* 2. конец игры: счёт набегает, блоки статистики выезжают по очереди */
+#o3.s .st>div{animation:plStat .5s cubic-bezier(.2,.9,.3,1.2) both}
+#o3.s .st>div:nth-child(2){animation-delay:.12s}#o3.s .st>div:nth-child(3){animation-delay:.24s}
+@keyframes plStat{from{opacity:0;transform:translateY(16px) scale(.9)}to{opacity:1;transform:none}}
+#o3.s #oB.ovrec,#o3.s #oB.plrec{background:linear-gradient(100deg,#ffd166,#fff3c4,#ffd166);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700;animation:plSheen2 2.4s linear infinite}
+@keyframes plSheen2{to{background-position:-250% 0}}
+.plstar{position:fixed;z-index:60;pointer-events:none;font-size:18px;animation:plStar 1.3s ease-out forwards}
+@keyframes plStar{0%{opacity:1;transform:translate(0,0) scale(.4)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.3) rotate(160deg)}}
+
+/* 3. магазин: выбранная карточка пружинит, дорогие — в золотой рамке */
+.sx.sel{animation:plSel .35s cubic-bezier(.3,1.6,.5,1)}
+@keyframes plSel{0%{transform:scale(.94)}100%{transform:scale(1)}}
+.sx.rare{box-shadow:0 0 0 1.5px rgba(255,209,102,.9),0 0 16px rgba(255,190,80,.38);animation:plGold 3s ease-in-out infinite}
+.sx.rare.sel{animation:plSel .35s cubic-bezier(.3,1.6,.5,1),plGold 3s .35s ease-in-out infinite}
+@keyframes plGold{0%,100%{box-shadow:0 0 0 1.5px rgba(255,209,102,.7),0 0 10px rgba(255,190,80,.25)}50%{box-shadow:0 0 0 1.5px rgba(255,236,170,1),0 0 22px rgba(255,190,80,.55)}}
+@property --pa{syntax:"<angle>";inherits:false;initial-value:0deg}
+@keyframes plSpin{to{--pa:360deg}}
+
+/* 4. достижения: по плашке пробегает блик */
+#achT{overflow:hidden}
+#achT::after{content:"";position:absolute;top:0;bottom:0;width:60px;left:-80px;background:linear-gradient(100deg,transparent,rgba(255,255,255,.28),transparent);transform:skewX(-18deg);animation:plShine 2.6s .5s ease-in-out infinite;pointer-events:none}
+@keyframes plShine{0%{left:-80px}55%,100%{left:120%}}
+
+/* 5. рамка аватарки по рангу */
+.av[data-rk]{position:relative;overflow:visible}
+.av[data-rk]::after{content:"";position:absolute;inset:-3px;border-radius:50%;padding:2px;pointer-events:none;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.av[data-rk="1"]::after{background:#6fa8ff}
+.av[data-rk="2"]::after{background:linear-gradient(135deg,#5ef2ff,#3ad1a8);filter:drop-shadow(0 0 4px rgba(94,242,255,.6))}
+.av[data-rk="3"]::after{background:linear-gradient(135deg,#ffd166,#ff9d4d);filter:drop-shadow(0 0 5px rgba(255,190,80,.7))}
+.av[data-rk="4"]::after{background:conic-gradient(from var(--pa,0deg),#ff6a3d,#ffd166,#ff4f6a,#ff6a3d);filter:drop-shadow(0 0 7px rgba(255,110,60,.8));animation:plSpin 3s linear infinite}
+.av[data-rk="5"]::after{background:conic-gradient(from var(--pa,0deg),#5ef2ff,#a082ff,#ff4fd8,#ffd166,#b8ff5c,#5ef2ff);filter:drop-shadow(0 0 9px rgba(160,130,255,.9));animation:plSpin 2.4s linear infinite;inset:-4px;padding:3px}
+
+/* 8. серия: огонёк растёт и разгорается */
+.hs i[data-fl="2"]{box-shadow:inset 0 1px 1px rgba(255,255,255,.5),0 0 12px rgba(255,150,60,.35)}
+.hs i[data-fl="3"]{box-shadow:inset 0 1px 1px rgba(255,255,255,.5),0 0 18px rgba(255,130,40,.6);border-color:rgba(255,150,60,.85)}
+.hs i[data-fl="4"]{box-shadow:inset 0 1px 1px rgba(255,255,255,.5),0 0 24px rgba(255,90,30,.85);border-color:rgba(255,110,50,1);background-image:linear-gradient(0deg,rgba(255,90,30,.35),transparent 70%)}
+.hs i[data-fl="5"]{box-shadow:inset 0 1px 1px rgba(255,255,255,.6),0 0 26px rgba(130,200,255,.95);border-color:rgba(160,220,255,1);background-image:linear-gradient(0deg,rgba(100,180,255,.4),transparent 70%)}
+.hs i[data-fl="3"]::after,.hs i[data-fl="4"]::after,.hs i[data-fl="5"]::after{content:"";position:absolute;left:12%;right:12%;bottom:-2px;height:6px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,200,90,.9),transparent);filter:blur(2px);animation:plEmber 1.1s ease-in-out infinite;pointer-events:none}
+.hs i[data-fl="5"]::after{background:radial-gradient(closest-side,rgba(190,235,255,.95),transparent)}
+@keyframes plEmber{0%,100%{opacity:.4;transform:scaleX(.7)}50%{opacity:1;transform:scaleX(1.1)}}
+.plspark{position:fixed;z-index:60;pointer-events:none;width:6px;height:6px;border-radius:50%;background:#ffd166;box-shadow:0 0 8px #ff9d4d;animation:plStar 1s ease-out forwards}
+
+/* 1. меню: кнопка «Тематики» дышит, заголовок мягко светится */
+#o1 #tp{animation:plBreath 3.2s ease-in-out infinite}
+@keyframes plBreath{0%,100%{box-shadow:0 0 28px rgba(94,242,255,.28),0 0 0 0 rgba(94,242,255,.0)}50%{box-shadow:0 0 52px rgba(150,130,255,.5),0 0 0 14px rgba(94,242,255,.06)}}
+
+/* 6. темы чатов */
+body[data-ct="neon"] #o15,body[data-ct="neon"] #o17{background:radial-gradient(70% 40% at 20% 0%,rgba(255,60,200,.22),transparent 70%),radial-gradient(70% 40% at 90% 100%,rgba(60,240,255,.2),transparent 70%),rgba(6,2,16,.94)}
+body[data-ct="neon"] .chm:not(.me) .chb{border-color:rgba(60,240,255,.55);box-shadow:0 0 12px rgba(60,240,255,.25);background:rgba(10,20,40,.7)}
+body[data-ct="neon"] .chm.me .chb{background:linear-gradient(135deg,rgba(255,60,200,.55),rgba(120,60,255,.55));border-color:rgba(255,120,220,.7);box-shadow:0 0 14px rgba(255,60,200,.35)}
+body[data-ct="space"] #o15,body[data-ct="space"] #o17{background:radial-gradient(60% 40% at 80% 10%,rgba(120,90,255,.3),transparent 70%),radial-gradient(50% 40% at 10% 90%,rgba(60,120,255,.22),transparent 70%),linear-gradient(180deg,#0a0830,#050416)}
+body[data-ct="space"] .chm:not(.me) .chb{background:rgba(120,110,255,.14);border-color:rgba(160,150,255,.3)}
+body[data-ct="space"] .chm.me .chb{background:linear-gradient(135deg,rgba(94,242,255,.4),rgba(130,100,255,.5));border-color:rgba(150,200,255,.5)}
+#plCt{font-size:16px}
+
+@media (prefers-reduced-motion:reduce){#splL.lt i,#o3.s>*,#o2.s>*,#o3.s .st>div,.sx.rare,#achT::after,.av[data-rk]::after,.hs i::after,#o1 #tp,#o3.s #oB.plrec{animation:none!important}}

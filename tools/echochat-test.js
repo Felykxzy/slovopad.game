@@ -321,6 +321,11 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
     await api('/api/echo/room/send', { room: rid, text: 'эй @Alice тут' }, B.token);
     await p.evaluate(() => SlovopadEcho.open()); await p.waitForTimeout(2500);
     await p.evaluate(() => SlovopadEcho.refresh && SlovopadEcho.refresh()); await p.waitForTimeout(1200);
+    ok(await p.evaluate(() => !!document.getElementById('plCt')), 'в списке чатов есть кнопка темы чата');
+    await p.evaluate(() => document.getElementById('plCt').click()); await p.waitForTimeout(200);
+    ok(await p.evaluate(() => document.body.getAttribute('data-ct') === 'neon'), 'кнопка включает тему «неон»');
+    await p.evaluate(() => { document.getElementById('plCt').click(); document.getElementById('plCt').click() }); await p.waitForTimeout(200);
+    ok(await p.evaluate(() => !document.body.hasAttribute('data-ct')), 'после трёх нажатий тема снова обычная');
     const rowSel = '#ecList .ecrow[data-k="' + rid + '"]';
     ok(await p.evaluate(s => !!document.querySelector(s + ' .ecat'), rowSel), 'в списке у комнаты значок @ про упоминание');
     const bb = await p.locator(rowSel).boundingBox(); await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await p.mouse.down(); await p.waitForTimeout(800); await p.mouse.up(); await p.waitForTimeout(900);
@@ -329,7 +334,11 @@ const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fai
     await p.screenshot({ path: shots + '/hub-pin.png' });
     await p.mouse.move(bb.x + 20, bb.y + 10); const bb2 = await p.locator(rowSel).boundingBox(); await p.mouse.move(bb2.x + bb2.width / 2, bb2.y + bb2.height / 2); await p.mouse.down(); await p.waitForTimeout(800); await p.mouse.up(); await p.waitForTimeout(900);
     ok(!((await api('/api/my/all', null, A.token)).pins || []).includes('r:' + rid), 'повторное зажатие открепляет');
+    await p.evaluate(() => SlovopadPolish.theme(1));
     await p.evaluate(id => SlovopadEcho.roomOpen(id, 'Словари'), rid); await p.waitForTimeout(1800);
+    await p.screenshot({ path: shots + '/chat-neon.png' });
+    await p.evaluate(() => SlovopadPolish.theme(2)); await p.waitForTimeout(300); await p.screenshot({ path: shots + '/chat-space.png' });
+    await p.evaluate(() => SlovopadPolish.theme(0));
   }
   await p.evaluate(() => { const m = [...document.querySelectorAll('#o17 .mav.tap')].find(x => x.classList.contains('hasph')); if (m) m.click() }); await p.waitForTimeout(1200);
   ok(await p.evaluate(() => !!document.querySelector('#ewho .fav.hasph')), 'в карточке игрока (по нажатию на ник) видно фото, а не эмодзи');

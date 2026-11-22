@@ -1,12 +1,12 @@
 {
-  "version": "4.17.1",
+  "version": "4.18.0",
   "notes": [
-    "Исправлены подвисания слов под прозрачной панелью; опыт для iPhone (?kbce=1)"
+    "Красивее интерфейс: заставка, огонь серии, конец игры, золотые рамки в магазине, рамки аватарок, темы чатов"
   ],
   "notes_en": [
-    "Fixed words lagging under the translucent bar; iPhone experiment (?kbce=1)"
+    "Prettier interface: splash, streak flame, game over, gold shop frames, avatar frames, chat themes"
   ],
   "notes_uk": [
-    "Виправлено підвисання слів під прозорою панеллю; дослід для iPhone (?kbce=1)"
+    "Гарніший інтерфейс: заставка, вогонь серії, кінець гри, золоті рамки в магазині, рамки аватарок, теми чатів"
   ]
 }
