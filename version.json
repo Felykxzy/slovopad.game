@@ -1,12 +1,12 @@
 {
-  "version": "4.19.3",
+  "version": "4.19.4",
   "notes": [
-    "Размытие фона стало мягким, без пикселей"
+    "Кнопка «на весь экран» не показывается там, где игра уже на весь экран (приложение, иконка на экране Домой)"
   ],
   "notes_en": [
-    "Background blur is now smooth, no pixelation"
+    "The fullscreen button is hidden where the game is already fullscreen"
   ],
   "notes_uk": [
-    "Розмиття фону стало м’яким, без пікселів"
+    "Кнопка «на весь екран» не показується там, де гра вже на весь екран"
   ]
 }

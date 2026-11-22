@@ -1,7 +1,7 @@
 /* Кнопка «на весь экран»: прячет рамки браузера сверху и снизу */
 (function(){
   var tg=window.Telegram&&Telegram.WebApp,de=document.documentElement;
-  var standalone=(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone;
+  var standalone=(window.matchMedia&&(matchMedia("(display-mode: standalone)").matches||matchMedia("(display-mode: fullscreen)").matches))||navigator.standalone||!!window.__reachNative;
   var can=!!(de.requestFullscreen||de.webkitRequestFullscreen);
   var tgFs=!!(tg&&tg.requestFullscreen&&parseFloat(tg.version||"0")>=8);
   var menu=document.getElementById("o1");
