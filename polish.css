@@ -69,3 +69,28 @@ body[data-ct="space"] .chm.me .chb{background:linear-gradient(135deg,rgba(94,242
 #plCt{font-size:16px}
 
 @media (prefers-reduced-motion:reduce){#splL.lt i,#o3.s>*,#o2.s>*,#o3.s .st>div,.sx.rare,#achT::after,.av[data-rk]::after,.hs i::after,#o1 #tp,#o3.s #oB.plrec{animation:none!important}}
+
+/* 4.19: загрузка — буквы загораются по мере загрузки, вспышка и круговое раскрытие меню */
+@property --ir{syntax:"<percentage>";inherits:false;initial-value:0%}
+#splL.lt i{filter:brightness(.4) saturate(.5);transition:filter .4s ease}
+#splL.lt i.on{filter:none;animation:plDrop .7s calc(var(--i) * .08s + .1s) cubic-bezier(.2,.9,.3,1.35) both,plSheen 3.4s linear infinite,plPop .5s cubic-bezier(.3,1.7,.5,1)}
+@keyframes plPop{0%{scale:1}40%{scale:1.38}100%{scale:1}}
+#splBar{height:9px;overflow:visible;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+#splB{position:relative;transition:none;background:linear-gradient(90deg,var(--ac),#a082ff 55%,var(--mg))}
+#splB::after{content:"";position:absolute;right:-5px;top:50%;width:14px;height:14px;margin-top:-7px;border-radius:50%;background:#fff;box-shadow:0 0 14px 5px var(--ac),0 0 26px 8px rgba(255,79,216,.55)}
+#splBar::after{content:"";position:absolute;inset:0;border-radius:6px;pointer-events:none;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);background-size:60% 100%;background-repeat:no-repeat;animation:plBarSh 1.4s linear infinite;mix-blend-mode:overlay}
+@keyframes plBarSh{from{background-position:-80% 0}to{background-position:180% 0}}
+#spl.upd #splB::after{display:none}
+#splT{font-variant-numeric:tabular-nums;transition:opacity .3s}
+#spl.go #splT,#spl.go #splBar,#spl.go #splS{opacity:0;transition:opacity .25s}
+#spl.go #splE{animation:plRing .55s cubic-bezier(.3,.7,.3,1) forwards}
+@keyframes plRing{0%{transform:scale(1);opacity:1}100%{transform:scale(7);opacity:0}}
+#spl.go #splL.lt i{animation:plPop .5s calc(var(--i) * .035s) cubic-bezier(.3,1.7,.5,1) both;filter:brightness(1.6) drop-shadow(0 0 10px #fff)}
+#spl.out{transform:none;opacity:1;transition:none;pointer-events:none;-webkit-mask-image:radial-gradient(circle at 50% 46%,transparent calc(var(--ir) - 14%),#000 var(--ir));mask-image:radial-gradient(circle at 50% 46%,transparent calc(var(--ir) - 14%),#000 var(--ir));animation:plIris .95s cubic-bezier(.55,0,.25,1) forwards}
+@keyframes plIris{from{--ir:0%}to{--ir:150%}}
+#o1.mIn .hero>*,#o1.mIn>.mb,#o1.mIn>.ib{animation:plMenu .7s cubic-bezier(.2,.85,.3,1) both}
+#o1.mIn .hero>:nth-child(1){animation-delay:.12s}#o1.mIn .hero>:nth-child(2){animation-delay:.18s}#o1.mIn .hero>:nth-child(3){animation-delay:.26s}
+#o1.mIn .hero>:nth-child(4){animation-delay:.34s}#o1.mIn .hero>:nth-child(5){animation-delay:.42s}#o1.mIn .hero>:nth-child(6){animation-delay:.5s}
+#o1.mIn .hero>:nth-child(n+7){animation-delay:.58s}#o1.mIn>.mb{animation-delay:.64s}#o1.mIn>.ib{animation-delay:.3s}
+@keyframes plMenu{from{opacity:0;transform:translateY(26px) scale(.94);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@media (prefers-reduced-motion:reduce){#spl.out{animation:none;-webkit-mask-image:none;mask-image:none;opacity:0;transition:opacity .3s}#o1.mIn .hero>*,#o1.mIn>.mb,#o1.mIn>.ib,#spl.go #splE,#spl.go #splL.lt i,#splBar::after{animation:none}}

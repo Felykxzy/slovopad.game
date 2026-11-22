@@ -1,12 +1,12 @@
 {
-  "version": "4.19.0",
+  "version": "4.19.1",
   "notes": [
-    "Новые фоны: Песчаная буря, Листопад, Плавучие острова, Маяк в шторм; щиты: Шестерёнки, Бабочки"
+    "Красивая загрузка и плавный переход в меню"
   ],
   "notes_en": [
-    "New backgrounds: Sandstorm, Falling Leaves, Floating Islands, Storm Lighthouse; shields: Clockwork, Butterflies"
+    "Prettier loading screen and smooth transition to the menu"
   ],
   "notes_uk": [
-    "Нові фони: Піщана буря, Листопад, Плавучі острови, Маяк у шторм; щити: Шестерні, Метелики"
+    "Гарне завантаження та плавний перехід у меню"
   ]
 }
