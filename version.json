@@ -1,12 +1,18 @@
 {
-  "version": "4.23.3",
+  "version": "5.0.0",
   "notes": [
-    "Коллекция миров в магазине"
+    "Версия 5.0: самая лучшая и стабильная",
+    "Живые фоны с облаками и туманом",
+    "Новый профиль, Slovopad ID и ЭХО"
   ],
   "notes_en": [
-    "World collection in the shop"
+    "Version 5.0: the best and most stable",
+    "Living backgrounds with clouds and mist",
+    "New profile, Slovopad ID and ECHO"
   ],
   "notes_uk": [
-    "Колекція світів у магазині"
+    "Версія 5.0: найкраща і найстабільніша",
+    "Живі фони з хмарами й туманом",
+    "Новий профіль, Slovopad ID та ЕХО"
   ]
 }
