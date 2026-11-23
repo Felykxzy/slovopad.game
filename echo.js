@@ -228,6 +228,17 @@
       r.onclick = () => { if (r._held) return; const F = window.SlovopadFriends; if (F && F.chatOpen) { F.setBack(hubOpen); F.chatOpen(f) } };
       l.appendChild(r);
     };
+    if (!E.friends.length && !E.rooms.length && sidTok()) {
+      [...l.querySelectorAll(".ecsec,.ecnone")].forEach(x => x.remove());
+      const hero = h("div", "ecempty");
+      hero.appendChild(h("div", "ecwave", "{echo}"));
+      hero.appendChild(h("b", "", T("Здесь пока тихо", "It's quiet here", "Тут поки тихо")));
+      hero.appendChild(h("span", "", T("Добавь друга, чтобы переписываться, или создай комнату и позови всех сразу.", "Add a friend to chat, or make a room and invite everyone at once.", "Додай друга, щоб листуватись, або створи кімнату й поклич усіх одразу.")));
+      const bs = h("div", "ecebtn");
+      bs.appendChild(btn("btn", "{plus}" + T("ДОБАВИТЬ ДРУГА", "ADD A FRIEND", "ДОДАТИ ДРУГА"), () => { const F = window.SlovopadFriends; if (F) F.open() }));
+      bs.appendChild(btn("btn a", T("СОЗДАТЬ КОМНАТУ", "CREATE A ROOM", "СТВОРИТИ КІМНАТУ"), () => { E.panel = "mk"; hubOpen() }));
+      hero.appendChild(bs); l.appendChild(hero); done(); return;
+    }
     if (!E.friends.length) {
       section(l, T("ЛИЧНЫЕ", "DIRECT", "ОСОБИСТІ"));
       l.appendChild(h("div", "ecdim ecnone", T("Здесь будут чаты с друзьями. Сначала добавь друга.", "Chats with friends will appear here. Add a friend first.", "Тут будуть чати з друзями. Спершу додай друга.")));
