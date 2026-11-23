@@ -324,7 +324,7 @@ L("vig",()=>{c.fillStyle=rg0(c,W/2,H/2,Math.max(W,H)*.75,"rgba(0,0,0,0)","rgba(0
 };
 const rg0=(c,x,y,r,a,b)=>{const g=c.createRadialGradient(x,y,r*.3,x,y,r);g.addColorStop(0,a);g.addColorStop(1,b);return g};
 function bgFx(ctx,id,W,H,t){let c=ctx;ctx.save();
-const L=(key,fn,nd)=>{const k=key+"|"+W+"x"+H;let l=SCa[k];if(!l){const ks=Object.keys(SCa);if(ks.length>24)ks.forEach(x=>delete SCa[x]);const D=Math.min(window.devicePixelRatio||1,2),cv=document.createElement("canvas");cv.width=Math.ceil(W*D);cv.height=Math.ceil(H*D);const g=cv.getContext("2d");g.scale(D,D);c=g;fn();c=ctx;l=SCa[k]=cv}if(!nd)ctx.drawImage(l,0,0,W,H);return l};
+const L=(key,fn,nd)=>{const k=key+"|"+W+"x"+H;let l=SCa[k];if(!l){const sm=W*H<90000,ks=Object.keys(SCa).filter(x=>{const m=x.split("|")[1].split("x");return(m[0]*m[1]<90000)===sm});if(ks.length>(sm?400:24))ks.forEach(x=>delete SCa[x]);const D=Math.min(window.devicePixelRatio||1,2),cv=document.createElement("canvas");cv.width=Math.ceil(W*D);cv.height=Math.ceil(H*D);const g=cv.getContext("2d");g.scale(D,D);c=g;fn();c=ctx;l=SCa[k]=cv}if(!nd)ctx.drawImage(l,0,0,W,H);return l};
 const rg=(x,y,r,a,b)=>{const g=c.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,a);g.addColorStop(1,b);return g};
 const lg=(y0,y1,a,b)=>{const g=c.createLinearGradient(0,y0,0,y1);g.addColorStop(0,a);g.addColorStop(1,b);return g};
 const ridge=(base,amp,sd,col)=>{c.fillStyle=col;c.beginPath();c.moveTo(0,H);for(let x=0;x<=W+10;x+=8){const u=x/W*6.28;c.lineTo(x,base+Math.sin(u*1.1+sd)*amp+Math.sin(u*2.7+sd*2.3)*amp*.45+Math.sin(u*6.1+sd*4)*amp*.15)}c.lineTo(W,H);c.closePath();c.fill()};
@@ -1041,7 +1041,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");glassSet((e.clientX/innerWidth-.5)/.55,(e.clientY/innerHeight-.5)/.5)},{passive:true});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="4.21.1";let upLater=false;
+const VER="4.21.2";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if($("spl")||state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
