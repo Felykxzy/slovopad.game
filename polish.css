@@ -145,3 +145,10 @@ body[data-ct="space"] .chm.me .chb{background:linear-gradient(135deg,rgba(94,242
 .wGr{grid-column:1/-1}
 .shtb{gap:5px}.shtb button{min-width:0;padding:12px 2px;font-size:10px;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:clip}
 .shtb button{font-size:15px;letter-spacing:.02em;flex:1 1 0}.shtb button.on{flex:2.6 1 0;font-size:11px;letter-spacing:.1em}
+
+/* магазин: карточки плавно появляются по очереди, нажатие слегка вдавливает */
+@keyframes plShIn{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+#shG .sx:not(.sel):not(.rare){animation:plShIn .32s cubic-bezier(.3,1.2,.5,1) both}
+#shG .sx:nth-child(2){animation-delay:.04s!important}#shG .sx:nth-child(3){animation-delay:.08s!important}#shG .sx:nth-child(4){animation-delay:.12s!important}#shG .sx:nth-child(5){animation-delay:.16s!important}#shG .sx:nth-child(6){animation-delay:.2s!important}#shG .sx:nth-child(n+7){animation-delay:.24s!important}
+#shG .sx:active{transform:scale(.97)}
+@media (prefers-reduced-motion:reduce){#shG .sx{animation:none!important}}

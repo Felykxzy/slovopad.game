@@ -277,14 +277,14 @@ function noiseTex(W,H,q,fn){const tw=Math.max(2,Math.ceil(W*q)),th=Math.max(2,Ma
 const cl01=v=>v<0?0:v>1?1:v;
 const REAL={
 b0:[["dust",[.0,1],[150,130,220],.55,2.2,11],["cl",[.05,.55],[110,70,200],[30,15,80],.22,2.6,12,.5]],
-b1:[["cl",[.05,.62],[255,170,120],[90,30,80],.8,2.4,21,.46],["mist",[.55,.72],[255,150,120],.35,3,22]],
+b1:[["shaft",[0,0],[255,200,140],.5,[.5,.66],25],["cl",[.05,.62],[255,170,120],[90,30,80],.8,2.4,21,.46],["mist",[.55,.72],[255,150,120],.35,3,22]],
 b2:[["cl",[.0,.5],[110,200,200],[10,40,50],.28,2.4,31,.5],["mist",[.72,.92],[90,230,200],.3,3,32]],
-b3:[["cl",[.0,.55],[120,150,200],[10,25,60],.6,2.2,41,.45],["mist",[.6,.95],[210,230,255],.55,2.6,42]],
-b4:[["cl",[.0,.45],[255,200,225],[150,80,130],.5,2.4,51,.5],["mist",[.5,.9],[255,190,220],.4,2.8,52]],
+b3:[["bed",[.9,1],[235,245,255],[120,150,200],.95,2.5,43],["cl",[.0,.55],[120,150,200],[10,25,60],.6,2.2,41,.45],["mist",[.6,.95],[210,230,255],.55,2.6,42]],
+b4:[["bokeh",[.05,.8],"255,200,225",.12,16,53],["cl",[.0,.45],[255,200,225],[150,80,130],.5,2.4,51,.5],["mist",[.5,.9],[255,190,220],.4,2.8,52]],
 b5:[["mist",[.6,1],[40,255,100],.22,3,61]],
 b6:[["cl",[.1,.55],[255,120,220],[50,10,90],.55,2.4,71,.46],["mist",[.5,.62],[255,100,210],.4,4,72]],
 b7:[["mist",[.55,1],[150,255,110],.35,3,81],["cl",[.0,.4],[70,110,100],[5,25,20],.3,2.4,82,.5]],
-b8:[["caus",[.0,.9],[170,240,255],.3,7,91],["mist",[.55,1],[10,70,100],.5,2.6,92]],
+b8:[["shaft",[0,0],[190,245,255],.4,[.55,-.05],91],["bed",[.88,1],[150,190,190],[8,40,50],.9,5,93],["caus",[.0,.9],[170,240,255],.3,7,91],["mist",[.55,1],[10,70,100],.5,2.6,92]],
 b10:[["cl",[.0,.5],[160,150,200],[20,20,60],.5,2.3,101,.46],["mist",[.65,.95],[255,190,110],.35,3,102]],
 b12:[["cl",[.0,.6],[200,100,70],[25,8,10],.75,2.4,121,.44],["mist",[.6,.95],[255,110,50],.3,3,122]],
 b13:[["mist",[.4,1],[190,130,255],.3,2.5,131],["dust",[0,1],[200,150,255],.3,3,132]],
@@ -296,13 +296,13 @@ b20:[["mist",[.6,1],[255,60,200],.3,3,201],["cl",[.0,.45],[90,80,170],[10,5,40],
 b21:[["cl",[.0,.6],[200,170,255],[30,15,70],.4,2.4,211,.48],["mist",[.6,1],[190,150,255],.3,3,212]],
 b22:[["cl",[.0,.65],[150,70,50],[15,5,5],.8,2.4,221,.42],["mist",[.65,1],[255,100,40],.35,3,222]],
 b23:[["cl",[.0,.5],[190,215,255],[30,50,100],.5,2.3,231,.46],["mist",[.65,.95],[230,240,255],.45,2.6,232]],
-b24:[["mist",[.2,1],[230,160,90],.5,2.6,241],["dust",[0,1],[255,210,150],.35,4,242]],
+b24:[["wind",[.3,1],[255,200,130],.28,6,243],["wind",[.5,1],[90,40,15],.25,9,244],["mist",[.2,1],[230,160,90],.5,2.6,241],["dust",[0,1],[255,210,150],.35,4,242]],
 b25:[["cl",[.0,.5],[255,190,120],[80,30,20],.55,2.3,251,.46],["mist",[.6,.95],[255,170,90],.3,3,252]],
 b26:[["cl",[.1,.9],[255,255,255],[120,150,200],.55,2.2,261,.5],["mist",[.7,1],[255,255,255],.35,2.6,262]],
 b27:[["cl",[.0,.6],[130,150,180],[8,14,28],.8,2.2,271,.4],["mist",[.7,1],[190,210,230],.4,3,272]]
 };
 const realFx=(c,L,id,W,H,t)=>{
-const sp=REAL[id];if(sp)sp.forEach((s,i)=>{
+c.globalAlpha=1;c.globalCompositeOperation="source-over";c.shadowBlur=0;const sp=REAL[id];if(sp)sp.forEach((s,i)=>{
  const key="r_"+id+i,ty=s[0];
  const cv=L(key,()=>{
   const y0=s[1][0],y1=s[1][1],asp=W/H;
@@ -312,10 +312,18 @@ const sp=REAL[id];if(sp)sp.forEach((s,i)=>{
    c.drawImage(noiseTex(W*1.2,H,.25,(u,v)=>{const n=fbm(u*sc*asp*1.6,v*sc*3,sd,4),w=Math.exp(-Math.pow((v-mid)/hw,2)*2.2);return[col[0],col[1],col[2],cl01((n-.25)*1.9)*w*255*al]}),-W*.1,0,W*1.2,H)}
   else if(ty==="caus"){const col=s[2],al=s[3],sc=s[4],sd=s[5];
    c.drawImage(noiseTex(W,H,.45,(u,v)=>{const n=fbm(u*sc*asp,v*sc,sd,3),n2=fbm(u*sc*asp*1.7+4,v*sc*1.7,sd+5,3),l=Math.abs(n-.5)*2,l2=Math.abs(n2-.5)*2,m=Math.pow(cl01(1-Math.min(l,l2)*16),1.5)*cl01(1-v*1.1)*.8;return[col[0],col[1],col[2],m*255*al]}),0,0,W,H)}
+  else if(ty==="wind"){const col=s[2],al=s[3],sc=s[4],sd=s[5];
+   c.drawImage(noiseTex(W,H,.4,(u,v)=>{const n=fbm(u*sc*.6*asp,v*sc*9,sd,4),m=cl01((n-.45)*3.2)*cl01((v-y0)/.1)*cl01((y1-v)/.1);return[col[0],col[1],col[2],m*255*al]}),0,0,W,H)}
+  else if(ty==="bed"){const col=s[2],dk=s[3],al=s[4],sc=s[5],sd=s[6];
+   c.drawImage(noiseTex(W,H,.5,(u,v)=>{const rp=Math.sin((v*sc*30+fbm(u*6*asp,v*8,sd,3)*5))*.5+.5,n=fbm(u*sc*asp*3,v*sc*3,sd+3,5),k=cl01(n*1.2+rp*.25-.1),m=cl01((v-y0)/.04)*cl01((y1-v)/.02);return[dk[0]+(col[0]-dk[0])*k|0,dk[1]+(col[1]-dk[1])*k|0,dk[2]+(col[2]-dk[2])*k|0,m*255*al]}),0,0,W,H)}
+  else if(ty==="shaft"){const col=s[2],al=s[3],sx=s[4][0]*W,sy=s[4][1]*H,sd=s[5];
+   c.drawImage(noiseTex(W,H,.3,(u,v)=>{const dx=u*W-sx,dy=v*H-sy,an=Math.atan2(dy,dx),r=Math.hypot(dx,dy)/Math.max(W,H),n=fbm(an*9,r*.6,sd,3),m=cl01((n-.4)*3)*Math.exp(-r*2.2)*(dy<0?1:.0)*cl01(1-(1-v)*0);return[col[0],col[1],col[2],m*255*al]}),0,0,W,H)}
+  else if(ty==="bokeh"){const col=s[2],al=s[3],n=s[4],sd=s[5];
+   for(let k=0;k<n;k++){const x=hsh(k,1,sd)*W,y=(y0+hsh(k,2,sd)*(y1-y0))*H,r=Math.min(W,H)*(.025+hsh(k,3,sd)*.07);const g=c.createRadialGradient(x,y,r*.6,x,y,r);g.addColorStop(0,"rgba("+col+","+al*(.4+hsh(k,4,sd)*.6)+")");g.addColorStop(.85,"rgba("+col+","+al*.7+")");g.addColorStop(1,"rgba("+col+",0)");c.fillStyle=g;c.beginPath();c.arc(x,y,r,0,6.3);c.fill()}}
   else if(ty==="dust"){const col=s[2],al=s[3],sc=s[4],sd=s[5];
    c.drawImage(noiseTex(W,H,.3,(u,v)=>{const d=Math.abs((v-.5)-(u-.5)*-1.2),n=fbm(u*sc*asp,v*sc,sd,5),m=cl01((n-.4)*2.5)*Math.exp(-d*d*10);return[col[0],col[1],col[2],m*255*al*.5]}),0,0,W,H)}
  },true);
- const dx=Math.sin(t*(.04+i*.013)+i)*W*.035,dy=ty==="mist"?Math.sin(t*.07+i)*H*.006:0;
+ const dx=Math.round(Math.sin(t*(.04+i*.013)+i)*W*.035),dy=ty==="mist"?Math.round(Math.sin(t*.07+i)*H*.006):0;
  c.drawImage(cv,dx,dy,W,H);
 });
 /* общая «плёнка»: мягкая виньетка и зерно */
@@ -1041,7 +1049,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");glassSet((e.clientX/innerWidth-.5)/.55,(e.clientY/innerHeight-.5)/.5)},{passive:true});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="4.21.2";let upLater=false;
+const VER="4.22.0";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if($("spl")||state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
