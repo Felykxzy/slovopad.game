@@ -329,7 +329,7 @@ document.documentElement.classList.add("js");
     bx.textAlign="center";bx.textBaseline="middle";
     for(var j=0;j<drift.length;j++){var o=drift[j];if(!reduce)o.y+=o.v*dt;if(o.y>BH+30){o.y=-30;o.x=20+rnd(BW-120)}
       var g=bx.createLinearGradient(0,o.y-60,0,o.y);g.addColorStop(0,"rgba("+o.c+",0)");g.addColorStop(1,"rgba("+o.c+",.18)");bx.fillStyle=g;bx.fillRect(o.x-1,o.y-60,2,60);
-      bx.save();bx.globalAlpha=.22;bx.font="800 "+o.s+"px Manrope,Segoe UI,sans-serif";bx.shadowColor="rgb("+o.c+")";bx.shadowBlur=10;bx.fillStyle="rgb("+o.c+")";bx.fillText(o.t,o.x,o.y);bx.restore()}
+      bx.save();bx.globalAlpha=.55;bx.font="800 "+o.s+"px Manrope,Segoe UI,sans-serif";bx.shadowColor="rgb("+o.c+")";bx.shadowBlur=5;bx.shadowOffsetX=5000;bx.fillStyle="rgb("+o.c+")";bx.fillText(o.t,o.x-5000,o.y);bx.restore()}
     requestAnimationFrame(bloop)}
   bsize();
   /* на телефоне при прокрутке меняется высота окна: не пересоздаём слова, только растягиваем холст */
