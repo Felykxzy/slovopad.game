@@ -1014,7 +1014,7 @@ if(c===1){put();return}const im=new Image();im.onload=()=>{phC[k]=1;put()};im.on
 function avSet(el,a,p){if(p){el.textContent="";el.style.backgroundImage='url("'+p+'")'}else{el.style.backgroundImage="";el.textContent=a}}
 function pfUI(){avSet($("pcA"),PF.a,PF.p);$("pcN").textContent=PF.n||tx("ПРОФИЛЬ");const h=$("hi");h.textContent="";if(PF.n){h.append(tx("ПРИВЕТ")+", ");const b=document.createElement("b");b.textContent=PF.n;h.append(b);{const tg=window.TagUI&&TagUI.mine();if(tg){h.append(" ");h.append(TagUI.el(tg))}}h.append(" 👋");h.classList.add("s")}else h.classList.remove("s")}
 function tfmt(s){const m=Math.round(s/60);return m<60?m+" "+tx("мин"):(m/60|0)+" "+tx("ч")+" "+m%60+" "+tx("м")}
-function pfOpen(){sidCard();avSet($("pAv"),PF.a,PF.p);$("pNm").textContent=PF.n||tx("ИГРОК");const r=RK[rki(tw())];$("pRk").textContent=r.i+" "+tx(r.n);
+function pfOpen(){sidCard();{const w=$("pAv").parentElement,t=tw(),ri=rki(t),a=RK[ri],nx=RK[ri+1];w.classList.add("ring");w.style.setProperty("--pr",nx?Math.min(100,(t-a.w)/(nx.w-a.w)*100):100)}avSet($("pAv"),PF.a,PF.p);$("pNm").textContent=PF.n||tx("ИГРОК");const r=RK[rki(tw())];$("pRk").textContent=r.i+" "+tx(r.n);
 let mx=0;const th=$("pTh");th.innerHTML="";
 THEMES.forEach(t=>{let b=0;["","en_","uk_"].forEach(q=>{try{b=Math.max(b,+localStorage.getItem("best_"+q+t.id)||0)}catch(e){}});mx=Math.max(mx,b);const d=document.createElement("div");d.className="gl tb"+(b?"":" z");d.style.setProperty("--c",t.c);d.innerHTML='<div class="h"><span>'+t.i+" "+tx(t.n)+"</span><em>"+b+'</em></div><div class="p"><i style="width:'+Math.min(100,b/6)+'%"></i></div>';th.appendChild(d)});
 const accValue=SlovopadCore.accuracy(PF.h,PF.m),wpmValue=SlovopadCore.wordsPerMinute(PF.w,PF.t),acc=accValue===null?"—":accValue+"%",wpm=wpmValue===null?"—":wpmValue,sn=streakNow();
@@ -1049,7 +1049,7 @@ document.addEventListener("pointerdown",e=>{try{ac=ac||new(window.AudioContext||
 document.addEventListener("pointermove",e=>{if(CFG.gls===0||document.body.classList.contains("gyro"))return;document.body.classList.add("ptr");glassSet((e.clientX/innerWidth-.5)/.55,(e.clientY/innerHeight-.5)/.5)},{passive:true});
 document.addEventListener("pointerup",end);document.addEventListener("pointercancel",end)})();
 if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-const VER="4.22.0";let upLater=false;
+const VER="4.23.0";let upLater=false;
 function upShow(m,j){$("upt").textContent=tx(m==="new"?"ДОСТУПНО ОБНОВЛЕНИЕ":"ЧТО НОВОГО");$("upv").textContent=tx("ВЕРСИЯ")+" "+j.version;const l=$("upl");l.innerHTML="";(j["notes_"+ui()]||j.notes||[]).forEach(n=>{const li=document.createElement("li");li.textContent=n;l.appendChild(li)});$("upY").textContent=tx(m==="new"?"ОБНОВИТЬ":"КРУТО");$("upN").style.display=m==="new"?"":"none";$("up").dataset.m=m;$("up").classList.add("s")}
 async function upCheck(){if($("spl")||state==="play"||state==="pause"||upLater||navigator.onLine===false||!/^http/.test(location.protocol))return;
 try{const r=await fetch("version.json?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();
@@ -1190,7 +1190,7 @@ $("sidName").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();$("sidPass").f
 $("sidPass").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();(sidM==="reg"?$("sidReg"):$("sidLogin")).click()}};
 function sidRender(){const on=!!sidTok(),i=sidInfo()||{};$("sidFormOut").style.display=on?"none":"";$("sidFormIn").style.display=on?"":"none";
 $("sidName").placeholder=tx("Никнейм");$("sidPass").placeholder=tx("Пароль (минимум 8 символов)");
-if(!on){sidMode(sidM);const tb=$("sidTg");if(tb){tb.hidden=!tgInit();tb.textContent=tx(tgNew?"СОЗДАТЬ НОВЫЙ АККАУНТ ЧЕРЕЗ TELEGRAM":"ВОЙТИ ЧЕРЕЗ TELEGRAM")}return}avSet($("sidAv"),PF.a,PF.p);$("sidNm").textContent=i.username||"";$("sidCode").textContent=i.spCode||"SP-······";
+if(!on){sidMode(sidM);const tb=$("sidTg");if(tb){tb.hidden=!tgInit();tb.textContent=tx(tgNew?"СОЗДАТЬ НОВЫЙ АККАУНТ ЧЕРЕЗ TELEGRAM":"ВОЙТИ ЧЕРЕЗ TELEGRAM")}return}avSet($("sidAv"),PF.a,PF.p);$("sidNm").textContent=i.username||"";$("sidCode").textContent=i.spCode||"SP-······";{const r=RK[rki(tw())];$("sidRk").textContent=r.i+" "+tx(r.n);const q=$("sidPassQr");if(q&&window.SlovopadQR&&i.spCode)try{SlovopadQR.draw(q,i.spCode,96)}catch(e){}}
 accRender();const box=$("sidPriv"),p=sidPriv();box.textContent="";SID_TOG.forEach(([k,label])=>{const row=document.createElement("button");row.type="button";row.className="sid-sw"+(p[k]?" on":"");const s=document.createElement("span");s.textContent=tx(label);const t=document.createElement("i");row.append(s,t);
 row.onclick=()=>{const q=sidPriv();q[k]=!q[k];localStorage.setItem(SID_PRIV,JSON.stringify(q));sidRender();sidAuto()};box.appendChild(row)})}
 function sidOpen(){try{sidRender();sidStatus("")}catch(e){dbgShow("Экран ID: "+e.message)}ov("o11");$("o11").scrollTop=0;if(sidTok())cloudLoadRanks()}

@@ -152,3 +152,30 @@ body[data-ct="space"] .chm.me .chb{background:linear-gradient(135deg,rgba(94,242
 #shG .sx:nth-child(2){animation-delay:.04s!important}#shG .sx:nth-child(3){animation-delay:.08s!important}#shG .sx:nth-child(4){animation-delay:.12s!important}#shG .sx:nth-child(5){animation-delay:.16s!important}#shG .sx:nth-child(6){animation-delay:.2s!important}#shG .sx:nth-child(n+7){animation-delay:.24s!important}
 #shG .sx:active{transform:scale(.97)}
 @media (prefers-reduced-motion:reduce){#shG .sx{animation:none!important}}
+
+/* ПРОФИЛЬ: аватар в кольце прогресса до следующего ранга */
+#o7 .avw.ring{padding:9px;border-radius:50%;background:conic-gradient(var(--ac) calc(var(--pr,0)*1%),rgba(255,255,255,.12) 0);box-shadow:0 0 40px rgba(94,242,255,.25)}
+#o7 .avw.ring .av{box-shadow:0 0 0 6px #0a0c24;border:0}
+#o7 .avw.ring .ed{right:6px;bottom:6px}
+#o7 .phero{gap:6px}
+#o7 .prk{order:1;margin-top:-22px;position:relative;border:0;color:#07091a;background:linear-gradient(90deg,var(--ac),var(--mg));padding:5px 16px;font-size:11px;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+#o7 .pnm{order:2;margin-top:6px;font-size:26px}
+#o7 .prbar{order:3;margin-bottom:14px}
+#o7 .sid-chip{width:max-content;max-width:100%;margin:6px auto 0;border-radius:20px;padding:8px 16px;gap:10px}
+#o7 .sid-chip::after{content:"⧉";font-size:14px;opacity:.8}
+#o7 .pbig div{text-align:center}
+#o7 .pbig b{font-weight:600}
+#o7 .pbig{gap:8px}
+
+/* SLOVOPAD ID: карточка-паспорт */
+#o11 .sid-card{position:relative;overflow:hidden;border:1px solid rgba(140,150,255,.55);border-radius:22px;padding:16px;background:linear-gradient(135deg,#10133a,#281458)}
+#o11 .sid-card:before{content:"";position:absolute;right:-50px;top:-50px;width:210px;height:210px;border-radius:50%;background:conic-gradient(#5ef2ff,#a77bff,#ff6fd0,#5ef2ff);opacity:.32;filter:blur(20px);pointer-events:none}
+#o11 .sid-card>*{position:relative}
+#o11 .sid-av{width:78px;height:78px;border-radius:18px;font-size:42px;background-color:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2)}
+#o11 .sid-nm{font-size:21px;letter-spacing:.1em}
+#o11 .sid-rk{font-size:11px;letter-spacing:.18em;font-weight:700;color:var(--ac);margin-top:3px}
+#o11 .sid-codebar{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px 12px;padding:12px;background:rgba(0,0,0,.3)}
+#o11 .sid-cl{min-width:0}
+#o11 .sid-code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:21px;letter-spacing:.1em;text-align:left}
+#o11 .sid-pqr{width:56px;height:56px;border-radius:8px;background:#fff;padding:3px;image-rendering:pixelated}
+#o11 .sid-codebar .btn{grid-column:1/-1}
