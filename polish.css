@@ -210,3 +210,9 @@ body[data-ct="space"] .chm.me .chb{background:linear-gradient(135deg,rgba(94,242
 .ecebtn .btn{width:100%}
 @media (prefers-reduced-motion:reduce){#o16 .ecai2::before,.ecwave::before,.ecwave::after{animation:none}}
 .ecebtn .btn{letter-spacing:.1em;font-size:12px;white-space:nowrap;padding-left:10px;padding-right:10px}
+
+/* нажатия: у этих кнопок раньше не было плавного отклика */
+.pclose,.sid-sw,.sid-accb,.eksa{transition:transform .15s,background-color .2s,opacity .2s,box-shadow .2s}
+.pclose:active,.sid-accb:active,.eksa:active{transform:scale(.92)}
+.sid-sw:active{transform:scale(.97)}
+@media (prefers-reduced-motion:reduce){.pclose,.sid-sw,.sid-accb,.eksa{transition:none}}
