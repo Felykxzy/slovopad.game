@@ -216,3 +216,9 @@ body[data-ct="space"] .chm.me .chb{background:linear-gradient(135deg,rgba(94,242
 .pclose:active,.sid-accb:active,.eksa:active{transform:scale(.92)}
 .sid-sw:active{transform:scale(.97)}
 @media (prefers-reduced-motion:reduce){.pclose,.sid-sw,.sid-accb,.eksa{transition:none}}
+
+/* кнопка «Поддержать автора» (банка monobank) */
+.ib.dnb{right:16px;top:calc(68px + var(--sat));font-size:20px;box-shadow:0 0 14px rgba(255,90,140,.4),inset 0 1px 1px rgba(255,255,255,.55),0 8px 22px rgba(0,0,0,.38)}
+.ib.dnb:not(:active){animation:dnBeat 2.6s ease-in-out infinite}
+@keyframes dnBeat{0%,60%,100%{transform:scale(1)}70%{transform:scale(1.14)}80%{transform:scale(1)}90%{transform:scale(1.1)}}
+@media (prefers-reduced-motion:reduce){.ib.dnb:not(:active){animation:none}}
