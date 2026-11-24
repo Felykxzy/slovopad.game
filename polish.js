@@ -104,9 +104,24 @@
     eqb.onclick = () => { try { o.onEq() } catch (e) { } close(o.done) };
     if (!calm()) setTimeout(() => stars(), 1000);
   }
+  /* 5.0.1: кнопка «Обновить игру» прячет настройки. Когда окно закрыли («Не надо», «Позже»),
+     а на экране не осталось ни одного окна, возвращаем экран, с которого его открыли (иначе пустой фон до перезагрузки) */
+  function updBack() {
+    const up = $("up"); if (!up) return;
+    new MutationObserver(() => {
+      if (up.classList.contains("s")) return;
+      setTimeout(() => {
+        try {
+          if (up.classList.contains("s") || document.querySelector(".ov.s") || state === "play") return;
+          ov(ov.cur && $(ov.cur) ? ov.cur : "o1");
+        } catch (e) { }
+      }, 0);
+    }).observe(up, { attributes: true, attributeFilter: ["class"] });
+  }
   window.SlovopadPolish = { chest: chest, themeBtn: themeBtn, theme: theme, stars: stars };
   function init() {
     theme();
+    updBack();
     rankFrames(); flame(); overFx();
     const hc = $("hC"); if (hc) new MutationObserver(flame).observe(hc, { childList: true, characterData: true, subtree: true });
     ["pc", "c7x"].forEach(id => { const e = $(id); if (e) e.addEventListener("click", () => setTimeout(rankFrames, 400)) });
