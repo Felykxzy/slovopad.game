@@ -1,18 +1,12 @@
 {
-  "version": "5.0.0",
+  "version": "5.0.1",
   "notes": [
-    "Версия 5.0: самая лучшая и стабильная",
-    "Живые фоны с облаками и туманом",
-    "Новый профиль, Slovopad ID и ЭХО"
+    "Исправлено: после кнопки «Обновить игру» меню больше не пропадает"
   ],
   "notes_en": [
-    "Version 5.0: the best and most stable",
-    "Living backgrounds with clouds and mist",
-    "New profile, Slovopad ID and ECHO"
+    "Fixed: the menu no longer disappears after the \"Update game\" button"
   ],
   "notes_uk": [
-    "Версія 5.0: найкраща і найстабільніша",
-    "Живі фони з хмарами й туманом",
-    "Новий профіль, Slovopad ID та ЕХО"
+    "Виправлено: після кнопки «Оновити гру» меню більше не зникає"
   ]
 }
