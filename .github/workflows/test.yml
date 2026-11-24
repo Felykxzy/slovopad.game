@@ -22,6 +22,14 @@ jobs:
           grep -q "const VER=\"$V\"" app.js || { echo "Версия в app.js не совпадает с version.json ($V)"; exit 1; }
       - name: Файлы кэша на месте
         run: |
-          for f in $(grep -o '"[A-Za-z0-9_./-]*\.\(js\|css\|html\|png\|webmanifest\|json\)"' sw.js | tr -d '"'); do [ -e "$f" ] || { echo "sw.js ссылается на отсутствующий файл: $f"; exit 1; }; done
+          for f in $(grep -o '"[A-Za-z0-9_./-]*\.\(js\|css\|html\|png\|webmanifest\|json\)\(?[^"]*\)\?"' sw.js | tr -d '"' | sed 's/?.*//'); do [ -e "$f" ] || { echo "sw.js ссылается на отсутствующий файл: $f"; exit 1; }; done
+      - name: Офлайн-кэш совпадает с index.html
+        run: |
+          for u in $(grep -o '\(src\|href\)="[A-Za-z0-9_./-]*\.\(js\|css\)[^"]*"' index.html | sed 's/^[a-z]*="//; s/"$//'); do grep -qF "\"$u\"" sw.js || { echo "В sw.js нет файла с такой же ссылкой, как в index.html: $u"; exit 1; }; done
       - name: Тесты
         run: npm test
+      - name: Проверка экранов
+        run: |
+          npm install --no-save --no-audit --no-fund playwright
+          npx playwright install --with-deps chromium
+          npm run smoke

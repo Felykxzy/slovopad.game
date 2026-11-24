@@ -222,3 +222,6 @@ body[data-ct="space"] .chm.me .chb{background:linear-gradient(135deg,rgba(94,242
 .ib.dnb:not(:active){animation:dnBeat 2.6s ease-in-out infinite}
 @keyframes dnBeat{0%,60%,100%{transform:scale(1)}70%{transform:scale(1.14)}80%{transform:scale(1)}90%{transform:scale(1.1)}}
 @media (prefers-reduced-motion:reduce){.ib.dnb:not(:active){animation:none}}
+
+/* iOS не приближает экран при вводе, если шрифт в поле 16px и больше */
+input,textarea,select{font-size:16px}
