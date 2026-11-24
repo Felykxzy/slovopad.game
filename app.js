@@ -905,7 +905,9 @@ for(let i=Sh.length-1;i>=0;i--){Sh[i].l-=dt;if(Sh[i].l<=0)Sh.splice(i,1)}}
 function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
 const CMB=["94,242,255","94,242,255","255,79,216","255,170,70","255,230,110"];
 const AW=[];function amb(){if(!AW.length)for(let i=0;i<14;i++)AW.push({t:(lbase())[Math.random()*lbase().length|0].toUpperCase(),x:Math.random(),y:Math.random(),v:.02+Math.random()*.035,s:11+Math.random()*8,c:["94,242,255","255,79,216","255,209,102","184,255,92","160,130,255"][i%5]});
-ctx.save();ctx.globalAlpha=.4;for(const a of AW){const y=((a.y+gt*a.v)%1.2)*(H+80)-40;ctx.font="500 "+a.s+"px -apple-system,system-ui,sans-serif";ctx.fillStyle="rgb("+a.c+")";ctx.fillText(a.t,a.x*(W-90)+12,y)}ctx.restore()}
+ctx.save();ctx.globalAlpha=.24;for(const a of AW){const y=((a.y+gt*a.v)%1.2)*(H+80)-40,sp=awSp(a);ctx.drawImage(sp,a.x*(W-90)+12-10,y-a.s-10,sp.width/2,sp.height/2)}ctx.restore()}
+/* слова на фоне меню: один раз рисуются размытыми в маленькую картинку, дальше только копируются */
+const AWc={};function awSp(a){const k=a.t+"|"+a.s+"|"+a.c;let c=AWc[k];if(c)return c;c=document.createElement("canvas");const f="500 "+a.s*2+"px -apple-system,system-ui,sans-serif",x=c.getContext("2d");x.font=f;c.width=Math.ceil(x.measureText(a.t).width)+40;c.height=Math.ceil(a.s*2)+40;x.font=f;x.fillStyle="rgb("+a.c+")";if("filter" in x){x.filter="blur(3.2px)";x.fillText(a.t,20,20+a.s*1.6)}else{x.shadowColor="rgb("+a.c+")";x.shadowBlur=7;x.shadowOffsetX=5000;x.fillText(a.t,20-5000,20+a.s*1.6)}return AWc[k]=c}
 let blc=null,blx=null,bl2=null,bx2=null,blK="";
 function bgPaint(c){c.drawImage(bgc,-10,-10,W+20,H+20);if(CFG.q)bgFx(c,curB(),W,H,gt);
 if(WBf>0&&bgcO){const Dd=cv.width/W;if(!xfc||xfc.width!==cv.width||xfc.height!==cv.height){xfc=document.createElement("canvas");xfc.width=cv.width;xfc.height=cv.height;xfx=xfc.getContext("2d")}
