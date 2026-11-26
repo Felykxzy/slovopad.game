@@ -32,4 +32,4 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx --yes wrangler@4 deploy --keep-vars
+        run: npx --yes wrangler@4 deploy --config wrangler.toml --name slovopad-api --keep-vars
