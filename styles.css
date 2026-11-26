@@ -883,7 +883,8 @@ body.eco #fg .fd.cur .fr>.ic,body.eco #fg .fd.cur .fr::after,body.eco #fg .fd.cu
 @keyframes splGem{0%,100%{transform:rotate(45deg) scale(1)}50%{transform:rotate(45deg) scale(1.1)}}
 @keyframes splIn{0%{opacity:0;transform:translateY(16px) scale(.9)}100%{opacity:1;transform:none}}
 @keyframes splSheen{to{background-position:-250% 0}}
-#splL{background:linear-gradient(100deg,var(--ac) 0%,var(--mg) 38%,#fff 50%,var(--ac) 62%,var(--mg) 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;animation:splpulse 2s ease-in-out infinite,splSheen 3.6s linear infinite,splIn .8s .12s cubic-bezier(.2,.9,.3,1.2) both}
+#splL{background:linear-gradient(100deg,var(--ac) 0%,var(--mg) 38%,#fff 50%,var(--ac) 62%,var(--mg) 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;animation:splSheen 3.6s linear infinite,splIn .8s .12s cubic-bezier(.2,.9,.3,1.2) both}
+#spl.out *,#spl.out::before{animation-play-state:paused!important}
 #splS{position:relative;font-size:10px;letter-spacing:.3em;opacity:.6;font-weight:600;text-align:center;padding:0 16px;animation:splIn .8s .25s both}
 #splBar{height:10px;width:min(72%,310px);margin-top:10px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);box-shadow:inset 0 1px 3px rgba(0,0,0,.45),0 0 20px rgba(94,242,255,.12);animation:splIn .8s .35s both}
 #splB{position:relative;overflow:hidden}
