@@ -1579,3 +1579,6 @@ html.lite.beta #o1 #seB{animation:none}
 #lv.perf{color:#ffd166;text-shadow:0 0 10px rgba(255,190,80,.7);animation:plPerf 1.8s ease-in-out infinite}
 @keyframes plPerf{0%,100%{text-shadow:0 0 6px rgba(255,190,80,.5)}50%{text-shadow:0 0 16px rgba(255,220,120,1)}}
 @media (prefers-reduced-motion:reduce){#lv.perf{animation:none}}
+
+.hubb{display:none}
+[data-hub] .hubb{display:flex;align-items:center;position:absolute;left:16px;top:calc(66px + var(--sat));height:34px;padding:0 14px;border-radius:30px;font:800 11px/1 inherit;letter-spacing:.14em;color:var(--ink);text-decoration:none;background:rgba(255,255,255,.07);backdrop-filter:blur(6px);box-shadow:0 0 14px rgba(94,242,255,.18);z-index:3}
